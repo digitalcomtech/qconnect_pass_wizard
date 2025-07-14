@@ -401,7 +401,7 @@
         if (addSecondary && secondaryImei) {
           payload.secondary_imei = secondaryImei;
         }
-        const resp = await fetch("https://installer-app.onrender.com/api/install", {
+        const resp = await fetch("/api/install", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
@@ -429,12 +429,12 @@
       async function checkStatus() {
         attempts++;
         // Call your backend endpoint that checks device status
-        const resp = await fetch(`https://installer-app.onrender.com/api/device-status?imei=${encodeURIComponent(imeiInput.value.trim())}`);
+        const resp = await fetch(`/api/device-status?imei=${encodeURIComponent(imeiInput.value.trim())}`);
         const data = await resp.json();
 
         if (data.isReporting) { 
           // Fetch latest device info from backend
-          fetch(`https://installer-app.onrender.com/api/device-status?imei=${encodeURIComponent(imeiInput.value.trim())}`)
+          fetch(`/api/device-status?imei=${encodeURIComponent(imeiInput.value.trim())}`)
             .then(resp => resp.json())
             .then(deviceData => {
               const deviceLat = deviceData.latest?.loc?.lat;

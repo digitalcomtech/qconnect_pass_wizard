@@ -1,12 +1,10 @@
 // server.js
 const express = require("express");
-const cors = require("cors");
 const fetch = require("node-fetch"); // version 2.x import style
 
 const TEST_MODE = false; // Set to false for production
 
 const app = express();
-app.use(cors());
 const PORT = process.env.PORT || 8080;
 
 // 1) Serve everything in ./public as static files:
