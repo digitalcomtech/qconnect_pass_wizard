@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>QConnect PASS Wizard</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
+      background: #f4f6fb;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .container {
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08), 0 1.5px 4px rgba(0,0,0,0.04);
+      padding: 36px 32px 28px 32px;
+      max-width: 480px;
+      width: 100%;
+      margin: 40px 0 24px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    h1 {
+      font-size: 1.7rem;
+      margin-bottom: 18px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-align: center;
+    }
+    .section {
+      margin-bottom: 30px;
+      padding: 18px 18px 10px 18px;
+      border: 1px solid #e3e7ef;
+      border-radius: 10px;
+      background: #f9fafc;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+      width: 100%;
+    }
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 600;
+      color: #2d3a4a;
+    }
+    input[type="text"],
+    input[type="date"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 10px 12px;
+      margin-bottom: 14px;
+      box-sizing: border-box;
+      font-size: 1rem;
+      border: 1px solid #d1d7e6;
+      border-radius: 6px;
+      background: #fff;
+      transition: border 0.2s;
+    }
+    input[type="text"]:focus,
+    input[type="date"]:focus,
+    select:focus,
+    textarea:focus {
+      border: 1.5px solid #4f8cff;
+      outline: none;
+    }
+    button {
+      padding: 11px 26px;
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: #fff;
+      background: linear-gradient(90deg, #4f8cff 0%, #2355e6 100%);
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin: 0 8px 8px 0;
+      box-shadow: 0 2px 8px rgba(79,140,255,0.08);
+      transition: background 0.2s, box-shadow 0.2s;
+    }
+    button:hover {
+      background: linear-gradient(90deg, #2355e6 0%, #4f8cff 100%);
+      box-shadow: 0 4px 16px rgba(79,140,255,0.13);
+    }
+    .hidden {
+      display: none;
+    }
+    #clientStatus,
+    #vinStatus,
+    #installStatus {
+      margin-top: 10px;
+      font-weight: 600;
+      color: #e74c3c;
+      text-align: center;
+    }
+    #successMsg {
+      color: #27ae60;
+      font-size: 1.1rem;
+      margin-top: 24px;
+      text-align: center;
+      font-weight: 600;
+    }
+    @media (max-width: 600px) {
+      .container {
+        padding: 18px 4vw 18px 4vw;
+        max-width: 98vw;
+      }
+      .section {
+        padding: 10px 4vw 8px 4vw;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>QConnect PASS Wizard</h1>
+
+    <!-- STEP 1: Client Name -->
+    <div id="clientSection" class="section">
+      <h2 style="text-align:center; font-size:1.2rem; margin-bottom:12px;">Step 1: Enter / Select Client Name</h2>
+      <form id="clientForm">
+        <label for="clientNameInput">Client Name or VIN Start:</label>
+        <input
+          type="text"
+          id="clientNameInput"
+          placeholder=""
+          autocomplete="off"
+        />
+        <button type="submit">Submit ▶ Load VINs</button>
+      </form>
+      <p id="clientStatus"></p>
+    </div>
+
+    <!-- STEP 2: VIN Selection -->
+    <div id="vinSection" class="section hidden">
+      <h2 style="text-align:center; font-size:1.2rem; margin-bottom:12px;">Step 2: Choose a VIN (Booked)</h2>
+      <div id="selectedPersonName" style="margin-bottom:10px; font-weight:bold;"></div>
+      <label for="vinSelect">VIN #:</label>
+      <select id="vinSelect">
+        <option value="">-- Select VIN --</option>
+      </select>
+      <button id="backToClientBtn" type="button">◀ Back</button>
+      <button id="nextVinBtn">Next ▶ Enter IMEI & SIM</button>
+      <p id="vinStatus"></p>
+    </div>
+
+    <!-- STEP 3: IMEI & SIM (POST to `/api/install`) -->
+    <div id="deviceSection" class="section hidden">
+      <h2 style="text-align:center; font-size:1.2rem; margin-bottom:12px;">Step 3: Enter IMEI & SIM</h2>
+      <label for="imeiInput">IMEI (Primary Device)</label>
+      <input
+        type="text"
+        id="imeiInput"
+        placeholder=""
+      />
+      <label for="imeiConfirmInput">Retype IMEI</label>
+      <input
+        type="text"
+        id="imeiConfirmInput"
+        placeholder="Retype IMEI"
+      />
+
+      <label for="simInput">SIM Card #</label>
+      <input
+        type="text"
+        id="simInput"
+        placeholder=""
+      />
+      <label for="simConfirmInput">Retype SIM Card #</label>
+      <input
+        type="text"
+        id="simConfirmInput"
+        placeholder="Retype SIM Card #"
+      />
+
+      <label style="display:flex;align-items:center;margin-bottom:8px;">
+        <input type="checkbox" id="addSecondaryUnit" style="margin-right:8px;" />
+        Add Secondary Unit (IMEI)
+      </label>
+      <div id="secondaryUnitFields" class="hidden" style="width:100%;">
+        <label for="secondaryImeiInput">Secondary IMEI</label>
+        <input type="text" id="secondaryImeiInput" placeholder="Enter secondary IMEI" />
+      </div>
+
+      <button id="backToVinBtn" type="button">◀ Back</button>
+      <button id="startInstallBtn" type="button">Start Installation ▶</button>
+      <button id="bypassLocationBtn" type="button" style="background:#aaa; color:#222; margin-top:8px;">🚧 Bypass Location Check</button>
+      <label style="display:flex;align-items:center;margin-top:12px;">
+        <input type="checkbox" id="testLocationOverride" style="margin-right:8px;" />
+        Test Location Override
+      </label>
+      <div id="locationOverrideFields" class="hidden" style="width:100%;margin-bottom:8px;">
+        <label for="overrideLat">Latitude</label>
+        <input type="number" id="overrideLat" step="any" placeholder="e.g. 19.4326" />
+        <label for="overrideLon">Longitude</label>
+        <input type="number" id="overrideLon" step="any" placeholder="e.g. -99.1332" />
+      </div>
+      <p id="installStatus"></p>
+    </div>
+
+    <!-- FINAL Success Message -->
+    <div id="successMsg" style="display:none; text-align:center; margin-top:32px;">
+      <div style="font-size:4rem; color:#27ae60; margin-bottom:16px;">&#10004;</div>
+      <div style="font-size:1.3rem; font-weight:700; color:#27ae60; margin-bottom:10px;">Installation Complete!</div>
+      <div style="font-size:1.1rem; color:#222;">Thank you for using the QConnect PASS Wizard.<br>You may now close this window.</div>
+    </div>
+  </div>
+
+  <script>
+    // DOM references
+    const clientSection       = document.getElementById("clientSection");
+    const clientForm          = document.getElementById("clientForm");
+    const clientNameInput     = document.getElementById("clientNameInput");
+    const clientStatus        = document.getElementById("clientStatus");
+
+    const vinSection          = document.getElementById("vinSection");
+    const vinSelect           = document.getElementById("vinSelect");
+    const nextVinBtn          = document.getElementById("nextVinBtn");
+    const backToClientBtn     = document.getElementById("backToClientBtn");
+    const vinStatus           = document.getElementById("vinStatus");
+
+    const deviceSection       = document.getElementById("deviceSection");
+    const imeiInput           = document.getElementById("imeiInput");
+    const simInput            = document.getElementById("simInput");
+    const startInstallBtn     = document.getElementById("startInstallBtn");
+    const backToVinBtn        = document.getElementById("backToVinBtn");
+    const installStatus       = document.getElementById("installStatus");
+
+    const successMsg          = document.getElementById("successMsg");
+
+    // State
+    let selectedClientName    = "";
+    let selectedVIN           = "";
+    let selectedInstallationId = "";
+
+    document.addEventListener("DOMContentLoaded", () => {
+      clientForm.addEventListener("submit", onNextClient);
+      nextVinBtn.addEventListener("click", onNextVin);
+      startInstallBtn.addEventListener("click", onStartInstallation);
+      backToClientBtn.addEventListener("click", onBackToClient);
+      backToVinBtn.addEventListener("click", onBackToVin);
+      document.getElementById("bypassLocationBtn").addEventListener("click", onBypassLocationCheck);
+      document.getElementById("addSecondaryUnit").addEventListener("change", function(e) {
+        document.getElementById("secondaryUnitFields").classList.toggle("hidden", !e.target.checked);
+      });
+      document.getElementById("testLocationOverride").addEventListener("change", function(e) {
+        document.getElementById("locationOverrideFields").classList.toggle("hidden", !e.target.checked);
+      });
+      restoreState();
+    });
+
+    // STEP 1 → STEP 2
+    async function onNextClient(e) {
+      e.preventDefault();
+      clientStatus.innerText = "";
+
+      selectedClientName = clientNameInput.value.trim();
+      if (!selectedClientName) {
+        clientStatus.innerText = "🚨 Please enter a client name or VIN start.";
+        return;
+      }
+      clientStatus.innerText = "↻ Fetching all installations…";
+
+      try {
+        const resp = await fetch(
+          "https://qservices.pegasusgateway.com/installations/api/v1/installation",
+          {
+            headers: {
+             "Authorization": "Bearer 2f2df11d24bba3d071c22ca1c54f42dd64dda64e6bddfe9e6f3cc824",
+              "Content-Type": "application/json"
+            }
+          }
+        );
+        if (!resp.ok) throw new Error(`Pegasus returned HTTP ${resp.status}`);
+        const installationsArray = await resp.json();
+
+        // Forgiving, dynamic search: match by name or VIN start
+        const normalize = str => str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() : "";
+        const inputNorm = normalize(selectedClientName);
+        const filtered = installationsArray.filter(inst => {
+          const nombre = inst.persona?.nombreAsegurado || "";
+          const apellido = inst.persona?.apellidoPaterno || "";
+          const fullName = [nombre, apellido].filter(Boolean).join(" ");
+          const vin = inst.vehiculo?.serie || "";
+          return (
+            normalize(fullName).includes(inputNorm) ||
+            vin.toUpperCase().startsWith(inputNorm)
+          );
+        });
+
+        if (filtered.length === 0) {
+          clientStatus.innerText = `❌ No installations found for "${selectedClientName}".`;
+          vinSelect.innerHTML = `<option value="">-- No VINs found --</option>`;
+          return;
+        }
+
+        vinSelect.innerHTML = `<option value="">-- Select VIN --</option>`;
+        // Store the full filtered array for later use
+        sessionStorage.setItem("filteredInst", JSON.stringify(filtered));
+
+        filtered.forEach(inst => {
+          const vin = inst.vehiculo?.serie;
+          if (!vin) return;
+          const p = inst.persona || {};
+          const fullName = [p.nombreAsegurado, p.nombreMedioAsegurado, p.apellidoPaterno, p.apellidoMaterno].filter(Boolean).join(" ");
+          const opt = document.createElement("option");
+          opt.value = vin;
+          opt.textContent = `${vin} — ${fullName}`;
+          opt.dataset.installationId = inst._id;
+          vinSelect.appendChild(opt);
+        });
+
+        // Persist
+        sessionStorage.setItem("step", "2");
+        sessionStorage.setItem("clientName", selectedClientName);
+
+        clientSection.classList.add("hidden");
+        vinSection.classList.remove("hidden");
+
+        debugPrint(filtered, "Filtered Installations");
+      } catch (err) {
+        console.error(err);
+        clientStatus.innerText = "❌ " + err.message;
+      }
+    }
+
+    // STEP 2 → STEP 3
+    function onNextVin() {
+      vinStatus.innerText = "";
+      const vin = vinSelect.value;
+      if (!vin) {
+        vinStatus.innerText = "🚨 Please select a VIN.";
+        return;
+      }
+      selectedVIN = vin;
+      selectedInstallationId = vinSelect.selectedOptions[0].dataset.installationId;
+
+      sessionStorage.setItem("step", "3");
+      sessionStorage.setItem("selectedVIN", selectedVIN);
+      sessionStorage.setItem("installationId", selectedInstallationId);
+
+      vinSection.classList.add("hidden");
+      deviceSection.classList.remove("hidden");
+
+      const filtered = JSON.parse(sessionStorage.getItem("filteredInst") || "[]");
+      const inst = filtered.find(inst => inst.vehiculo?.serie === vin);
+      let personName = "";
+      if (inst && inst.persona) {
+        const p = inst.persona;
+        personName = [p.nombreAsegurado, p.nombreMedioAsegurado, p.apellidoPaterno, p.apellidoMaterno]
+          .filter(Boolean).join(" ");
+        sessionStorage.setItem("selectedClientFullName", personName);
+      }
+
+      if (inst) {
+        // Store the full installation object for later use (for device location)
+        sessionStorage.setItem("selectedInstallation", JSON.stringify(inst));
+      }
+    }
+
+    // STEP 3 → STEP 4
+    async function onStartInstallation() {
+      installStatus.innerText = "";
+      const imei = imeiInput.value.trim();
+      const imeiConfirm = document.getElementById("imeiConfirmInput").value.trim();
+      const sim = simInput.value.trim();
+      const simConfirm = document.getElementById("simConfirmInput").value.trim();
+      const secondaryImei = document.getElementById("secondaryImeiInput").value.trim();
+      const addSecondary = document.getElementById("addSecondaryUnit").checked;
+      if (!imei || !sim) {
+        installStatus.innerText = "🚨 Please enter both IMEI and SIM.";
+        return;
+      }
+      if (imei !== imeiConfirm) {
+        installStatus.innerText = "🚨 IMEI values do not match.";
+        return;
+      }
+      if (sim !== simConfirm) {
+        installStatus.innerText = "🚨 SIM values do not match.";
+        return;
+      }
+      if (addSecondary && !secondaryImei) {
+        installStatus.innerText = "🚨 Please enter the secondary IMEI.";
+        return;
+      }
+      installStatus.innerText = "↻ Sending IMEI & SIM to server…";
+
+      try {
+        const payload = {
+          client_name: sessionStorage.getItem("selectedClientFullName") || selectedClientName,
+          imei,
+          sim_number: sim,
+          vin: selectedVIN,
+          installationId: selectedInstallationId
+        };
+        if (addSecondary && secondaryImei) {
+          payload.secondary_imei = secondaryImei;
+        }
+        const resp = await fetch("/api/install", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await resp.json();
+        if (!resp.ok || data.status !== "success") throw new Error(data.message || `Status: ${data.status}`);
+
+        sessionStorage.setItem("step", "waitingForDevice");
+        installStatus.innerText = "⏳ Waiting for device to report...";
+
+        // Start polling for device status
+        pollForDeviceReporting();
+      } catch (err) {
+        console.error(err);
+        installStatus.innerText = "❌ " + err.message;
+      }
+    }
+
+    function pollForDeviceReporting() {
+      const POLL_INTERVAL = 5000; // 5 seconds
+      const MAX_ATTEMPTS = 60; // e.g., 5 minutes
+
+      let attempts = 0;
+
+      async function checkStatus() {
+        attempts++;
+        // Call your backend endpoint that checks device status
+        const resp = await fetch(`/api/device-status?imei=${encodeURIComponent(imeiInput.value.trim())}`);
+        const data = await resp.json();
+
+        if (data.isReporting) { 
+          // Fetch latest device info from backend
+          fetch(`/api/device-status?imei=${encodeURIComponent(imeiInput.value.trim())}`)
+            .then(resp => resp.json())
+            .then(deviceData => {
+              const deviceLat = deviceData.latest?.loc?.lat;
+              const deviceLon = deviceData.latest?.loc?.lon;
+
+              if (deviceLat == null || deviceLon == null) {
+                installStatus.innerText = "Device location not available.";
+                return;
+              }
+
+              const overrideEnabled = document.getElementById("testLocationOverride").checked;
+              const overrideLat = parseFloat(document.getElementById("overrideLat").value);
+              const overrideLon = parseFloat(document.getElementById("overrideLon").value);
+              if (overrideEnabled && !isNaN(overrideLat) && !isNaN(overrideLon)) {
+                // Use override coordinates
+                const userLat = overrideLat;
+                const userLon = overrideLon;
+                const distance = haversineDistance(userLat, userLon, deviceLat, deviceLon);
+                if (distance < 200) {
+                  installStatus.innerText = "✅ You are close to the device. Redirecting to closing form…";
+                  setTimeout(() => {
+                    openPrefilledForm();
+                    deviceSection.classList.add("hidden");
+                    successMsg.style.display = "block";
+                    sessionStorage.setItem("step", "done");
+                  }, 1000);
+                } else {
+                  installStatus.innerText = "❌ You are too far from the device location to proceed.";
+                }
+                return;
+              }
+              navigator.geolocation.getCurrentPosition(
+                function(position) {
+                  const userLat = position.coords.latitude;
+                  const userLon = position.coords.longitude;
+                  const distance = haversineDistance(userLat, userLon, deviceLat, deviceLon);
+                  if (distance < 200) {
+                    installStatus.innerText = "✅ You are close to the device. Redirecting to closing form…";
+                    setTimeout(() => {
+                      openPrefilledForm();
+                      deviceSection.classList.add("hidden");
+                      successMsg.style.display = "block";
+                      sessionStorage.setItem("step", "done");
+                    }, 1000);
+                  } else {
+                    installStatus.innerText = "❌ You are too far from the device location to proceed.";
+                  }
+                },
+                function(error) {
+                  installStatus.innerText = "Unable to get your location: " + error.message;
+                },
+                { enableHighAccuracy: true }
+              );
+            });
+        } else if (attempts < MAX_ATTEMPTS) {
+          setTimeout(checkStatus, POLL_INTERVAL);
+        } else {
+          installStatus.innerText = "❌ Timed out waiting for device to report.";
+        }
+      }
+
+      checkStatus();
+    }
+
+    function openPrefilledForm() {
+      const inst = JSON.parse(sessionStorage.getItem("selectedInstallation") || "{}");
+      if (!inst || !inst.vehiculo) {
+        alert("No installation data found!");
+        return;
+      }
+      // Map your JSON fields to the form's query params
+      const params = new URLSearchParams({
+        installationId: inst._id,
+        driverName: inst.persona?.nombreAsegurado || "",
+        "driverName[last]": inst.persona?.apellidoPaterno || "",
+        email: inst.persona?.contactos?.[0]?.email || "",
+        serviceType: inst.persona?.tipo || "",
+        enterpriseName: inst.persona?.nombreAsegurado + " " + inst.persona?.apellidoPaterno,
+        typeA127: "Instalación",
+        plate: inst.vehiculo?.placas || "",
+        make: inst.vehiculo?.marca || "",
+        model: inst.vehiculo?.submarca || "",
+        ano: inst.vehiculo?.modelo || "",
+        vin: inst.vehiculo?.serie || "",
+        color: inst.vehiculo?.color || "",
+        numeroEconomico: inst.vehiculo?.numeroEconomico || "",
+        noDe: inst.vehiculo?.numeroMotor || ""
+      });
+      const url = `https://forms.fleetmetriks.com/232204864076960?${params.toString()}`;
+      window.open(url, "_blank"); // or use location.href = url; to redirect in the same tab
+    }
+
+    // BACK handlers
+    function onBackToClient() {
+      vinSection.classList.add("hidden");
+      clientSection.classList.remove("hidden");
+    }
+    function onBackToVin() {
+      deviceSection.classList.add("hidden");
+      vinSection.classList.remove("hidden");
+    }
+
+    // BYPASS LOCATION CHECK HANDLER
+    function onBypassLocationCheck() {
+      installStatus.innerText = "⚠️ Location check bypassed for testing.";
+      setTimeout(() => {
+        deviceSection.classList.add("hidden");
+        successMsg.style.display = "block";
+        sessionStorage.setItem("step", "done");
+      }, 1000);
+    }
+
+    // Restore UI on reload
+    function restoreState() {
+  const step = sessionStorage.getItem("step") || "1";
+  // hide everything first
+  clientSection.classList.add("hidden");
+  vinSection.classList.add("hidden");
+  deviceSection.classList.add("hidden");
+  successMsg.style.display = "none";
+
+  if (step === "2") {
+    // restore Step 2 UI
+    clientNameInput.value = sessionStorage.getItem("clientName") || "";
+    const filtered = JSON.parse(sessionStorage.getItem("filteredInst") || "[]");
+    vinSelect.innerHTML = `<option value="">-- Select VIN --</option>`;
+    filtered.forEach(inst => {
+      const vin = inst.vehiculo?.serie;
+      if (!vin) return;
+      const opt = document.createElement("option");
+      opt.value = vin;
+      opt.textContent = vin;
+      opt.dataset.installationId = inst._id;
+      if (vin === sessionStorage.getItem("selectedVIN")) opt.selected = true;
+      vinSelect.appendChild(opt);
+    });
+    vinSection.classList.remove("hidden");
+
+  } else if (step === "3") {
+    // restore Step 3 UI
+    onNextVin();
+
+  } else {
+    // default to Step 1
+    clientSection.classList.remove("hidden");
+  }
+}
+
+    function debugPrint(obj, label = "") {
+      const out = document.getElementById("debugOutput");
+      out.textContent = (label ? label + ":\n" : "") + JSON.stringify(obj, null, 2);
+    }
+
+    // Haversine Distance calculation (for proximity check)
+    function haversineDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371; // Radius of Earth in km
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const distance = R * c; // Distance in km
+      return distance;
+    }
+
+  </script>
+</body>
+</html>
