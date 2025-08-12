@@ -104,6 +104,16 @@
       text-align: center;
       font-weight: 600;
     }
+    #imeiVerificationStatus {
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      min-height: 20px;
+    }
+    #imeiVerificationStatus span {
+      display: block;
+    }
     @media (max-width: 600px) {
       .container {
         padding: 18px 4vw 18px 4vw;
@@ -152,11 +162,17 @@
     <div id="deviceSection" class="section hidden">
       <h2 style="text-align:center; font-size:1.2rem; margin-bottom:12px;">Step 3: Enter IMEI & SIM</h2>
       <label for="imeiInput">IMEI (Primary Device)</label>
-      <input
-        type="text"
-        id="imeiInput"
-        placeholder=""
-      />
+      <div style="display:flex; gap:8px; align-items:flex-end;">
+        <input
+          type="text"
+          id="imeiInput"
+          placeholder="Enter IMEI"
+          style="flex:1;"
+        />
+        <button id="verifyImeiBtn" type="button" style="white-space:nowrap;">Verify IMEI</button>
+      </div>
+      <div id="imeiVerificationStatus" style="margin-bottom:14px;"></div>
+      
       <label for="imeiConfirmInput">Retype IMEI</label>
       <input
         type="text"
@@ -187,7 +203,7 @@
       </div>
 
       <button id="backToVinBtn" type="button">◀ Back</button>
-      <button id="startInstallBtn" type="button">Start Installation ▶</button>
+      <button id="startInstallBtn" type="button" disabled>Start Installation ▶</button>
       <button id="bypassLocationBtn" type="button" style="background:#aaa; color:#222; margin-top:8px;">🚧 Bypass Location Check</button>
       <label style="display:flex;align-items:center;margin-top:12px;">
         <input type="checkbox" id="testLocationOverride" style="margin-right:8px;" />
@@ -230,6 +246,8 @@
     const startInstallBtn     = document.getElementById("startInstallBtn");
     const backToVinBtn        = document.getElementById("backToVinBtn");
     const installStatus       = document.getElementById("installStatus");
+    const verifyImeiBtn       = document.getElementById("verifyImeiBtn");
+    const imeiVerificationStatus = document.getElementById("imeiVerificationStatus");
 
     const successMsg          = document.getElementById("successMsg");
 
@@ -237,6 +255,7 @@
     let selectedClientName    = "";
     let selectedVIN           = "";
     let selectedInstallationId = "";
+    let imeiVerified          = false;
 
     document.addEventListener("DOMContentLoaded", () => {
       clientForm.addEventListener("submit", onNextClient);
@@ -244,6 +263,17 @@
       startInstallBtn.addEventListener("click", onStartInstallation);
       backToClientBtn.addEventListener("click", onBackToClient);
       backToVinBtn.addEventListener("click", onBackToVin);
+      verifyImeiBtn.addEventListener("click", onVerifyImei);
+      
+      // Reset verification when IMEI changes
+      imeiInput.addEventListener("input", () => {
+        if (imeiVerified) {
+          imeiVerified = false;
+          startInstallBtn.disabled = true;
+          imeiVerificationStatus.innerHTML = '<span style="color:#f39c12;">⚠️ IMEI changed - please verify again</span>';
+        }
+      });
+      
       document.getElementById("bypassLocationBtn").addEventListener("click", onBypassLocationCheck);
       document.getElementById("addSecondaryUnit").addEventListener("change", function(e) {
         document.getElementById("secondaryUnitFields").classList.toggle("hidden", !e.target.checked);
@@ -363,9 +393,55 @@
       }
     }
 
+    // IMEI Verification
+    async function onVerifyImei() {
+      const imei = imeiInput.value.trim();
+      if (!imei) {
+        imeiVerificationStatus.innerHTML = '<span style="color:#e74c3c;">🚨 Please enter an IMEI to verify.</span>';
+        return;
+      }
+
+      imeiVerificationStatus.innerHTML = '<span style="color:#f39c12;">⏳ Verifying IMEI...</span>';
+      verifyImeiBtn.disabled = true;
+
+      try {
+        const resp = await fetch("/api/verify-imei", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ imei })
+        });
+
+        const data = await resp.json();
+
+        if (resp.ok && data.success) {
+          imeiVerified = true;
+          startInstallBtn.disabled = false;
+          imeiVerificationStatus.innerHTML = `<span style="color:#27ae60;">✅ IMEI verified successfully! Device state: ${data.deviceState}</span>`;
+        } else {
+          imeiVerified = false;
+          startInstallBtn.disabled = true;
+          imeiVerificationStatus.innerHTML = `<span style="color:#e74c3c;">❌ ${data.message}</span>`;
+        }
+      } catch (err) {
+        console.error("Error verifying IMEI:", err);
+        imeiVerified = false;
+        startInstallBtn.disabled = true;
+        imeiVerificationStatus.innerHTML = '<span style="color:#e74c3c;">❌ Error connecting to verification service</span>';
+      } finally {
+        verifyImeiBtn.disabled = false;
+      }
+    }
+
     // STEP 3 → STEP 4
     async function onStartInstallation() {
       installStatus.innerText = "";
+      
+      // Check if IMEI has been verified
+      if (!imeiVerified) {
+        installStatus.innerText = "🚨 Please verify the IMEI before proceeding with installation.";
+        return;
+      }
+      
       const imei = imeiInput.value.trim();
       const imeiConfirm = document.getElementById("imeiConfirmInput").value.trim();
       const sim = simInput.value.trim();
@@ -555,6 +631,11 @@
   vinSection.classList.add("hidden");
   deviceSection.classList.add("hidden");
   successMsg.style.display = "none";
+
+  // Reset IMEI verification state
+  imeiVerified = false;
+  startInstallBtn.disabled = true;
+  imeiVerificationStatus.innerHTML = "";
 
   if (step === "2") {
     // restore Step 2 UI

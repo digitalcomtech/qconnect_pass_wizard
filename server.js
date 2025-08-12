@@ -129,6 +129,87 @@ app.get("/api/device-status", async (req, res) => {
   res.json({ isReporting, latest: deviceData.latest });
 });
 
+// New endpoint for IMEI verification
+app.post("/api/verify-imei", async (req, res) => {
+  try {
+    const { imei } = req.body;
+    
+    if (!imei) {
+      return res.status(400).json({
+        success: false,
+        message: "IMEI is required"
+      });
+    }
+
+    console.log("Verifying IMEI:", imei);
+    
+    // Call Pegasus devices API to verify the IMEI
+    const deviceResp = await fetch(`https://api.pegasusgateway.com/devices/${imei}`, {
+      headers: {
+        "Authenticate": "2f2df11d24bba3d071c22ca1c54f42dd64dda64e6bddfe9e6f3cc824"
+      }
+    });
+
+    if (!deviceResp.ok) {
+      if (deviceResp.status === 404) {
+        return res.status(404).json({
+          success: false,
+          message: "Device not found - IMEI does not exist in the system"
+        });
+      }
+      return res.status(deviceResp.status).json({
+        success: false,
+        message: `Pegasus API error: ${deviceResp.status}`
+      });
+    }
+
+    const deviceData = await deviceResp.json();
+    console.log("Device verification response:", deviceData);
+
+    // Check if device exists and analyze its state
+    if (!deviceData.imei) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid device data received from Pegasus"
+      });
+    }
+
+    // Check if device is in the correct state (unlinked or before first link)
+    const hasVehicle = deviceData.vehicle && Object.keys(deviceData.vehicle).length > 0;
+    const vehicleHasDetails = hasVehicle && deviceData.vehicle.name && deviceData.vehicle.id;
+    
+    // Device is acceptable if:
+    // 1. No vehicle object at all (before link)
+    // 2. Vehicle object exists but only has _epoch (after unlink)
+    const isAcceptable = !hasVehicle || (hasVehicle && !vehicleHasDetails);
+
+    if (!isAcceptable) {
+      return res.status(400).json({
+        success: false,
+        message: "Device is already linked to a vehicle and cannot be used for installation",
+        deviceState: "linked",
+        vehicleName: deviceData.vehicle?.name,
+        vehicleId: deviceData.vehicle?.id
+      });
+    }
+
+    // Device is acceptable
+    res.json({
+      success: true,
+      message: "IMEI verified successfully",
+      deviceState: hasVehicle ? "unlinked" : "never_linked",
+      deviceData: deviceData
+    });
+
+  } catch (err) {
+    console.error("Error in /api/verify-imei:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while verifying IMEI"
+    });
+  }
+});
+
 // 5) Start the server
 app.listen(PORT, () => {
   console.log(`Express proxy running at http://localhost:${PORT}`);
