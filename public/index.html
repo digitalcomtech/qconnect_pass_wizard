@@ -206,6 +206,10 @@
       <button id="startInstallBtn" type="button" disabled>Start Installation ▶</button>
       <button id="bypassLocationBtn" type="button" style="background:#aaa; color:#222; margin-top:8px;">🚧 Bypass Location Check</button>
       <label style="display:flex;align-items:center;margin-top:12px;">
+        <input type="checkbox" id="bypassImeiCheck" style="margin-right:8px;" />
+        Bypass IMEI Verification
+      </label>
+      <label style="display:flex;align-items:center;margin-top:12px;">
         <input type="checkbox" id="testLocationOverride" style="margin-right:8px;" />
         Test Location Override
       </label>
@@ -277,6 +281,17 @@
       document.getElementById("bypassLocationBtn").addEventListener("click", onBypassLocationCheck);
       document.getElementById("addSecondaryUnit").addEventListener("change", function(e) {
         document.getElementById("secondaryUnitFields").classList.toggle("hidden", !e.target.checked);
+      });
+      document.getElementById("bypassImeiCheck").addEventListener("change", function(e) {
+        if (e.target.checked) {
+          imeiVerified = true;
+          startInstallBtn.disabled = false;
+          imeiVerificationStatus.innerHTML = '<span style="color:#f39c12;">⚠️ IMEI verification bypassed</span>';
+        } else {
+          imeiVerified = false;
+          startInstallBtn.disabled = true;
+          imeiVerificationStatus.innerHTML = '';
+        }
       });
       document.getElementById("testLocationOverride").addEventListener("change", function(e) {
         document.getElementById("locationOverrideFields").classList.toggle("hidden", !e.target.checked);
@@ -599,7 +614,7 @@
         numeroEconomico: inst.vehiculo?.numeroEconomico || "",
         noDe: inst.vehiculo?.numeroMotor || ""
       });
-      const url = `https://forms.fleetmetriks.com/232204864076960?${params.toString()}`;
+      const url = `https://forms.fleetmetriks.com/252054474420955?${params.toString()}`;
       window.open(url, "_blank"); // or use location.href = url; to redirect in the same tab
     }
 
@@ -617,6 +632,7 @@
     function onBypassLocationCheck() {
       installStatus.innerText = "⚠️ Location check bypassed for testing.";
       setTimeout(() => {
+        openPrefilledForm();
         deviceSection.classList.add("hidden");
         successMsg.style.display = "block";
         sessionStorage.setItem("step", "done");
@@ -636,6 +652,7 @@
   imeiVerified = false;
   startInstallBtn.disabled = true;
   imeiVerificationStatus.innerHTML = "";
+  document.getElementById("bypassImeiCheck").checked = false;
 
   if (step === "2") {
     // restore Step 2 UI
