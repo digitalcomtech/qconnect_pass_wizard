@@ -138,8 +138,17 @@
       font-weight: 600;
       color: #dc2626;
       text-align: center;
-      padding: 12px;
+      padding: 0;
       border-radius: 8px;
+      min-height: 0;
+      transition: all 0.3s ease;
+    }
+    
+    #clientStatus:not(:empty),
+    #vinStatus:not(:empty),
+    #installStatus:not(:empty) {
+      padding: 12px;
+      min-height: 20px;
       background: rgba(220, 38, 38, 0.1);
     }
     #successMsg {
@@ -150,10 +159,17 @@
       font-weight: 600;
     }
     #imeiVerificationStatus {
-      padding: 12px 16px;
+      padding: 0;
       border-radius: 8px;
       font-size: 0.9rem;
       font-weight: 500;
+      min-height: 0;
+      border: none;
+      transition: all 0.3s ease;
+    }
+    
+    #imeiVerificationStatus:not(:empty) {
+      padding: 12px 16px;
       min-height: 24px;
       border: 1px solid #e2e8f0;
     }
