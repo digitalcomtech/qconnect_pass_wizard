@@ -127,6 +127,7 @@
 </head>
 <body>
   <div class="container">
+    <div id="environmentIndicator" style="position: absolute; top: 10px; right: 10px; background: #27ae60; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">PROD</div>
     <h1>QConnect PASS Wizard</h1>
 
     <!-- STEP 1: Client Name -->
@@ -180,17 +181,17 @@
         placeholder="Retype IMEI"
       />
 
-      <label for="simInput">SIM Card #</label>
+      <label for="simInput">SIM Card # (Optional)</label>
       <input
         type="text"
         id="simInput"
-        placeholder=""
+        placeholder="Leave blank if no SIM card"
       />
-      <label for="simConfirmInput">Retype SIM Card #</label>
+      <label for="simConfirmInput">Retype SIM Card # (Optional)</label>
       <input
         type="text"
         id="simConfirmInput"
-        placeholder="Retype SIM Card #"
+        placeholder="Retype SIM Card # (optional)"
       />
 
       <label style="display:flex;align-items:center;margin-bottom:8px;">
@@ -204,22 +205,46 @@
 
       <button id="backToVinBtn" type="button">◀ Back</button>
       <button id="startInstallBtn" type="button" disabled>Start Installation ▶</button>
-      <button id="bypassLocationBtn" type="button" style="background:#aaa; color:#222; margin-top:8px;">🚧 Bypass Location Check</button>
-      <label style="display:flex;align-items:center;margin-top:12px;">
-        <input type="checkbox" id="bypassImeiCheck" style="margin-right:8px;" />
-        Bypass IMEI Verification
-      </label>
-      <label style="display:flex;align-items:center;margin-top:12px;">
-        <input type="checkbox" id="testLocationOverride" style="margin-right:8px;" />
-        Test Location Override
-      </label>
-      <div id="locationOverrideFields" class="hidden" style="width:100%;margin-bottom:8px;">
-        <label for="overrideLat">Latitude</label>
-        <input type="number" id="overrideLat" step="any" placeholder="e.g. 19.4326" />
-        <label for="overrideLon">Longitude</label>
-        <input type="number" id="overrideLon" step="any" placeholder="e.g. -99.1332" />
+      
+      <div style="background: #e8f4fd; border: 1px solid #b3d9ff; border-radius: 6px; padding: 12px; margin-top: 12px; margin-bottom: 12px;">
+        <div style="font-weight: 600; color: #2c5aa0; margin-bottom: 8px;">📍 Location Verification</div>
+        <div style="font-size: 0.9rem; color: #555; margin-bottom: 12px;">
+          The app will verify your location is within 200 meters of the device before proceeding with installation.
+        </div>
       </div>
       <p id="installStatus"></p>
+    </div>
+
+    <!-- STEP 4: Manual Confirmation -->
+    <div id="confirmationSection" class="section hidden">
+      <h2 style="text-align:center; font-size:1.2rem; margin-bottom:12px;">Step 4: Finalize Installation</h2>
+      <div style="text-align:center; margin-bottom:20px;">
+        <div style="font-size:1.1rem; margin-bottom:10px;">✅ Form has been submitted successfully!</div>
+        <div style="font-size:0.95rem; color:#666; margin-bottom:20px;">
+          Please confirm that the installation is complete and all checks have been performed.
+        </div>
+        <div style="background: #d4edda; border: 1px solid #c3e6cb; border-radius: 6px; padding: 12px; margin: 0 20px; font-size: 0.9rem; color: #155724;">
+          💡 <strong>Note:</strong> Make sure you have completed the installation form that was opened earlier before proceeding with this final confirmation.
+        </div>
+      </div>
+      
+      <div style="background:#f9fafc; padding:16px; border-radius:8px; margin-bottom:20px;">
+        <h3 style="margin:0 0 10px 0; font-size:1rem; color:#2d3a4a;">Installation Checklist:</h3>
+        <div style="font-size:0.9rem; color:#555;">
+          ☑️ Device properly mounted and connected<br>
+          ☑️ Power connections verified<br>
+          ☑️ Ignition wire connected<br>
+          ☑️ Input/Output connections tested<br>
+          ☑️ Device reporting location successfully
+        </div>
+      </div>
+
+      <div style="text-align:center;">
+        <button id="finalConfirmBtn" type="button" style="background: linear-gradient(90deg, #27ae60 0%, #2ecc71 100%); font-size:1.1rem; padding:12px 30px;">
+          🔒 Confirm & Finalize Installation
+        </button>
+        <div id="confirmationStatus" style="margin-top:15px; font-weight:600;"></div>
+      </div>
     </div>
 
     <!-- FINAL Success Message -->
@@ -253,6 +278,9 @@
     const verifyImeiBtn       = document.getElementById("verifyImeiBtn");
     const imeiVerificationStatus = document.getElementById("imeiVerificationStatus");
 
+    const confirmationSection = document.getElementById("confirmationSection");
+    const finalConfirmBtn     = document.getElementById("finalConfirmBtn");
+    const confirmationStatus  = document.getElementById("confirmationStatus");
     const successMsg          = document.getElementById("successMsg");
 
     // State
@@ -260,8 +288,22 @@
     let selectedVIN           = "";
     let selectedInstallationId = "";
     let imeiVerified          = false;
+    let appConfig             = null;
 
-    document.addEventListener("DOMContentLoaded", () => {
+    document.addEventListener("DOMContentLoaded", async () => {
+      // Check geolocation support
+      if (!navigator.geolocation) {
+        console.warn("Geolocation not supported by this browser");
+        // Add a warning to the UI
+        const locationWarning = document.createElement("div");
+        locationWarning.style.cssText = "background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 6px; padding: 8px; margin: 8px 0; color: #721c24; font-size: 0.9rem;";
+        locationWarning.innerHTML = "⚠️ Geolocation not supported by your browser. You'll need to use manual location override.";
+        document.querySelector(".container").insertBefore(locationWarning, document.getElementById("clientSection"));
+      }
+      
+      // Load app configuration first
+      await loadAppConfig();
+      
       clientForm.addEventListener("submit", onNextClient);
       nextVinBtn.addEventListener("click", onNextVin);
       startInstallBtn.addEventListener("click", onStartInstallation);
@@ -278,26 +320,49 @@
         }
       });
       
-      document.getElementById("bypassLocationBtn").addEventListener("click", onBypassLocationCheck);
       document.getElementById("addSecondaryUnit").addEventListener("change", function(e) {
         document.getElementById("secondaryUnitFields").classList.toggle("hidden", !e.target.checked);
       });
-      document.getElementById("bypassImeiCheck").addEventListener("change", function(e) {
-        if (e.target.checked) {
-          imeiVerified = true;
-          startInstallBtn.disabled = false;
-          imeiVerificationStatus.innerHTML = '<span style="color:#f39c12;">⚠️ IMEI verification bypassed</span>';
-        } else {
-          imeiVerified = false;
-          startInstallBtn.disabled = true;
-          imeiVerificationStatus.innerHTML = '';
-        }
-      });
-      document.getElementById("testLocationOverride").addEventListener("change", function(e) {
-        document.getElementById("locationOverrideFields").classList.toggle("hidden", !e.target.checked);
-      });
+      
+      // Final confirmation button
+      finalConfirmBtn.addEventListener("click", onFinalConfirmation);
+      
       restoreState();
     });
+
+    // Load app configuration
+    async function loadAppConfig() {
+      try {
+        const resp = await fetch("/api/config");
+        appConfig = await resp.json();
+        console.log(`🔧 Frontend loaded ${appConfig.environment.toUpperCase()} environment config`);
+        
+        // Update page title and indicator to show environment
+        const envIndicator = document.getElementById("environmentIndicator");
+        if (appConfig.environment === "qa") {
+          document.title = "QConnect PASS Wizard (QA)";
+          document.querySelector("h1").textContent = "QConnect PASS Wizard (QA)";
+          document.querySelector("h1").style.color = "#f39c12";
+          envIndicator.textContent = "QA";
+          envIndicator.style.background = "#f39c12";
+        } else {
+          document.title = "QConnect PASS Wizard";
+          document.querySelector("h1").textContent = "QConnect PASS Wizard";
+          document.querySelector("h1").style.color = "#2d3a4a";
+          envIndicator.textContent = "PROD";
+          envIndicator.style.background = "#27ae60";
+        }
+      } catch (err) {
+        console.error("Failed to load app config:", err);
+        // Fallback to production config
+        appConfig = {
+          environment: "production",
+          testMode: false,
+          pegasusBaseUrl: "https://qservices.pegasusgateway.com",
+          pegasusToken: "2f2df11d24bba3d071c22ca1c54f42dd64dda64e6bddfe9e6f3cc824"
+        };
+      }
+    }
 
     // STEP 1 → STEP 2
     async function onNextClient(e) {
@@ -313,10 +378,10 @@
 
       try {
         const resp = await fetch(
-          "https://qservices.pegasusgateway.com/installations/api/v1/installation",
+          `${appConfig.pegasusBaseUrl}/installations/api/v1/installation`,
           {
             headers: {
-             "Authorization": "Bearer 2f2df11d24bba3d071c22ca1c54f42dd64dda64e6bddfe9e6f3cc824",
+             "Authorization": `Bearer ${appConfig.pegasusToken}`,
               "Content-Type": "application/json"
             }
           }
@@ -463,15 +528,16 @@
       const simConfirm = document.getElementById("simConfirmInput").value.trim();
       const secondaryImei = document.getElementById("secondaryImeiInput").value.trim();
       const addSecondary = document.getElementById("addSecondaryUnit").checked;
-      if (!imei || !sim) {
-        installStatus.innerText = "🚨 Please enter both IMEI and SIM.";
+      if (!imei) {
+        installStatus.innerText = "🚨 Please enter IMEI.";
         return;
       }
       if (imei !== imeiConfirm) {
         installStatus.innerText = "🚨 IMEI values do not match.";
         return;
       }
-      if (sim !== simConfirm) {
+      // Only validate SIM if provided
+      if (sim && sim !== simConfirm) {
         installStatus.innerText = "🚨 SIM values do not match.";
         return;
       }
@@ -485,10 +551,13 @@
         const payload = {
           client_name: sessionStorage.getItem("selectedClientFullName") || selectedClientName,
           imei,
-          sim_number: sim,
           vin: selectedVIN,
           installationId: selectedInstallationId
         };
+        // Only include SIM if provided
+        if (sim) {
+          payload.sim_number = sim;
+        }
         if (addSecondary && secondaryImei) {
           payload.secondary_imei = secondaryImei;
         }
@@ -501,7 +570,29 @@
         if (!resp.ok || data.status !== "success") throw new Error(data.message || `Status: ${data.status}`);
 
         sessionStorage.setItem("step", "waitingForDevice");
-        installStatus.innerText = "⏳ Waiting for device to report...";
+        installStatus.innerHTML = `
+          <div style="margin-bottom: 15px;">
+            <div style="font-size: 1.1rem; color: #2c5aa0; margin-bottom: 8px;">
+              ⏳ Starting device location monitoring...
+            </div>
+            <div style="font-size: 0.9rem; color: #666; margin-bottom: 8px;">
+              <strong>Initial interval:</strong> 10 seconds | <strong>Maximum duration:</strong> 30 minutes
+            </div>
+            <div style="background: #e8f4fd; border: 1px solid #b3d9ff; border-radius: 6px; padding: 8px; font-size: 0.8rem; color: #2c5aa0;">
+              💡 <strong>Smart polling:</strong> We'll check less frequently over time to avoid overwhelming the system.
+            </div>
+          </div>
+          <button id="stopPollingBtn" type="button" style="background: #e74c3c; margin-top: 8px; font-size: 0.9rem;">🛑 Stop Waiting</button>
+        `;
+
+        // Initialize polling control
+        window.stopPolling = false;
+
+        // Add stop polling functionality
+        document.getElementById("stopPollingBtn").addEventListener("click", () => {
+          window.stopPolling = true;
+          installStatus.innerHTML = "🛑 Stopped waiting for device. You can restart the installation process.";
+        });
 
         // Start polling for device status
         pollForDeviceReporting();
@@ -512,81 +603,371 @@
     }
 
     function pollForDeviceReporting() {
-      const POLL_INTERVAL = 5000; // 5 seconds
-      const MAX_ATTEMPTS = 60; // e.g., 5 minutes
-
+      // Smart polling with progressive backoff and extended timeout
+      const MAX_DURATION = 30 * 60 * 1000; // 30 minutes total
+      const INITIAL_INTERVAL = 10000; // Start with 10 seconds
+      const MAX_INTERVAL = 120000; // Max 2 minutes between checks
+      const BACKOFF_MULTIPLIER = 1.5; // Increase interval by 50% each time
+      
       let attempts = 0;
+      let currentInterval = INITIAL_INTERVAL;
+      let startTime = Date.now();
+      let lastLocationCheck = null;
+      let consecutiveLocationFailures = 0;
+      const MAX_CONSECUTIVE_FAILURES = 3; // Allow some wrong locations before giving up
+
+      // Update the status display with better information
+      function updateStatusDisplay() {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        const minutes = Math.floor(elapsed / 60);
+        const seconds = elapsed % 60;
+        const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        
+        const nextCheckIn = Math.ceil(currentInterval / 1000);
+        
+        installStatus.innerHTML = `
+          <div style="margin-bottom: 15px;">
+            <div style="font-size: 1.1rem; color: #2c5aa0; margin-bottom: 8px;">
+              ⏳ Waiting for device to report location...
+            </div>
+            <div style="font-size: 0.9rem; color: #666; margin-bottom: 8px;">
+              <strong>Elapsed time:</strong> ${timeStr} | <strong>Next check in:</strong> ${nextCheckIn}s
+            </div>
+            <div style="font-size: 0.9rem; color: #666; margin-bottom: 8px;">
+              <strong>Attempts:</strong> ${attempts} | <strong>Current interval:</strong> ${Math.ceil(currentInterval/1000)}s
+            </div>
+            <div style="background: #e8f4fd; border: 1px solid #b3d9ff; border-radius: 6px; padding: 8px; font-size: 0.8rem; color: #2c5aa0;">
+              💡 <strong>Tip:</strong> Device may take up to 30 minutes to report. We'll check less frequently over time to avoid overwhelming the system.
+            </div>
+            <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 8px; font-size: 0.8rem; color: #856404; margin-top: 8px;">
+              🔍 <strong>Enhanced Requirements:</strong> Device must be online, have recent connection data (≤5min), recent network activity (≤5min), AND fresh location data (≤60s old)
+            </div>
+          </div>
+          <button id="stopPollingBtn" type="button" style="background: #e74c3c; margin-top: 8px; font-size: 0.9rem;">🛑 Stop Waiting</button>
+          <button id="forceLocationCheckBtn" type="button" style="background: #3498db; margin-left: 8px; font-size: 0.9rem;">🔍 Check Now</button>
+        `;
+
+        // Add event listeners for the new buttons
+        document.getElementById("stopPollingBtn").addEventListener("click", () => {
+          window.stopPolling = true;
+          installStatus.innerHTML = "🛑 Stopped waiting for device. You can restart the installation process.";
+        });
+
+        document.getElementById("forceLocationCheckBtn").addEventListener("click", () => {
+          // Force an immediate check
+          currentInterval = 1000; // Check in 1 second
+          checkStatus();
+        });
+      }
 
       async function checkStatus() {
+        // Check if polling was stopped
+        if (window.stopPolling) {
+          console.log("Polling stopped by user");
+          return;
+        }
+
+        // Check if we've exceeded the maximum duration
+        if (Date.now() - startTime > MAX_DURATION) {
+          installStatus.innerHTML = `
+            <div style="color: #e74c3c; margin-bottom: 15px;">
+              <div style="font-size: 1.1rem; margin-bottom: 8px;">⏰ Time limit reached (30 minutes)</div>
+              <div style="font-size: 0.9rem; margin-bottom: 15px;">
+                The device has not reported location within the expected timeframe. This could indicate:
+              </div>
+              <ul style="font-size: 0.9rem; margin-bottom: 15px; padding-left: 20px;">
+                <li>Device is not properly connected or powered</li>
+                <li>Network connectivity issues</li>
+                <li>Device configuration problems</li>
+              </ul>
+            </div>
+            <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 12px; margin-bottom: 15px;">
+              <strong>Options:</strong>
+              <div style="margin-top: 8px;">
+                <button id="retryPollingBtn" type="button" style="background: #3498db; margin-right: 8px; font-size: 0.9rem;">🔄 Restart Polling</button>
+              </div>
+            </div>
+          `;
+
+          // Add event listeners for the options
+          document.getElementById("retryPollingBtn").addEventListener("click", () => {
+            startTime = Date.now();
+            attempts = 0;
+            currentInterval = INITIAL_INTERVAL;
+            consecutiveLocationFailures = 0;
+            checkStatus();
+          });
+
+          return;
+        }
+
         attempts++;
-        // Call your backend endpoint that checks device status
+        console.log(`Checking device status (attempt ${attempts}, interval: ${Math.ceil(currentInterval/1000)}s)...`);
+        
+        // Update status display
+        updateStatusDisplay();
+
+        try {
+                  // Call backend endpoint to check device status
         const resp = await fetch(`/api/device-status?imei=${encodeURIComponent(imeiInput.value.trim())}`);
         const data = await resp.json();
+        
+        // Log detailed device status for debugging
+        console.log("Device status check:", {
+          isReporting: data.isReporting,
+          hasValidLocation: data.latest?.loc?.valid,
+          isOnline: data.connection?.online,
+          connectionState: data.connection?.state,
+          locationAge: data.latest?.loc?.age,
+          locationData: data.latest?.loc
+        });
+        
+        // Also log the full response for debugging
+        console.log("Full device status response:", data);
 
-        if (data.isReporting) { 
-          // Fetch latest device info from backend
-          fetch(`/api/device-status?imei=${encodeURIComponent(imeiInput.value.trim())}`)
-            .then(resp => resp.json())
-            .then(deviceData => {
-              const deviceLat = deviceData.latest?.loc?.lat;
-              const deviceLon = deviceData.latest?.loc?.lon;
+          // Enhanced validation using backend analysis
+          const isDeviceOnline = data.isOnline === true;
+          const hasValidLocation = data.latest?.loc?.valid === true;
+          const locationAge = data.latest?.loc?.age || 0; // Age in seconds
+          const hasRecentConnection = data.hasRecentConnection === true;
+          const hasRecentActivity = data.hasRecentActivity === true;
+          
+          // Comprehensive validation - ALL conditions must be true
+          if (data.isReporting && hasValidLocation && isDeviceOnline && hasRecentConnection && hasRecentActivity && locationAge <= 60) {
+            console.log("Device is online and reporting fresh location, checking proximity...");
+            
+            // Get device location data
+            const deviceLat = data.latest.loc.lat;
+            const deviceLon = data.latest.loc.lon;
 
-              if (deviceLat == null || deviceLon == null) {
-                installStatus.innerText = "Device location not available.";
-                return;
-              }
+            if (deviceLat == null || deviceLon == null) {
+              console.log("Device location data incomplete, continuing to poll...");
+              scheduleNextCheck();
+              return;
+            }
 
-              const overrideEnabled = document.getElementById("testLocationOverride").checked;
-              const overrideLat = parseFloat(document.getElementById("overrideLat").value);
-              const overrideLon = parseFloat(document.getElementById("overrideLon").value);
-              if (overrideEnabled && !isNaN(overrideLat) && !isNaN(overrideLon)) {
-                // Use override coordinates
-                const userLat = overrideLat;
-                const userLon = overrideLon;
-                const distance = haversineDistance(userLat, userLon, deviceLat, deviceLon);
-                if (distance < 200) {
-                  installStatus.innerText = "✅ You are close to the device. Redirecting to closing form…";
-                  setTimeout(() => {
-                    openPrefilledForm();
-                    deviceSection.classList.add("hidden");
-                    successMsg.style.display = "block";
-                    sessionStorage.setItem("step", "done");
-                  }, 1000);
-                } else {
-                  installStatus.innerText = "❌ You are too far from the device location to proceed.";
-                }
-                return;
-              }
-              navigator.geolocation.getCurrentPosition(
-                function(position) {
-                  const userLat = position.coords.latitude;
-                  const userLon = position.coords.longitude;
-                  const distance = haversineDistance(userLat, userLon, deviceLat, deviceLon);
-                  if (distance < 200) {
-                    installStatus.innerText = "✅ You are close to the device. Redirecting to closing form…";
-                    setTimeout(() => {
-                      openPrefilledForm();
-                      deviceSection.classList.add("hidden");
-                      successMsg.style.display = "block";
-                      sessionStorage.setItem("step", "done");
-                    }, 1000);
-                  } else {
-                    installStatus.innerText = "❌ You are too far from the device location to proceed.";
-                  }
-                },
-                function(error) {
-                  installStatus.innerText = "Unable to get your location: " + error.message;
-                },
-                { enableHighAccuracy: true }
-              );
+            // Check if this is a reasonable location (not obviously wrong)
+            if (Math.abs(deviceLat) > 90 || Math.abs(deviceLon) > 180) {
+              console.log("Device reported invalid coordinates, continuing to poll...");
+              scheduleNextCheck();
+              return;
+            }
+
+            // Check location age - if it's very old, it might be stale data
+            if (locationAge > 300) { // 5 minutes old
+              console.log(`Device location is ${locationAge}s old, might be stale. Continuing to poll...`);
+              scheduleNextCheck();
+              return;
+            }
+
+            // Now check user proximity to device
+            await checkUserProximity(deviceLat, deviceLon);
+            
+          } else {
+            // Enhanced logging showing exactly why each check failed
+            console.log("🔍 Device validation failed - analyzing reasons:");
+            
+            if (!data.isReporting) {
+              console.log("❌ Device not reporting data yet");
+            } else {
+              console.log("✅ Device is reporting data");
+            }
+            
+            if (!hasValidLocation) {
+              console.log("❌ Device data available but no valid location");
+            } else {
+              console.log("✅ Device has valid location");
+            }
+            
+            if (!isDeviceOnline) {
+              console.log("❌ Device has location but is offline");
+            } else {
+              console.log("✅ Device connection is online");
+            }
+            
+            if (!hasRecentConnection) {
+              console.log("❌ Device connection data is stale (>5 minutes old)");
+            } else {
+              console.log("✅ Device has recent connection data");
+            }
+            
+            if (!hasRecentActivity) {
+              console.log("❌ Device has no recent network activity (>5 minutes)");
+            } else {
+              console.log("✅ Device has recent network activity");
+            }
+            
+            if (locationAge > 60) {
+              console.log(`❌ Device location is too old (${locationAge}s > 60s)`);
+            } else {
+              console.log(`✅ Device location is fresh (${locationAge}s ≤ 60s)`);
+            }
+            
+            console.log("📊 Summary:", {
+              isReporting: data.isReporting,
+              hasValidLocation,
+              isDeviceOnline,
+              hasRecentConnection,
+              hasRecentActivity,
+              locationAge,
+              dataFreshness: data.dataFreshness
             });
-        } else if (attempts < MAX_ATTEMPTS) {
-          setTimeout(checkStatus, POLL_INTERVAL);
-        } else {
-          installStatus.innerText = "❌ Timed out waiting for device to report.";
+            
+            scheduleNextCheck();
+          }
+
+        } catch (error) {
+          console.error("Error checking device status:", error);
+          // Don't stop polling on errors, just continue
+          scheduleNextCheck();
         }
       }
 
+              // Function to check user proximity to device
+        async function checkUserProximity(deviceLat, deviceLon) {
+          try {
+
+          // Use GPS location
+          navigator.geolocation.getCurrentPosition(
+            function(position) {
+              const userLat = position.coords.latitude;
+              const userLon = position.coords.longitude;
+              const distance = haversineDistance(userLat, userLon, deviceLat, deviceLon);
+              
+              if (distance < 200) {
+                handleProximitySuccess("GPS");
+              } else {
+                handleProximityFailure(distance, "GPS");
+              }
+            },
+            function(error) {
+              console.log("GPS error, showing manual location options...");
+              showManualLocationOverride(deviceLat, deviceLon);
+            },
+            { 
+              enableHighAccuracy: true, 
+              timeout: 15000, 
+              maximumAge: 60000 
+            }
+          );
+
+        } catch (error) {
+          console.error("Error in proximity check:", error);
+          scheduleNextCheck();
+        }
+      }
+
+      // Handle successful proximity check
+      function handleProximitySuccess(method) {
+        console.log(`Proximity check successful via ${method}`);
+        installStatus.innerHTML = `
+          <div style="color: #27ae60; margin-bottom: 15px;">
+            <div style="font-size: 1.1rem; margin-bottom: 8px;">✅ Location check passed!</div>
+            <div style="font-size: 0.9rem; margin-bottom: 15px;">
+              You are within 200 meters of the device. Opening installation form...
+            </div>
+          </div>
+        `;
+        
+        setTimeout(() => {
+          openPrefilledForm();
+          // Show form completion interface
+          installStatus.innerHTML = `
+            <div style="color: #27ae60; margin-bottom: 10px;">✅ Location check passed!</div>
+            <div style="background: #e8f4fd; border: 1px solid #b3d9ff; border-radius: 6px; padding: 12px; margin-bottom: 10px;">
+              <div style="font-weight: 600; color: #2c5aa0; margin-bottom: 8px;">📋 Form Opened</div>
+              <div style="font-size: 0.9rem; color: #555; margin-bottom: 12px;">
+                The installation form has been opened in a new tab. Please complete the form, then return here and click the button below to continue.
+              </div>
+              <button id="formCompletedBtn" type="button" style="background: #27ae60; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer;">
+                ✅ I've Completed the Form - Continue to Confirmation
+              </button>
+            </div>
+          `;
+          
+          // Add event listener for the form completion button
+          document.getElementById("formCompletedBtn").addEventListener("click", function() {
+            showConfirmationStep();
+          });
+        }, 1000);
+      }
+
+      // Handle proximity check failure
+      function handleProximityFailure(distance, method) {
+        consecutiveLocationFailures++;
+        console.log(`Proximity check failed via ${method}. Distance: ${distance.toFixed(0)}m. Failures: ${consecutiveLocationFailures}`);
+        
+        if (consecutiveLocationFailures >= MAX_CONSECUTIVE_FAILURES) {
+          // Too many consecutive failures, show manual options
+          installStatus.innerHTML = `
+            <div style="color: #e74c3c; margin-bottom: 15px;">
+              <div style="font-size: 1.1rem; margin-bottom: 8px;">📍 Location mismatch detected</div>
+              <div style="font-size: 0.9rem; margin-bottom: 15px;">
+                Device location: ${distance.toFixed(0)}m away from your position.<br>
+                This could be due to:
+              </div>
+              <ul style="font-size: 0.9rem; margin-bottom: 15px; padding-left: 20px;">
+                <li>Device reporting its last known location (not current)</li>
+                <li>GPS accuracy issues on either device</li>
+                <li>Device not yet moved to installation location</li>
+              </ul>
+            </div>
+            <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 12px; margin-bottom: 15px;">
+              <strong>Options:</strong>
+              <div style="margin-top: 8px;">
+                <button id="continuePollingBtn" type="button" style="background: #3498db; margin-right: 8px; font-size: 0.9rem;">🔄 Continue Waiting</button>
+              </div>
+            </div>
+          `;
+
+          // Add event listeners
+          document.getElementById("continuePollingBtn").addEventListener("click", () => {
+            consecutiveLocationFailures = 0; // Reset counter
+            scheduleNextCheck();
+          });
+
+        } else {
+          // Just continue polling, but show the issue
+          installStatus.innerHTML = `
+            <div style="color: #f39c12; margin-bottom: 15px;">
+              <div style="font-size: 1.1rem; margin-bottom: 8px;">⚠️ Location mismatch (${consecutiveLocationFailures}/${MAX_CONSECUTIVE_FAILURES})</div>
+              <div style="font-size: 0.9rem; margin-bottom: 15px;">
+                Device is ${distance.toFixed(0)}m away. This might be stale location data.<br>
+                Continuing to monitor for updated location...
+              </div>
+            </div>
+            <button id="stopPollingBtn" type="button" style="background: #e74c3c; margin-top: 8px; font-size: 0.9rem;">🛑 Stop Waiting</button>
+            <button id="forceLocationCheckBtn" type="button" style="background: #3498db; margin-left: 8px; font-size: 0.9rem;">🔍 Check Now</button>
+          `;
+
+          // Add event listeners
+          document.getElementById("stopPollingBtn").addEventListener("click", () => {
+            window.stopPolling = true;
+            installStatus.innerHTML = "🛑 Stopped waiting for device. You can restart the installation process.";
+          });
+
+          document.getElementById("forceLocationCheckBtn").addEventListener("click", () => {
+            currentInterval = 1000; // Check in 1 second
+            checkStatus();
+          });
+
+          scheduleNextCheck();
+        }
+      }
+
+
+      // Schedule the next check with progressive backoff
+      function scheduleNextCheck() {
+        if (window.stopPolling) return;
+        
+        // Increase interval progressively, but cap it
+        currentInterval = Math.min(currentInterval * BACKOFF_MULTIPLIER, MAX_INTERVAL);
+        
+        console.log(`Scheduling next check in ${Math.ceil(currentInterval/1000)}s`);
+        setTimeout(checkStatus, currentInterval);
+      }
+
+      // Start the first check
       checkStatus();
     }
 
@@ -628,15 +1009,48 @@
       vinSection.classList.remove("hidden");
     }
 
-    // BYPASS LOCATION CHECK HANDLER
-    function onBypassLocationCheck() {
-      installStatus.innerText = "⚠️ Location check bypassed for testing.";
-      setTimeout(() => {
-        openPrefilledForm();
-        deviceSection.classList.add("hidden");
-        successMsg.style.display = "block";
-        sessionStorage.setItem("step", "done");
-      }, 1000);
+
+
+    // SHOW CONFIRMATION STEP
+    function showConfirmationStep() {
+      deviceSection.classList.add("hidden");
+      confirmationSection.classList.remove("hidden");
+      sessionStorage.setItem("step", "confirmation");
+    }
+
+    // FINAL CONFIRMATION HANDLER
+    async function onFinalConfirmation() {
+      confirmationStatus.innerText = "🔄 Sending final confirmation to system...";
+      finalConfirmBtn.disabled = true;
+      
+      try {
+        const resp = await fetch("/api/confirm-installation", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            installationId: selectedInstallationId 
+          })
+        });
+
+        const data = await resp.json();
+
+        if (resp.ok && data.success) {
+          confirmationStatus.innerText = "✅ Installation confirmed successfully!";
+          setTimeout(() => {
+            confirmationSection.classList.add("hidden");
+            successMsg.style.display = "block";
+            sessionStorage.setItem("step", "done");
+          }, 1500);
+        } else {
+          confirmationStatus.innerText = `❌ Confirmation failed: ${data.message}`;
+          finalConfirmBtn.disabled = false;
+          console.error("Confirmation failed:", data);
+        }
+      } catch (err) {
+        console.error("Error confirming installation:", err);
+        confirmationStatus.innerText = "❌ Error confirming installation. Please try again.";
+        finalConfirmBtn.disabled = false;
+      }
     }
 
     // Restore UI on reload
@@ -646,13 +1060,27 @@
   clientSection.classList.add("hidden");
   vinSection.classList.add("hidden");
   deviceSection.classList.add("hidden");
+  confirmationSection.classList.add("hidden");
   successMsg.style.display = "none";
 
-  // Reset IMEI verification state
-  imeiVerified = false;
-  startInstallBtn.disabled = true;
-  imeiVerificationStatus.innerHTML = "";
-  document.getElementById("bypassImeiCheck").checked = false;
+                // Reset IMEI verification state
+        imeiVerified = false;
+        startInstallBtn.disabled = true;
+        imeiVerificationStatus.innerHTML = "";
+      
+      // Add location permission request button if geolocation is supported
+      if (navigator.geolocation) {
+        const locationPermissionBtn = document.createElement("button");
+        locationPermissionBtn.type = "button";
+        locationPermissionBtn.textContent = "📍 Request Location Permission";
+        locationPermissionBtn.style.cssText = "background: #17a2b8; font-size: 0.9rem; padding: 8px 16px; margin-top: 8px;";
+        locationPermissionBtn.addEventListener("click", requestLocationPermission);
+        
+        const locationOptionsDiv = document.querySelector(".container").querySelector('[style*="background: #e8f4fd"]');
+        if (locationOptionsDiv) {
+          locationOptionsDiv.appendChild(locationPermissionBtn);
+        }
+      }
 
   if (step === "2") {
     // restore Step 2 UI
@@ -675,6 +1103,14 @@
     // restore Step 3 UI
     onNextVin();
 
+  } else if (step === "confirmation") {
+    // restore confirmation step
+    confirmationSection.classList.remove("hidden");
+
+  } else if (step === "done") {
+    // show success message
+    successMsg.style.display = "block";
+
   } else {
     // default to Step 1
     clientSection.classList.remove("hidden");
@@ -684,6 +1120,44 @@
     function debugPrint(obj, label = "") {
       const out = document.getElementById("debugOutput");
       out.textContent = (label ? label + ":\n" : "") + JSON.stringify(obj, null, 2);
+    }
+
+    // Request location permission proactively
+    function requestLocationPermission() {
+      if (!navigator.geolocation) {
+        alert("Geolocation is not supported by your browser.");
+        return;
+      }
+      
+      navigator.geolocation.getCurrentPosition(
+        function(position) {
+          alert("✅ Location permission granted! Your coordinates: " + 
+                position.coords.latitude.toFixed(6) + ", " + 
+                position.coords.longitude.toFixed(6));
+        },
+        function(error) {
+          let errorMsg = "";
+          switch(error.code) {
+            case error.PERMISSION_DENIED:
+              errorMsg = "Location permission denied. Please:\n1. Click the location icon in your browser's address bar\n2. Select 'Allow' for location access\n3. Refresh the page";
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMsg = "Location information unavailable. Please check your device's location services.";
+              break;
+            case error.TIMEOUT:
+              errorMsg = "Location request timed out. Please try again.";
+              break;
+            default:
+              errorMsg = "Location error: " + error.message;
+          }
+          alert("❌ " + errorMsg);
+        },
+        { 
+          enableHighAccuracy: true, 
+          timeout: 10000, 
+          maximumAge: 60000 
+        }
+      );
     }
 
     // Haversine Distance calculation (for proximity check)
