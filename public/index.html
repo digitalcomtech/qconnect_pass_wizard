@@ -5,9 +5,9 @@
   <title>QConnect PASS Wizard</title>
   <style>
     body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', sans-serif;
       margin: 0;
-      background: #f4f6fb;
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
@@ -16,75 +16,117 @@
     }
     .container {
       background: #fff;
-      border-radius: 14px;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.08), 0 1.5px 4px rgba(0,0,0,0.04);
-      padding: 36px 32px 28px 32px;
-      max-width: 480px;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(23, 162, 184, 0.12), 0 4px 16px rgba(0,0,0,0.08);
+      padding: 40px 36px 32px 36px;
+      max-width: 520px;
       width: 100%;
       margin: 40px 0 24px 0;
       display: flex;
       flex-direction: column;
       align-items: center;
+      border: 1px solid rgba(23, 162, 184, 0.1);
     }
     h1 {
-      font-size: 1.7rem;
-      margin-bottom: 18px;
+      font-size: 2rem;
+      margin-bottom: 24px;
       font-weight: 700;
-      letter-spacing: 0.5px;
+      letter-spacing: -0.5px;
       text-align: center;
+      background: linear-gradient(135deg, #17a2b8 0%, #2c5aa0 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
     .section {
-      margin-bottom: 30px;
-      padding: 18px 18px 10px 18px;
-      border: 1px solid #e3e7ef;
-      border-radius: 10px;
-      background: #f9fafc;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+      margin-bottom: 32px;
+      padding: 24px 20px 16px 20px;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      box-shadow: 0 2px 8px rgba(23, 162, 184, 0.06);
       width: 100%;
+      position: relative;
+    }
+    .section::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #17a2b8 0%, #2c5aa0 100%);
+      border-radius: 12px 12px 0 0;
     }
     label {
       display: block;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
       font-weight: 600;
-      color: #2d3a4a;
+      color: #1e293b;
+      font-size: 0.95rem;
     }
     input[type="text"],
     input[type="date"],
+    input[type="number"],
     select,
     textarea {
       width: 100%;
-      padding: 10px 12px;
-      margin-bottom: 14px;
+      padding: 12px 16px;
+      margin-bottom: 16px;
       box-sizing: border-box;
       font-size: 1rem;
-      border: 1px solid #d1d7e6;
-      border-radius: 6px;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
       background: #fff;
-      transition: border 0.2s;
+      transition: all 0.2s ease;
+      font-family: inherit;
     }
     input[type="text"]:focus,
     input[type="date"]:focus,
+    input[type="number"]:focus,
     select:focus,
     textarea:focus {
-      border: 1.5px solid #4f8cff;
+      border-color: #17a2b8;
       outline: none;
+      box-shadow: 0 0 0 3px rgba(23, 162, 184, 0.1);
+      transform: translateY(-1px);
     }
     button {
-      padding: 11px 26px;
-      font-size: 1.05rem;
+      padding: 12px 28px;
+      font-size: 1rem;
       font-weight: 600;
       color: #fff;
-      background: linear-gradient(90deg, #4f8cff 0%, #2355e6 100%);
+      background: linear-gradient(135deg, #17a2b8 0%, #2c5aa0 100%);
       border: none;
-      border-radius: 6px;
+      border-radius: 8px;
       cursor: pointer;
       margin: 0 8px 8px 0;
-      box-shadow: 0 2px 8px rgba(79,140,255,0.08);
-      transition: background 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 12px rgba(23, 162, 184, 0.2);
+      transition: all 0.2s ease;
+      font-family: inherit;
+      position: relative;
+      overflow: hidden;
+    }
+    button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s;
+    }
+    button:hover::before {
+      left: 100%;
     }
     button:hover {
-      background: linear-gradient(90deg, #2355e6 0%, #4f8cff 100%);
-      box-shadow: 0 4px 16px rgba(79,140,255,0.13);
+      background: linear-gradient(135deg, #2c5aa0 0%, #17a2b8 100%);
+      box-shadow: 0 6px 20px rgba(23, 162, 184, 0.3);
+      transform: translateY(-2px);
+    }
+    button:active {
+      transform: translateY(0);
     }
     .hidden {
       display: none;
@@ -92,35 +134,102 @@
     #clientStatus,
     #vinStatus,
     #installStatus {
-      margin-top: 10px;
+      margin-top: 12px;
       font-weight: 600;
-      color: #e74c3c;
+      color: #dc2626;
       text-align: center;
+      padding: 12px;
+      border-radius: 8px;
+      background: rgba(220, 38, 38, 0.1);
     }
     #successMsg {
-      color: #27ae60;
-      font-size: 1.1rem;
-      margin-top: 24px;
+      color: #059669;
+      font-size: 1.2rem;
+      margin-top: 28px;
       text-align: center;
       font-weight: 600;
     }
     #imeiVerificationStatus {
-      padding: 8px 12px;
-      border-radius: 6px;
+      padding: 12px 16px;
+      border-radius: 8px;
       font-size: 0.9rem;
       font-weight: 500;
-      min-height: 20px;
+      min-height: 24px;
+      border: 1px solid #e2e8f0;
     }
     #imeiVerificationStatus span {
       display: block;
     }
+    
+    /* Qualitrack-style environment indicator */
+    #environmentIndicator {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: linear-gradient(135deg, #17a2b8 0%, #2c5aa0 100%);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      box-shadow: 0 2px 8px rgba(23, 162, 184, 0.3);
+      border: 2px solid rgba(255,255,255,0.2);
+    }
+    
+    /* Enhanced section headers */
+    .section h2 {
+      text-align: center;
+      font-size: 1.3rem;
+      margin-bottom: 16px;
+      font-weight: 700;
+      color: #1e293b;
+      position: relative;
+    }
+    .section h2::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 40px;
+      height: 3px;
+      background: linear-gradient(90deg, #17a2b8 0%, #2c5aa0 100%);
+      border-radius: 2px;
+    }
+    
+    /* Qualitrack-style info boxes */
+    .info-box {
+      background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+      border: 1px solid #93c5fd;
+      border-radius: 10px;
+      padding: 16px;
+      margin: 16px 0;
+      position: relative;
+    }
+    .info-box::before {
+      content: '💡';
+      position: absolute;
+      top: -8px;
+      left: 16px;
+      background: #fff;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      border: 1px solid #93c5fd;
+    }
+    
     @media (max-width: 600px) {
       .container {
-        padding: 18px 4vw 18px 4vw;
-        max-width: 98vw;
+        padding: 20px 5vw 20px 5vw;
+        max-width: 95vw;
+        margin: 20px 0 16px 0;
       }
       .section {
-        padding: 10px 4vw 8px 4vw;
+        padding: 16px 4vw 12px 4vw;
+      }
+      h1 {
+        font-size: 1.6rem;
       }
     }
   </style>
@@ -206,42 +315,42 @@
       <button id="backToVinBtn" type="button">◀ Back</button>
       <button id="startInstallBtn" type="button" disabled>Start Installation ▶</button>
       
-      <div style="background: #e8f4fd; border: 1px solid #b3d9ff; border-radius: 6px; padding: 12px; margin-top: 12px; margin-bottom: 12px;">
-        <div style="font-weight: 600; color: #2c5aa0; margin-bottom: 8px;">📍 Location Verification</div>
-        <div style="font-size: 0.9rem; color: #555; margin-bottom: 12px;">
+      <div class="info-box" style="margin-top: 16px; margin-bottom: 16px;">
+        <div style="font-weight: 600; color: #1e40af; margin-bottom: 8px; font-size: 1rem;">📍 Location Verification</div>
+        <div style="font-size: 0.9rem; color: #374151; margin-bottom: 12px;">
           The app will verify your location is within 200 meters of the device before proceeding with installation.
         </div>
         
         <!-- Test Mode Location Spoofing -->
-        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #b3d9ff;">
-          <label style="display:flex;align-items:center;margin-bottom:8px;cursor:pointer;">
-            <input type="checkbox" id="enableTestMode" style="margin-right:8px;" />
-            <span style="font-weight: 600; color: #e67e22;">🧪 Enable Test Mode (Location Spoofing)</span>
+        <div style="margin-top: 16px; padding-top: 16px; border-top: 2px solid #e2e8f0;">
+          <label style="display:flex;align-items:center;margin-bottom:12px;cursor:pointer;">
+            <input type="checkbox" id="enableTestMode" style="margin-right:10px; transform: scale(1.2);" />
+            <span style="font-weight: 600; color: #ea580c; font-size: 1rem;">🧪 Enable Test Mode (Location Spoofing)</span>
           </label>
-          <div id="testModeFields" class="hidden" style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 10px; margin-top: 8px;">
-            <div style="font-size: 0.9rem; color: #856404; margin-bottom: 8px;">
+          <div id="testModeFields" class="hidden" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 2px solid #f59e0b; border-radius: 10px; padding: 16px; margin-top: 12px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15);">
+            <div style="font-size: 0.95rem; color: #92400e; margin-bottom: 12px; font-weight: 600;">
               💡 <strong>Test Mode:</strong> Enter custom coordinates to simulate being at the installation location
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
               <div>
-                <label for="testLatInput" style="font-size: 0.8rem; color: #856404;">Test Latitude:</label>
-                <input type="number" id="testLatInput" placeholder="e.g., 25.78395" step="0.00001" style="font-size: 0.8rem; padding: 6px 8px;" />
+                <label for="testLatInput" style="font-size: 0.9rem; color: #92400e; font-weight: 600;">Test Latitude:</label>
+                <input type="number" id="testLatInput" placeholder="e.g., 25.78395" step="0.00001" style="font-size: 0.9rem; padding: 10px 12px; border: 2px solid #f59e0b; border-radius: 8px; background: #fff;" />
               </div>
               <div>
-                <label for="testLonInput" style="font-size: 0.8rem; color: #856404;">Test Longitude:</label>
-                <input type="number" id="testLonInput" placeholder="e.g., -100.26345" step="0.00001" style="font-size: 0.8rem; padding: 6px 8px;" />
+                <label for="testLonInput" style="font-size: 0.9rem; color: #92400e; font-weight: 600;">Test Longitude:</label>
+                <input type="number" id="testLonInput" placeholder="e.g., -100.26345" step="0.00001" style="font-size: 0.9rem; padding: 10px 12px; border: 2px solid #f59e0b; border-radius: 8px; background: #fff;" />
               </div>
             </div>
-            <div style="font-size: 0.8rem; color: #856404;">
+            <div style="font-size: 0.9rem; color: #92400e; margin-bottom: 12px; padding: 12px; background: rgba(255,255,255,0.6); border-radius: 8px; border: 1px solid #f59e0b;">
               <strong>Current Device Location:</strong> 
-              <span id="deviceLocationDisplay">Loading...</span>
-              <button id="copyDeviceLocationBtn" type="button" style="background: #17a2b8; color: white; border: none; border-radius: 4px; padding: 2px 6px; margin-left: 8px; font-size: 0.7rem; cursor: pointer;">
+              <span id="deviceLocationDisplay" style="font-weight: 600; color: #1e40af;">Loading...</span>
+              <button id="copyDeviceLocationBtn" type="button" style="background: linear-gradient(135deg, #17a2b8 0%, #2c5aa0 100%); color: white; border: none; border-radius: 6px; padding: 6px 10px; margin-left: 12px; font-size: 0.8rem; cursor: pointer; font-weight: 600; box-shadow: 0 2px 6px rgba(23, 162, 184, 0.3);">
                 📋 Copy to Test Fields
               </button>
             </div>
-            <div style="font-size: 0.8rem; color: #856404; margin-top: 8px; padding-top: 8px; border-top: 1px solid #ffeaa7;">
+            <div style="font-size: 0.85rem; color: #92400e; margin-top: 12px; padding-top: 12px; border-top: 2px solid #f59e0b;">
               🎯 <strong>How to use:</strong> 
-              <ol style="margin: 4px 0 4px 16px; padding: 0;">
+              <ol style="margin: 6px 0 6px 20px; padding: 0; line-height: 1.5;">
                 <li>Check "Enable Test Mode" above</li>
                 <li>Wait for device to report location (or use "Copy to Test Fields")</li>
                 <li>Modify coordinates slightly to test proximity logic</li>
@@ -262,14 +371,14 @@
         <div style="font-size:0.95rem; color:#666; margin-bottom:20px;">
           Please confirm that the installation is complete and all checks have been performed.
         </div>
-        <div style="background: #d4edda; border: 1px solid #c3e6cb; border-radius: 6px; padding: 12px; margin: 0 20px; font-size: 0.9rem; color: #155724;">
+        <div class="info-box" style="margin: 0 20px; background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); border: 2px solid #10b981;">
           💡 <strong>Note:</strong> Make sure you have completed the installation form that was opened earlier before proceeding with this final confirmation.
         </div>
       </div>
       
-      <div style="background:#f9fafc; padding:16px; border-radius:8px; margin-bottom:20px;">
-        <h3 style="margin:0 0 10px 0; font-size:1rem; color:#2d3a4a;">Installation Checklist:</h3>
-        <div style="font-size:0.9rem; color:#555;">
+      <div class="info-box" style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border: 2px solid #64748b; margin-bottom: 20px;">
+        <h3 style="margin:0 0 12px 0; font-size:1.1rem; color:#1e293b; font-weight: 700;">Installation Checklist:</h3>
+        <div style="font-size:0.95rem; color:#475569; line-height: 1.6;">
           ☑️ Device properly mounted and connected<br>
           ☑️ Power connections verified<br>
           ☑️ Ignition wire connected<br>
@@ -279,7 +388,7 @@
       </div>
 
       <div style="text-align:center;">
-        <button id="finalConfirmBtn" type="button" style="background: linear-gradient(90deg, #27ae60 0%, #2ecc71 100%); font-size:1.1rem; padding:12px 30px;">
+        <button id="finalConfirmBtn" type="button" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); font-size:1.1rem; padding:14px 32px; box-shadow: 0 6px 20px rgba(5, 150, 105, 0.3);">
           🔒 Confirm & Finalize Installation
         </button>
         <div id="confirmationStatus" style="margin-top:15px; font-weight:600;"></div>
@@ -288,9 +397,9 @@
 
     <!-- FINAL Success Message -->
     <div id="successMsg" style="display:none; text-align:center; margin-top:32px;">
-      <div style="font-size:4rem; color:#27ae60; margin-bottom:16px;">&#10004;</div>
-      <div style="font-size:1.3rem; font-weight:700; color:#27ae60; margin-bottom:10px;">Installation Complete!</div>
-      <div style="font-size:1.1rem; color:#222;">Thank you for using the QConnect PASS Wizard.<br>You may now close this window.</div>
+      <div style="font-size:5rem; color:#059669; margin-bottom:20px; text-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);">&#10004;</div>
+      <div style="font-size:1.5rem; font-weight:700; color:#059669; margin-bottom:12px; text-shadow: 0 2px 8px rgba(5, 150, 105, 0.2);">Installation Complete!</div>
+      <div style="font-size:1.1rem; color:#374151; line-height: 1.6;">Thank you for using the QConnect PASS Wizard.<br>You may now close this window.</div>
     </div>
   </div>
 
@@ -409,15 +518,13 @@
         if (appConfig.environment === "qa") {
           document.title = "QConnect PASS Wizard (QA)";
           document.querySelector("h1").textContent = "QConnect PASS Wizard (QA)";
-          document.querySelector("h1").style.color = "#f39c12";
           envIndicator.textContent = "QA";
-          envIndicator.style.background = "#f39c12";
+          envIndicator.style.background = "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)";
         } else {
           document.title = "QConnect PASS Wizard";
           document.querySelector("h1").textContent = "QConnect PASS Wizard";
-          document.querySelector("h1").style.color = "#2d3a4a";
           envIndicator.textContent = "PROD";
-          envIndicator.style.background = "#27ae60";
+          envIndicator.style.background = "linear-gradient(135deg, #17a2b8 0%, #2c5aa0 100%)";
         }
       } catch (err) {
         console.error("Failed to load app config:", err);
@@ -638,22 +745,22 @@
 
         sessionStorage.setItem("step", "waitingForDevice");
         const testModeNote = document.getElementById("enableTestMode").checked ? 
-          '<div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 8px; margin-top: 8px; font-size: 0.8rem; color: #856404;">🧪 <strong>Test Mode Active:</strong> Will use custom coordinates instead of GPS</div>' : '';
+          '<div class="info-box" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 2px solid #f59e0b; margin-top: 12px; color: #92400e;">🧪 <strong>Test Mode Active:</strong> Will use custom coordinates instead of GPS</div>' : '';
         
         installStatus.innerHTML = `
-          <div style="margin-bottom: 15px;">
-            <div style="font-size: 1.1rem; color: #2c5aa0; margin-bottom: 8px;">
+          <div style="margin-bottom: 20px;">
+            <div style="font-size: 1.2rem; color: #1e40af; margin-bottom: 12px; font-weight: 700;">
               ⏳ Starting device location monitoring...
             </div>
-            <div style="font-size: 0.9rem; color: #666; margin-bottom: 8px;">
+            <div style="font-size: 0.95rem; color: #475569; margin-bottom: 12px; line-height: 1.5;">
               <strong>Initial interval:</strong> 10 seconds | <strong>Maximum duration:</strong> 30 minutes
             </div>
-            <div style="background: #e8f4fd; border: 1px solid #b3d9ff; border-radius: 6px; padding: 8px; font-size: 0.8rem; color: #2c5aa0;">
+            <div class="info-box" style="margin-bottom: 12px;">
               💡 <strong>Smart polling:</strong> We'll check less frequently over time to avoid overwhelming the system.
             </div>
             ${testModeNote}
           </div>
-          <button id="stopPollingBtn" type="button" style="background: #e74c3c; margin-top: 8px; font-size: 0.9rem;">🛑 Stop Waiting</button>
+          <button id="stopPollingBtn" type="button" style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); margin-top: 12px; font-size: 0.95rem; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);">🛑 Stop Waiting</button>
         `;
 
         // Initialize polling control
@@ -697,25 +804,25 @@
         const nextCheckIn = Math.ceil(currentInterval / 1000);
         
         installStatus.innerHTML = `
-          <div style="margin-bottom: 15px;">
-            <div style="font-size: 1.1rem; color: #2c5aa0; margin-bottom: 8px;">
+          <div style="margin-bottom: 20px;">
+            <div style="font-size: 1.2rem; color: #1e40af; margin-bottom: 12px; font-weight: 700;">
               ⏳ Waiting for device to report location...
             </div>
-            <div style="font-size: 0.9rem; color: #666; margin-bottom: 8px;">
+            <div style="font-size: 0.95rem; color: #475569; margin-bottom: 10px; line-height: 1.5;">
               <strong>Elapsed time:</strong> ${timeStr} | <strong>Next check in:</strong> ${nextCheckIn}s
             </div>
-            <div style="font-size: 0.9rem; color: #666; margin-bottom: 8px;">
+            <div style="font-size: 0.95rem; color: #475569; margin-bottom: 12px; line-height: 1.5;">
               <strong>Attempts:</strong> ${attempts} | <strong>Current interval:</strong> ${Math.ceil(currentInterval/1000)}s
             </div>
-            <div style="background: #e8f4fd; border: 1px solid #b3d9ff; border-radius: 6px; padding: 8px; font-size: 0.8rem; color: #2c5aa0;">
+            <div class="info-box" style="margin-bottom: 12px;">
               💡 <strong>Tip:</strong> Device may take up to 30 minutes to report. We'll check less frequently over time to avoid overwhelming the system.
             </div>
-            <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 8px; font-size: 0.8rem; color: #856404; margin-top: 8px;">
+            <div class="info-box" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 2px solid #f59e0b; color: #92400e;">
               🔍 <strong>Enhanced Requirements:</strong> Device must be online, have recent connection data (≤5min), recent network activity (≤5min), AND fresh location data (≤60s old)
             </div>
           </div>
-          <button id="stopPollingBtn" type="button" style="background: #e74c3c; margin-top: 8px; font-size: 0.9rem;">🛑 Stop Waiting</button>
-          <button id="forceLocationCheckBtn" type="button" style="background: #3498db; margin-left: 8px; font-size: 0.9rem;">🔍 Check Now</button>
+          <button id="stopPollingBtn" type="button" style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); margin-top: 12px; font-size: 0.95rem; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);">🛑 Stop Waiting</button>
+          <button id="forceLocationCheckBtn" type="button" style="background: linear-gradient(135deg, #17a2b8 0%, #2c5aa0 100%); margin-left: 12px; font-size: 0.95rem; box-shadow: 0 4px 12px rgba(23, 162, 184, 0.3);">🔍 Check Now</button>
         `;
 
         // Add event listeners for the new buttons
@@ -741,21 +848,21 @@
         // Check if we've exceeded the maximum duration
         if (Date.now() - startTime > MAX_DURATION) {
           installStatus.innerHTML = `
-            <div style="color: #e74c3c; margin-bottom: 15px;">
-              <div style="font-size: 1.1rem; margin-bottom: 8px;">⏰ Time limit reached (30 minutes)</div>
-              <div style="font-size: 0.9rem; margin-bottom: 15px;">
+            <div style="color: #dc2626; margin-bottom: 20px;">
+              <div style="font-size: 1.2rem; margin-bottom: 10px; font-weight: 700;">⏰ Time limit reached (30 minutes)</div>
+              <div style="font-size: 0.95rem; margin-bottom: 16px; line-height: 1.5;">
                 The device has not reported location within the expected timeframe. This could indicate:
               </div>
-              <ul style="font-size: 0.9rem; margin-bottom: 15px; padding-left: 20px;">
+              <ul style="font-size: 0.95rem; margin-bottom: 16px; padding-left: 24px; line-height: 1.6;">
                 <li>Device is not properly connected or powered</li>
                 <li>Network connectivity issues</li>
                 <li>Device configuration problems</li>
               </ul>
             </div>
-            <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 12px; margin-bottom: 15px;">
+            <div class="info-box" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 2px solid #f59e0b; margin-bottom: 16px; color: #92400e;">
               <strong>Options:</strong>
-              <div style="margin-top: 8px;">
-                <button id="retryPollingBtn" type="button" style="background: #3498db; margin-right: 8px; font-size: 0.9rem;">🔄 Restart Polling</button>
+              <div style="margin-top: 12px;">
+                <button id="retryPollingBtn" type="button" style="background: linear-gradient(135deg, #17a2b8 0%, #2c5aa0 100%); margin-right: 12px; font-size: 0.95rem; box-shadow: 0 4px 12px rgba(23, 162, 184, 0.3);">🔄 Restart Polling</button>
               </div>
             </div>
           `;
@@ -962,12 +1069,12 @@
       function handleProximitySuccess(method) {
         console.log(`Proximity check successful via ${method}`);
         const testModeIndicator = method === "Test Mode" ? 
-          '<div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 8px; margin-bottom: 12px; font-size: 0.9rem; color: #856404;">🧪 <strong>Test Mode Active:</strong> Using custom coordinates for proximity check</div>' : '';
+          '<div class="info-box" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 2px solid #f59e0b; margin-bottom: 16px; color: #92400e;">🧪 <strong>Test Mode Active:</strong> Using custom coordinates for proximity check</div>' : '';
         
         installStatus.innerHTML = `
-          <div style="color: #27ae60; margin-bottom: 15px;">
-            <div style="font-size: 1.1rem; margin-bottom: 8px;">✅ Location check passed!</div>
-            <div style="font-size: 0.9rem; margin-bottom: 15px;">
+          <div style="color: #059669; margin-bottom: 20px;">
+            <div style="font-size: 1.2rem; margin-bottom: 10px; font-weight: 700;">✅ Location check passed!</div>
+            <div style="font-size: 0.95rem; margin-bottom: 16px; line-height: 1.5;">
               You are within 200 meters of the device. Opening installation form...
             </div>
             ${testModeIndicator}
@@ -978,13 +1085,13 @@
           openPrefilledForm();
           // Show form completion interface
           installStatus.innerHTML = `
-            <div style="color: #27ae60; margin-bottom: 10px;">✅ Location check passed!</div>
-            <div style="background: #e8f4fd; border: 1px solid #b3d9ff; border-radius: 6px; padding: 12px; margin-bottom: 10px;">
-              <div style="font-weight: 600; color: #2c5aa0; margin-bottom: 8px;">📋 Form Opened</div>
-              <div style="font-size: 0.9rem; color: #555; margin-bottom: 12px;">
+            <div style="color: #059669; margin-bottom: 12px; font-weight: 700;">✅ Location check passed!</div>
+            <div class="info-box" style="margin-bottom: 12px;">
+              <div style="font-weight: 700; color: #1e40af; margin-bottom: 10px; font-size: 1rem;">📋 Form Opened</div>
+              <div style="font-size: 0.95rem; color: #374151; margin-bottom: 16px; line-height: 1.5;">
                 The installation form has been opened in a new tab. Please complete the form, then return here and click the button below to continue.
               </div>
-              <button id="formCompletedBtn" type="button" style="background: #27ae60; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer;">
+              <button id="formCompletedBtn" type="button" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); color: white; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);">
                 ✅ I've Completed the Form - Continue to Confirmation
               </button>
             </div>
@@ -1005,22 +1112,22 @@
         if (consecutiveLocationFailures >= MAX_CONSECUTIVE_FAILURES) {
           // Too many consecutive failures, show manual options
           installStatus.innerHTML = `
-            <div style="color: #e74c3c; margin-bottom: 15px;">
-              <div style="font-size: 1.1rem; margin-bottom: 8px;">📍 Location mismatch detected</div>
-              <div style="font-size: 0.9rem; margin-bottom: 15px;">
+            <div style="color: #dc2626; margin-bottom: 20px;">
+              <div style="font-size: 1.2rem; margin-bottom: 10px; font-weight: 700;">📍 Location mismatch detected</div>
+              <div style="font-size: 0.95rem; margin-bottom: 16px; line-height: 1.5;">
                 Device location: ${distance.toFixed(0)}m away from your position.<br>
                 This could be due to:
               </div>
-              <ul style="font-size: 0.9rem; margin-bottom: 15px; padding-left: 20px;">
+              <ul style="font-size: 0.95rem; margin-bottom: 16px; padding-left: 24px; line-height: 1.6;">
                 <li>Device reporting its last known location (not current)</li>
                 <li>GPS accuracy issues on either device</li>
                 <li>Device not yet moved to installation location</li>
               </ul>
             </div>
-            <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 12px; margin-bottom: 15px;">
+            <div class="info-box" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 2px solid #f59e0b; margin-bottom: 16px; color: #92400e;">
               <strong>Options:</strong>
-              <div style="margin-top: 8px;">
-                <button id="continuePollingBtn" type="button" style="background: #3498db; margin-right: 8px; font-size: 0.9rem;">🔄 Continue Waiting</button>
+              <div style="margin-top: 12px;">
+                <button id="continuePollingBtn" type="button" style="background: linear-gradient(135deg, #17a2b8 0%, #2c5aa0 100%); margin-right: 12px; font-size: 0.95rem; box-shadow: 0 4px 12px rgba(23, 162, 184, 0.3);">🔄 Continue Waiting</button>
               </div>
             </div>
           `;
@@ -1034,15 +1141,15 @@
         } else {
           // Just continue polling, but show the issue
           installStatus.innerHTML = `
-            <div style="color: #f39c12; margin-bottom: 15px;">
-              <div style="font-size: 1.1rem; margin-bottom: 8px;">⚠️ Location mismatch (${consecutiveLocationFailures}/${MAX_CONSECUTIVE_FAILURES})</div>
-              <div style="font-size: 0.9rem; margin-bottom: 15px;">
+            <div style="color: #d97706; margin-bottom: 20px;">
+              <div style="font-size: 1.2rem; margin-bottom: 10px; font-weight: 700;">⚠️ Location mismatch (${consecutiveLocationFailures}/${MAX_CONSECUTIVE_FAILURES})</div>
+              <div style="font-size: 0.95rem; margin-bottom: 16px; line-height: 1.5;">
                 Device is ${distance.toFixed(0)}m away. This might be stale location data.<br>
                 Continuing to monitor for updated location...
               </div>
             </div>
-            <button id="stopPollingBtn" type="button" style="background: #e74c3c; margin-top: 8px; font-size: 0.9rem;">🛑 Stop Waiting</button>
-            <button id="forceLocationCheckBtn" type="button" style="background: #3498db; margin-left: 8px; font-size: 0.9rem;">🔍 Check Now</button>
+            <button id="stopPollingBtn" type="button" style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); margin-top: 12px; font-size: 0.95rem; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);">🛑 Stop Waiting</button>
+            <button id="forceLocationCheckBtn" type="button" style="background: linear-gradient(135deg, #17a2b8 0%, #2c5aa0 100%); margin-left: 12px; font-size: 0.95rem; box-shadow: 0 4px 12px rgba(23, 162, 184, 0.3);">🔍 Check Now</button>
           `;
 
           // Add event listeners
@@ -1178,7 +1285,7 @@
         const locationPermissionBtn = document.createElement("button");
         locationPermissionBtn.type = "button";
         locationPermissionBtn.textContent = "📍 Request Location Permission";
-        locationPermissionBtn.style.cssText = "background: #17a2b8; font-size: 0.9rem; padding: 8px 16px; margin-top: 8px;";
+        locationPermissionBtn.style.cssText = "background: linear-gradient(135deg, #17a2b8 0%, #2c5aa0 100%); color: white; font-size: 0.9rem; padding: 10px 18px; margin-top: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; box-shadow: 0 4px 12px rgba(23, 162, 184, 0.3);";
         locationPermissionBtn.addEventListener("click", requestLocationPermission);
         
         const locationOptionsDiv = document.querySelector(".container").querySelector('[style*="background: #e8f4fd"]');
