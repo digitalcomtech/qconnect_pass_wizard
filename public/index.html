@@ -211,6 +211,45 @@
         <div style="font-size: 0.9rem; color: #555; margin-bottom: 12px;">
           The app will verify your location is within 200 meters of the device before proceeding with installation.
         </div>
+        
+        <!-- Test Mode Location Spoofing -->
+        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #b3d9ff;">
+          <label style="display:flex;align-items:center;margin-bottom:8px;cursor:pointer;">
+            <input type="checkbox" id="enableTestMode" style="margin-right:8px;" />
+            <span style="font-weight: 600; color: #e67e22;">🧪 Enable Test Mode (Location Spoofing)</span>
+          </label>
+          <div id="testModeFields" class="hidden" style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 10px; margin-top: 8px;">
+            <div style="font-size: 0.9rem; color: #856404; margin-bottom: 8px;">
+              💡 <strong>Test Mode:</strong> Enter custom coordinates to simulate being at the installation location
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+              <div>
+                <label for="testLatInput" style="font-size: 0.8rem; color: #856404;">Test Latitude:</label>
+                <input type="number" id="testLatInput" placeholder="e.g., 25.78395" step="0.00001" style="font-size: 0.8rem; padding: 6px 8px;" />
+              </div>
+              <div>
+                <label for="testLonInput" style="font-size: 0.8rem; color: #856404;">Test Longitude:</label>
+                <input type="number" id="testLonInput" placeholder="e.g., -100.26345" step="0.00001" style="font-size: 0.8rem; padding: 6px 8px;" />
+              </div>
+            </div>
+            <div style="font-size: 0.8rem; color: #856404;">
+              <strong>Current Device Location:</strong> 
+              <span id="deviceLocationDisplay">Loading...</span>
+              <button id="copyDeviceLocationBtn" type="button" style="background: #17a2b8; color: white; border: none; border-radius: 4px; padding: 2px 6px; margin-left: 8px; font-size: 0.7rem; cursor: pointer;">
+                📋 Copy to Test Fields
+              </button>
+            </div>
+            <div style="font-size: 0.8rem; color: #856404; margin-top: 8px; padding-top: 8px; border-top: 1px solid #ffeaa7;">
+              🎯 <strong>How to use:</strong> 
+              <ol style="margin: 4px 0 4px 16px; padding: 0;">
+                <li>Check "Enable Test Mode" above</li>
+                <li>Wait for device to report location (or use "Copy to Test Fields")</li>
+                <li>Modify coordinates slightly to test proximity logic</li>
+                <li>Start installation - app will use your test coordinates</li>
+              </ol>
+            </div>
+          </div>
+        </div>
       </div>
       <p id="installStatus"></p>
     </div>
@@ -322,6 +361,34 @@
       
       document.getElementById("addSecondaryUnit").addEventListener("change", function(e) {
         document.getElementById("secondaryUnitFields").classList.toggle("hidden", !e.target.checked);
+      });
+      
+      // Test mode toggle
+      document.getElementById("enableTestMode").addEventListener("change", function(e) {
+        document.getElementById("testModeFields").classList.toggle("hidden", !e.target.checked);
+        if (e.target.checked) {
+          updateDeviceLocationDisplay();
+        }
+      });
+      
+      // Copy device location to test fields
+      document.addEventListener("click", function(e) {
+        if (e.target.id === "copyDeviceLocationBtn") {
+          const inst = JSON.parse(sessionStorage.getItem("selectedInstallation") || "{}");
+          const deviceLat = inst.vehiculo?.latest?.loc?.lat;
+          const deviceLon = inst.vehiculo?.latest?.loc?.lon;
+          
+          if (deviceLat && deviceLon) {
+            document.getElementById("testLatInput").value = deviceLat.toFixed(5);
+            document.getElementById("testLonInput").value = deviceLon.toFixed(5);
+            e.target.textContent = "✅ Copied!";
+            setTimeout(() => {
+              e.target.textContent = "📋 Copy to Test Fields";
+            }, 2000);
+          } else {
+            alert("Device location not available yet. Please wait for the device to report its location.");
+          }
+        }
       });
       
       // Final confirmation button
@@ -570,6 +637,9 @@
         if (!resp.ok || data.status !== "success") throw new Error(data.message || `Status: ${data.status}`);
 
         sessionStorage.setItem("step", "waitingForDevice");
+        const testModeNote = document.getElementById("enableTestMode").checked ? 
+          '<div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 8px; margin-top: 8px; font-size: 0.8rem; color: #856404;">🧪 <strong>Test Mode Active:</strong> Will use custom coordinates instead of GPS</div>' : '';
+        
         installStatus.innerHTML = `
           <div style="margin-bottom: 15px;">
             <div style="font-size: 1.1rem; color: #2c5aa0; margin-bottom: 8px;">
@@ -581,6 +651,7 @@
             <div style="background: #e8f4fd; border: 1px solid #b3d9ff; border-radius: 6px; padding: 8px; font-size: 0.8rem; color: #2c5aa0;">
               💡 <strong>Smart polling:</strong> We'll check less frequently over time to avoid overwhelming the system.
             </div>
+            ${testModeNote}
           </div>
           <button id="stopPollingBtn" type="button" style="background: #e74c3c; margin-top: 8px; font-size: 0.9rem;">🛑 Stop Waiting</button>
         `;
@@ -732,6 +803,11 @@
           const hasRecentConnection = data.hasRecentConnection === true;
           const hasRecentActivity = data.hasRecentActivity === true;
           
+          // Update device location display for test mode
+          if (document.getElementById("enableTestMode").checked) {
+            updateDeviceLocationDisplay();
+          }
+          
           // Comprehensive validation - ALL conditions must be true
           if (data.isReporting && hasValidLocation && isDeviceOnline && hasRecentConnection && hasRecentActivity && locationAge <= 60) {
             console.log("Device is online and reporting fresh location, checking proximity...");
@@ -826,30 +902,55 @@
               // Function to check user proximity to device
         async function checkUserProximity(deviceLat, deviceLon) {
           try {
-
-          // Use GPS location
-          navigator.geolocation.getCurrentPosition(
-            function(position) {
-              const userLat = position.coords.latitude;
-              const userLon = position.coords.longitude;
-              const distance = haversineDistance(userLat, userLon, deviceLat, deviceLon);
+            // Check if test mode is enabled
+            const testModeEnabled = document.getElementById("enableTestMode").checked;
+            
+            if (testModeEnabled) {
+              // Use test coordinates
+              const testLat = parseFloat(document.getElementById("testLatInput").value);
+              const testLon = parseFloat(document.getElementById("testLonInput").value);
+              
+              if (isNaN(testLat) || isNaN(testLon)) {
+                console.log("Test coordinates not entered, continuing to poll...");
+                scheduleNextCheck();
+                return;
+              }
+              
+              console.log(`🧪 Test Mode: Using coordinates ${testLat}, ${testLon}`);
+              console.log(`🧪 Device coordinates: ${deviceLat}, ${deviceLon}`);
+              const distance = haversineDistance(testLat, testLon, deviceLat, deviceLon);
+              console.log(`🧪 Calculated distance: ${distance.toFixed(2)}m`);
               
               if (distance < 200) {
-                handleProximitySuccess("GPS");
+                handleProximitySuccess("Test Mode");
               } else {
-                handleProximityFailure(distance, "GPS");
+                handleProximityFailure(distance, "Test Mode");
               }
-            },
-            function(error) {
-              console.log("GPS error, showing manual location options...");
-              showManualLocationOverride(deviceLat, deviceLon);
-            },
-            { 
-              enableHighAccuracy: true, 
-              timeout: 15000, 
-              maximumAge: 60000 
+            } else {
+              // Use GPS location
+              navigator.geolocation.getCurrentPosition(
+                function(position) {
+                  const userLat = position.coords.latitude;
+                  const userLon = position.coords.longitude;
+                  const distance = haversineDistance(userLat, userLon, deviceLat, deviceLon);
+                  
+                  if (distance < 200) {
+                    handleProximitySuccess("GPS");
+                  } else {
+                    handleProximityFailure(distance, "GPS");
+                  }
+                },
+                function(error) {
+                  console.log("GPS error, showing manual location options...");
+                  showManualLocationOverride(deviceLat, deviceLon);
+                },
+                { 
+                  enableHighAccuracy: true, 
+                  timeout: 15000, 
+                  maximumAge: 60000 
+                }
+              );
             }
-          );
 
         } catch (error) {
           console.error("Error in proximity check:", error);
@@ -860,12 +961,16 @@
       // Handle successful proximity check
       function handleProximitySuccess(method) {
         console.log(`Proximity check successful via ${method}`);
+        const testModeIndicator = method === "Test Mode" ? 
+          '<div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 8px; margin-bottom: 12px; font-size: 0.9rem; color: #856404;">🧪 <strong>Test Mode Active:</strong> Using custom coordinates for proximity check</div>' : '';
+        
         installStatus.innerHTML = `
           <div style="color: #27ae60; margin-bottom: 15px;">
             <div style="font-size: 1.1rem; margin-bottom: 8px;">✅ Location check passed!</div>
             <div style="font-size: 0.9rem; margin-bottom: 15px;">
               You are within 200 meters of the device. Opening installation form...
             </div>
+            ${testModeIndicator}
           </div>
         `;
         
@@ -1122,6 +1227,24 @@
       out.textContent = (label ? label + ":\n" : "") + JSON.stringify(obj, null, 2);
     }
 
+    // Update device location display for test mode
+    function updateDeviceLocationDisplay() {
+      const inst = JSON.parse(sessionStorage.getItem("selectedInstallation") || "{}");
+      const deviceLat = inst.vehiculo?.latest?.loc?.lat;
+      const deviceLon = inst.vehiculo?.latest?.loc?.lon;
+      
+      const displayElement = document.getElementById("deviceLocationDisplay");
+      if (deviceLat && deviceLon) {
+        displayElement.innerHTML = `${deviceLat.toFixed(5)}, ${deviceLon.toFixed(5)}`;
+        
+        // Auto-populate test coordinates with device location for easy testing
+        document.getElementById("testLatInput").value = deviceLat.toFixed(5);
+        document.getElementById("testLonInput").value = deviceLon.toFixed(5);
+      } else {
+        displayElement.innerHTML = "Device location not available yet";
+      }
+    }
+    
     // Request location permission proactively
     function requestLocationPermission() {
       if (!navigator.geolocation) {
