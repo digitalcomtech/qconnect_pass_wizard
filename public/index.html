@@ -453,6 +453,7 @@
     let selectedInstallationId = "";
     let imeiVerified          = false;
     let appConfig             = null;
+    let formAlreadyOpened     = false; // Prevent form from opening multiple times
 
     document.addEventListener("DOMContentLoaded", async () => {
       // Check geolocation support
@@ -705,6 +706,9 @@
     // STEP 3 → STEP 4
     async function onStartInstallation() {
       installStatus.innerText = "";
+      
+      // Reset form opened flag for new installation
+      formAlreadyOpened = false;
       
       // Check if IMEI has been verified
       if (!imeiVerified) {
@@ -959,8 +963,13 @@
               return;
             }
 
-            // Now check user proximity to device
-            await checkUserProximity(deviceLat, deviceLon);
+            // Now check user proximity to device (only if form hasn't been opened yet)
+            if (!formAlreadyOpened) {
+              await checkUserProximity(deviceLat, deviceLon);
+            } else {
+              console.log("Form already opened, skipping proximity check");
+              scheduleNextCheck();
+            }
             
           } else {
             // Enhanced logging showing exactly why each check failed
@@ -1024,6 +1033,12 @@
 
               // Function to check user proximity to device
         async function checkUserProximity(deviceLat, deviceLon) {
+          // Double-check to prevent multiple form openings
+          if (formAlreadyOpened) {
+            console.log("Form already opened, skipping proximity check");
+            return;
+          }
+          
           try {
             // Check if test mode is enabled
             const testModeEnabled = document.getElementById("enableTestMode").checked;
@@ -1083,7 +1098,15 @@
 
       // Handle successful proximity check
       function handleProximitySuccess(method) {
+        // Prevent multiple form openings
+        if (formAlreadyOpened) {
+          console.log("Form already opened, skipping duplicate call");
+          return;
+        }
+        
         console.log(`Proximity check successful via ${method}`);
+        formAlreadyOpened = true; // Set flag to prevent multiple openings
+        
         const testModeIndicator = method === "Test Mode" ? 
           '<div class="info-box" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 2px solid #f59e0b; margin-bottom: 16px; color: #92400e;">🧪 <strong>Test Mode Active:</strong> Using custom coordinates for proximity check</div>' : '';
         
@@ -1098,7 +1121,9 @@
         `;
         
         setTimeout(() => {
+          console.log("Opening prefilled form...");
           openPrefilledForm();
+          console.log("Form opened successfully");
           // Show form completion interface
           installStatus.innerHTML = `
             <div style="color: #059669; margin-bottom: 12px; font-weight: 700;">✅ Location check passed!</div>
@@ -1223,7 +1248,7 @@
         numeroEconomico: inst.vehiculo?.numeroEconomico || "",
         noDe: inst.vehiculo?.numeroMotor || ""
       });
-      const url = `https://forms.fleetmetriks.com/252054474420955?${params.toString()}`;
+      const url = `https://forms.fleetmetriks.com/232983887026974?${params.toString()}`;
       window.open(url, "_blank"); // or use location.href = url; to redirect in the same tab
     }
 

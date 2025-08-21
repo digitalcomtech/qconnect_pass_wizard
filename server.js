@@ -7,7 +7,7 @@ const ENABLE_CONFIRMATION_FALLBACK = true; // Enable fallback when Pegasus is un
 
 // 🔧 ENVIRONMENT SWITCHER - Change this line to switch environments:
 // Set to "qa" for testing, "production" for live environment
-const ENVIRONMENT = "qa";
+const ENVIRONMENT = "production";
 
 // Environment Configuration
 const ENV_CONFIG = {
