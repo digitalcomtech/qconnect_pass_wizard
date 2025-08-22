@@ -1135,7 +1135,7 @@
 
         if (resp.ok && data.success) {
           simVerified = true;
-          simVerificationStatus.innerHTML = `<span style="color:#27ae60;">✅ SIM verified successfully! Found in ${data.simData.foundIn} | Status: ${data.simData.status}</span>`;
+          simVerificationStatus.innerHTML = `<span style="color:#27ae60;">✅ ${data.simData.simType} SIM verified successfully! Found in ${data.simData.foundIn} | Status: ${data.simData.status}</span>`;
         } else {
           simVerified = false;
           simVerificationStatus.innerHTML = `<span style="color:#e74c3c;">❌ ${data.message}</span>`;

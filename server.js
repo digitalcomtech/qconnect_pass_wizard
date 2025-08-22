@@ -402,9 +402,30 @@ app.post("/api/verify-sim", async (req, res) => {
 
     console.log("Verifying SIM ICCID:", iccid);
     
-    // Check both Pegasus instances sequentially
-    const pegasus1Url = `https://api.pegasusgateway.com/m2m/supersims/v1/Sims?Iccid=${iccid}`;
-    const pegasus256Url = `https://api.pegasusgateway.com/m2m/supersims/v1/Sims?Iccid=${iccid}`;
+    // Determine SIM type and appropriate endpoints based on ICCID prefix
+    let simType = "";
+    let pegasus1Url = "";
+    let pegasus256Url = "";
+    
+    if (iccid.startsWith("8988")) {
+      simType = "SuperSIM";
+      pegasus1Url = `https://api.pegasusgateway.com/m2m/supersims/v1/Sims?Iccid=${iccid}`;
+      pegasus256Url = `https://api.pegasusgateway.com/m2m/supersims/v1/Sims?Iccid=${iccid}`;
+    } else if (iccid.startsWith("8901")) {
+      simType = "Wireless";
+      pegasus1Url = `https://api.pegasusgateway.com/m2m/wireless/v1/Sims?Iccid=${iccid}`;
+      pegasus256Url = `https://api.pegasusgateway.com/m2m/wireless/v1/Sims?Iccid=${iccid}`;
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid ICCID format. Must start with 8988 (SuperSIM) or 8901 (Wireless)",
+        iccid: iccid
+      });
+    }
+    
+    console.log(`SIM Type detected: ${simType}`);
+    console.log(`Pegasus1 URL: ${pegasus1Url}`);
+    console.log(`Pegasus256 URL: ${pegasus256Url}`);
     
     let simFound = false;
     let simData = null;
@@ -412,7 +433,7 @@ app.post("/api/verify-sim", async (req, res) => {
     
     // Try Pegasus1 first
     try {
-      console.log("Checking Pegasus1 for SIM:", iccid);
+      console.log(`Checking Pegasus1 for ${simType} SIM:`, iccid);
       const pegasus1Resp = await fetch(pegasus1Url, {
         headers: {
           "Authenticate": currentConfig.pegasus1Token
@@ -424,11 +445,13 @@ app.post("/api/verify-sim", async (req, res) => {
         const pegasus1Data = await pegasus1Resp.json();
         console.log("Pegasus1 response:", pegasus1Data);
         
-        if (pegasus1Data.sims && pegasus1Data.sims.length > 0) {
+        // Handle both SuperSIM and Wireless response formats
+        const sims = pegasus1Data.sims || pegasus1Data.data || [];
+        if (sims.length > 0) {
           simFound = true;
-          simData = pegasus1Data.sims[0];
+          simData = sims[0];
           foundIn = "Pegasus1";
-          console.log("SIM found in Pegasus1");
+          console.log(`${simType} SIM found in Pegasus1`);
         }
       } else {
         console.log(`Pegasus1 returned status: ${pegasus1Resp.status}`);
@@ -440,7 +463,7 @@ app.post("/api/verify-sim", async (req, res) => {
     // If not found in Pegasus1, try Pegasus256
     if (!simFound) {
       try {
-        console.log("Checking Pegasus256 for SIM:", iccid);
+        console.log(`Checking Pegasus256 for ${simType} SIM:`, iccid);
         const pegasus256Resp = await fetch(pegasus256Url, {
           headers: {
             "Authenticate": currentConfig.pegasus256Token
@@ -452,11 +475,13 @@ app.post("/api/verify-sim", async (req, res) => {
           const pegasus256Data = await pegasus256Resp.json();
           console.log("Pegasus256 response:", pegasus256Data);
           
-          if (pegasus256Data.sims && pegasus256Data.sims.length > 0) {
+          // Handle both SuperSIM and Wireless response formats
+          const sims = pegasus256Data.sims || pegasus256Data.data || [];
+          if (sims.length > 0) {
             simFound = true;
-            simData = pegasus256Data.sims[0];
+            simData = sims[0];
             foundIn = "Pegasus256";
-            console.log("SIM found in Pegasus256");
+            console.log(`${simType} SIM found in Pegasus256`);
           }
         } else {
           console.log(`Pegasus256 returned status: ${pegasus256Resp.status}`);
@@ -470,12 +495,13 @@ app.post("/api/verify-sim", async (req, res) => {
       // SIM found, return success with details
       res.json({
         success: true,
-        message: `SIM verified successfully in ${foundIn}`,
+        message: `${simType} SIM verified successfully in ${foundIn}`,
         simData: {
           iccid: simData.iccid,
           status: simData.status,
-          fleet_sid: simData.fleet_sid,
-          account_sid: simData.account_sid,
+          simType: simType,
+          fleet_sid: simData.fleet_sid || simData.fleet_id,
+          account_sid: simData.account_sid || simData.account_id,
           date_created: simData.date_created,
           date_updated: simData.date_updated,
           foundIn: foundIn
@@ -485,8 +511,9 @@ app.post("/api/verify-sim", async (req, res) => {
       // SIM not found in either instance
       res.status(404).json({
         success: false,
-        message: "SIM not found in either Pegasus instance",
+        message: `${simType} SIM not found in either Pegasus instance`,
         checkedInstances: ["Pegasus1", "Pegasus256"],
+        simType: simType,
         iccid: iccid
       });
     }
