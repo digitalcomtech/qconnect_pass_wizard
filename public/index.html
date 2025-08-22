@@ -10,22 +10,179 @@
       background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
       min-height: 100vh;
       display: flex;
+      align-items: stretch;
+      justify-content: stretch;
+    }
+    
+    /* Main layout container */
+    .app-container {
+      display: flex;
+      width: 100%;
+      height: 100vh;
+      overflow: hidden;
+    }
+    
+    /* Sidebar */
+    .sidebar {
+      width: 280px;
+      background: linear-gradient(180deg, #1e293b 0%, #334155 100%);
+      color: white;
+      padding: 24px 0;
+      box-shadow: 4px 0 20px rgba(0,0,0,0.1);
+      display: flex;
       flex-direction: column;
+      position: relative;
+      z-index: 10;
+    }
+    
+    .sidebar-header {
+      padding: 0 24px 24px 24px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      margin-bottom: 24px;
+    }
+    
+    .sidebar-title {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin: 0 0 8px 0;
+      background: linear-gradient(135deg, #17a2b8 0%, #2c5aa0 100%);
+      -webkit-background-clip: text;
+      -webkit-background-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .sidebar-subtitle {
+      font-size: 0.9rem;
+      color: rgba(255,255,255,0.7);
+      margin: 0;
+    }
+    
+    /* Step navigation */
+    .step-nav {
+      flex: 1;
+      padding: 0 16px;
+    }
+    
+    .step-item {
+      display: flex;
+      align-items: center;
+      padding: 16px 20px;
+      margin: 8px 0;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+      border: 2px solid transparent;
+    }
+    
+    .step-item:hover {
+      background: rgba(255,255,255,0.1);
+      transform: translateX(4px);
+    }
+    
+    .step-item.active {
+      background: linear-gradient(135deg, #17a2b8 0%, #2c5aa0 100%);
+      border-color: rgba(255,255,255,0.3);
+      box-shadow: 0 4px 16px rgba(23, 162, 184, 0.3);
+    }
+    
+    .step-item.completed {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: #10b981;
+    }
+    
+    .step-item.locked {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .step-number {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      display: flex;
       align-items: center;
       justify-content: center;
+      font-weight: 700;
+      font-size: 0.9rem;
+      margin-right: 16px;
+      transition: all 0.2s ease;
     }
-    .container {
+    
+    .step-item.active .step-number {
+      background: rgba(255,255,255,0.9);
+      color: #1e293b;
+    }
+    
+    .step-item.completed .step-number {
+      background: #10b981;
+      color: white;
+    }
+    
+    .step-info {
+      flex: 1;
+    }
+    
+    .step-title {
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin: 0 0 4px 0;
+    }
+    
+    .step-description {
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.7);
+      margin: 0;
+    }
+    
+    .step-status {
+      margin-left: 12px;
+    }
+    
+    .step-status.completed::after {
+      content: '✓';
+      color: #10b981;
+      font-weight: 700;
+      font-size: 1.2rem;
+    }
+    
+    /* Main content area */
+    .main-content {
+      flex: 1;
+      background: #fff;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+    }
+    
+    .content-container {
+      max-width: 600px;
+      width: 100%;
       background: #fff;
       border-radius: 16px;
       box-shadow: 0 8px 32px rgba(23, 162, 184, 0.12), 0 4px 16px rgba(0,0,0,0.08);
       padding: 40px 36px 32px 36px;
-      max-width: 520px;
-      width: 100%;
-      margin: 40px 0 24px 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
       border: 1px solid rgba(23, 162, 184, 0.1);
+      position: relative;
+    }
+    
+    /* Environment indicator in sidebar */
+    .sidebar-environment {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: linear-gradient(135deg, #17a2b8 0%, #2c5aa0 100%);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      box-shadow: 0 2px 8px rgba(23, 162, 184, 0.3);
+      border: 2px solid rgba(255,255,255,0.2);
     }
     h1 {
       font-size: 2rem;
@@ -235,15 +392,70 @@
       border: 1px solid #93c5fd;
     }
     
+    @media (max-width: 768px) {
+      .app-container {
+        flex-direction: column;
+      }
+      
+      .sidebar {
+        width: 100%;
+        height: auto;
+        padding: 16px 0;
+      }
+      
+      .step-nav {
+        display: flex;
+        overflow-x: auto;
+        padding: 0 16px;
+        gap: 12px;
+      }
+      
+      .step-item {
+        min-width: 140px;
+        flex-shrink: 0;
+      }
+      
+      .main-content {
+        padding: 20px 10px;
+      }
+      
+      .content-container {
+        padding: 24px 20px;
+      }
+      
+      .sidebar-title {
+        font-size: 1.2rem;
+      }
+      
+      .step-title {
+        font-size: 0.85rem;
+      }
+      
+      .step-description {
+        font-size: 0.75rem;
+      }
+    }
+    
     @media (max-width: 600px) {
-      .container {
-        padding: 20px 5vw 20px 5vw;
-        max-width: 95vw;
-        margin: 20px 0 16px 0;
+      .step-nav {
+        gap: 8px;
       }
-      .section {
-        padding: 16px 4vw 12px 4vw;
+      
+      .step-item {
+        min-width: 120px;
+        padding: 12px 16px;
       }
+      
+      .step-number {
+        width: 28px;
+        height: 28px;
+        font-size: 0.8rem;
+      }
+      
+      .content-container {
+        padding: 20px 16px;
+      }
+      
       h1 {
         font-size: 1.6rem;
       }
@@ -251,9 +463,77 @@
   </style>
 </head>
 <body>
-  <div class="container">
-    <div id="environmentIndicator" style="position: absolute; top: 10px; right: 10px; background: #27ae60; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">PROD</div>
-    <h1>QConnect PASS Wizard</h1>
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <div class="sidebar">
+      <div class="sidebar-environment" id="sidebarEnvironment">PROD</div>
+      
+      <div class="sidebar-header">
+        <h1 class="sidebar-title">QConnect PASS</h1>
+        <p class="sidebar-subtitle">Installation Wizard</p>
+      </div>
+      
+      <div class="step-nav">
+        <div class="step-item active" data-step="1" id="stepNav1">
+          <div class="step-number">1</div>
+          <div class="step-info">
+            <div class="step-title">Client Selection</div>
+            <div class="step-description">Enter client name or VIN</div>
+          </div>
+          <div class="step-status" id="stepStatus1"></div>
+        </div>
+        
+        <div class="step-item locked" data-step="2" id="stepNav2">
+          <div class="step-number">2</div>
+          <div class="step-info">
+            <div class="step-title">VIN Selection</div>
+            <div class="step-description">Choose installation VIN</div>
+          </div>
+          <div class="step-status" id="stepStatus2"></div>
+        </div>
+        
+        <div class="step-item locked" data-step="3" id="stepNav3">
+          <div class="step-number">3</div>
+          <div class="step-info">
+            <div class="step-title">Device Setup</div>
+            <div class="step-description">Enter IMEI & SIM details</div>
+          </div>
+          <div class="step-status" id="stepStatus3"></div>
+        </div>
+        
+        <div class="step-item locked" data-step="4" id="stepNav4">
+          <div class="step-number">4</div>
+          <div class="step-info">
+            <div class="step-title">Location Check</div>
+            <div class="step-description">Verify proximity to device</div>
+          </div>
+          <div class="step-status" id="stepStatus4"></div>
+        </div>
+        
+        <div class="step-item locked" data-step="5" id="stepNav5">
+          <div class="step-number">5</div>
+          <div class="step-info">
+            <div class="step-title">Form Completion</div>
+            <div class="step-description">Complete installation form</div>
+          </div>
+          <div class="step-status" id="stepStatus5"></div>
+        </div>
+        
+        <div class="step-item locked" data-step="6" id="stepNav6">
+          <div class="step-number">6</div>
+          <div class="step-info">
+            <div class="step-title">Final Confirmation</div>
+            <div class="step-description">Confirm installation complete</div>
+          </div>
+          <div class="step-status" id="stepStatus6"></div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Main Content Area -->
+    <div class="main-content">
+      <div class="content-container">
+        <h1 style="text-align:center; font-size:1.8rem; margin-bottom:32px; color:#1e293b;">QConnect PASS Wizard</h1>
 
     <!-- STEP 1: Client Name -->
     <div id="clientSection" class="section">
@@ -379,43 +659,57 @@
       <p id="installStatus"></p>
     </div>
 
-    <!-- STEP 4: Manual Confirmation -->
-    <div id="confirmationSection" class="section hidden">
-      <h2 style="text-align:center; font-size:1.2rem; margin-bottom:12px;">Step 4: Finalize Installation</h2>
-      <div style="text-align:center; margin-bottom:20px;">
-        <div style="font-size:1.1rem; margin-bottom:10px;">✅ Form has been submitted successfully!</div>
-        <div style="font-size:0.95rem; color:#666; margin-bottom:20px;">
-          Please confirm that the installation is complete and all checks have been performed.
+        <!-- STEP 4: Location Check & Form -->
+        <div id="locationSection" class="section hidden">
+          <h2 style="text-align:center; font-size:1.2rem; margin-bottom:12px;">Step 4: Location Verification & Form</h2>
+          <div id="locationStatus"></div>
         </div>
-        <div class="info-box" style="margin: 0 20px; background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); border: 2px solid #10b981;">
-          💡 <strong>Note:</strong> Make sure you have completed the installation form that was opened earlier before proceeding with this final confirmation.
-        </div>
-      </div>
-      
-      <div class="info-box" style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border: 2px solid #64748b; margin-bottom: 20px;">
-        <h3 style="margin:0 0 12px 0; font-size:1.1rem; color:#1e293b; font-weight: 700;">Installation Checklist:</h3>
-        <div style="font-size:0.95rem; color:#475569; line-height: 1.6;">
-          ☑️ Device properly mounted and connected<br>
-          ☑️ Power connections verified<br>
-          ☑️ Ignition wire connected<br>
-          ☑️ Input/Output connections tested<br>
-          ☑️ Device reporting location successfully
-        </div>
-      </div>
 
-      <div style="text-align:center;">
-        <button id="finalConfirmBtn" type="button" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); font-size:1.1rem; padding:14px 32px; box-shadow: 0 6px 20px rgba(5, 150, 105, 0.3);">
-          🔒 Confirm & Finalize Installation
-        </button>
-        <div id="confirmationStatus" style="margin-top:15px; font-weight:600;"></div>
-      </div>
-    </div>
+        <!-- STEP 5: Form Completion -->
+        <div id="formSection" class="section hidden">
+          <h2 style="text-align:center; font-size:1.2rem; margin-bottom:12px;">Step 5: Complete Installation Form</h2>
+          <div id="formStatus"></div>
+        </div>
 
-    <!-- FINAL Success Message -->
-    <div id="successMsg" style="display:none; text-align:center; margin-top:32px;">
-      <div style="font-size:5rem; color:#059669; margin-bottom:20px; text-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);">&#10004;</div>
-      <div style="font-size:1.5rem; font-weight:700; color:#059669; margin-bottom:12px; text-shadow: 0 2px 8px rgba(5, 150, 105, 0.2);">Installation Complete!</div>
-      <div style="font-size:1.1rem; color:#374151; line-height: 1.6;">Thank you for using the QConnect PASS Wizard.<br>You may now close this window.</div>
+        <!-- STEP 6: Final Confirmation -->
+        <div id="confirmationSection" class="section hidden">
+          <h2 style="text-align:center; font-size:1.2rem; margin-bottom:12px;">Step 6: Finalize Installation</h2>
+          <div style="text-align:center; margin-bottom:20px;">
+            <div style="font-size:1.1rem; margin-bottom:10px;">✅ Form has been submitted successfully!</div>
+            <div style="font-size:0.95rem; color:#666; margin-bottom:20px;">
+              Please confirm that the installation is complete and all checks have been performed.
+            </div>
+            <div class="info-box" style="margin: 0 20px; background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); border: 2px solid #10b981;">
+              💡 <strong>Note:</strong> Make sure you have completed the installation form that was opened earlier before proceeding with this final confirmation.
+            </div>
+          </div>
+          
+          <div class="info-box" style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border: 2px solid #64748b; margin-bottom: 20px;">
+            <h3 style="margin:0 0 12px 0; font-size:1.1rem; color:#1e293b; font-weight: 700;">Installation Checklist:</h3>
+            <div style="font-size:0.95rem; color:#475569; line-height: 1.6;">
+              ☑️ Device properly mounted and connected<br>
+              ☑️ Power connections verified<br>
+              ☑️ Ignition wire connected<br>
+              ☑️ Input/Output connections tested<br>
+              ☑️ Device reporting location successfully
+            </div>
+          </div>
+
+          <div style="text-align:center;">
+            <button id="finalConfirmBtn" type="button" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); font-size:1.1rem; padding:14px 32px; box-shadow: 0 6px 20px rgba(5, 150, 105, 0.3);">
+              🔒 Confirm & Finalize Installation
+            </button>
+            <div id="confirmationStatus" style="margin-top:15px; font-weight:600;"></div>
+          </div>
+        </div>
+
+        <!-- FINAL Success Message -->
+        <div id="successMsg" style="display:none; text-align:center; margin-top:32px;">
+          <div style="font-size:5rem; color:#059669; margin-bottom:20px; text-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);">&#10004;</div>
+          <div style="font-size:1.5rem; font-weight:700; color:#059669; margin-bottom:12px; text-shadow: 0 2px 8px rgba(5, 150, 105, 0.2);">Installation Complete!</div>
+          <div style="font-size:1.1rem; color:#374151; line-height: 1.6;">Thank you for using the QConnect PASS Wizard.<br>You may now close this window.</div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -463,17 +757,18 @@
         const locationWarning = document.createElement("div");
         locationWarning.style.cssText = "background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 6px; padding: 8px; margin: 8px 0; color: #721c24; font-size: 0.9rem;";
         locationWarning.innerHTML = "⚠️ Geolocation not supported by your browser. You'll need to use manual location override.";
-        document.querySelector(".container").insertBefore(locationWarning, document.getElementById("clientSection"));
+        document.querySelector(".content-container").insertBefore(locationWarning, document.getElementById("clientSection"));
       }
       
       // Load app configuration first
       await loadAppConfig();
       
+      // Initialize sidebar navigation
+      initializeSidebarNavigation();
+      
       clientForm.addEventListener("submit", onNextClient);
       nextVinBtn.addEventListener("click", onNextVin);
       startInstallBtn.addEventListener("click", onStartInstallation);
-      backToClientBtn.addEventListener("click", onBackToClient);
-      backToVinBtn.addEventListener("click", onBackToVin);
       verifyImeiBtn.addEventListener("click", onVerifyImei);
       
       // Reset verification when IMEI changes
@@ -530,17 +825,16 @@
         appConfig = await resp.json();
         console.log(`🔧 Frontend loaded ${appConfig.environment.toUpperCase()} environment config`);
         
-        // Update page title and indicator to show environment
-        const envIndicator = document.getElementById("environmentIndicator");
+        // Update page title and sidebar indicator to show environment
+        const envIndicator = document.getElementById("sidebarEnvironment");
         if (appConfig.environment === "qa") {
           document.title = "QConnect PASS Wizard (QA)";
-          document.querySelector("h1").textContent = "QConnect PASS Wizard (QA)";
+          document.querySelector(".content-container h1").textContent = "QConnect PASS Wizard (QA)";
           envIndicator.textContent = "QA";
           envIndicator.style.background = "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)";
         } else {
           document.title = "QConnect PASS Wizard";
-          document.querySelector("h1").textContent = "QConnect PASS Wizard";
-          envIndicator.textContent = "PROD";
+          document.querySelector(".content-container h1").textContent = "QConnect PASS Wizard";
           envIndicator.style.background = "linear-gradient(135deg, #17a2b8 0%, #2c5aa0 100%)";
         }
       } catch (err) {
@@ -552,6 +846,102 @@
           pegasusBaseUrl: "https://qservices.pegasusgateway.com",
           pegasusToken: "2f2df11d24bba3d071c22ca1c54f42dd64dda64e6bddfe9e6f3cc824"
         };
+      }
+    }
+    
+    // Initialize sidebar navigation
+    function initializeSidebarNavigation() {
+      // Add click event listeners to all step navigation items
+      document.querySelectorAll('.step-item').forEach(stepItem => {
+        stepItem.addEventListener('click', function() {
+          const step = this.getAttribute('data-step');
+          if (!this.classList.contains('locked')) {
+            navigateToStep(parseInt(step));
+          }
+        });
+      });
+    }
+    
+    // Navigate to a specific step
+    function navigateToStep(stepNumber) {
+      // Hide all sections first
+      document.querySelectorAll('.section').forEach(section => {
+        section.classList.add('hidden');
+      });
+      
+      // Remove active class from all step nav items
+      document.querySelectorAll('.step-item').forEach(item => {
+        item.classList.remove('active');
+      });
+      
+      // Show the selected step
+      let targetSection;
+      switch(stepNumber) {
+        case 1:
+          targetSection = document.getElementById('clientSection');
+          break;
+        case 2:
+          targetSection = document.getElementById('vinSection');
+          break;
+        case 3:
+          targetSection = document.getElementById('deviceSection');
+          break;
+        case 4:
+          targetSection = document.getElementById('locationSection');
+          break;
+        case 5:
+          targetSection = document.getElementById('formSection');
+          break;
+        case 6:
+          targetSection = document.getElementById('confirmationSection');
+          break;
+        default:
+          targetSection = document.getElementById('clientSection');
+      }
+      
+      if (targetSection) {
+        targetSection.classList.remove('hidden');
+        // Update active step in sidebar
+        document.getElementById(`stepNav${stepNumber}`).classList.add('active');
+        // Store current step in session
+        sessionStorage.setItem("currentStep", stepNumber.toString());
+      }
+    }
+    
+    // Update step status in sidebar
+    function updateStepStatus(stepNumber, status) {
+      const stepNav = document.getElementById(`stepNav${stepNumber}`);
+      const stepStatus = document.getElementById(`stepStatus${stepNumber}`);
+      
+      if (stepNav && stepStatus) {
+        // Remove all status classes
+        stepNav.classList.remove('locked', 'completed');
+        stepStatus.classList.remove('completed');
+        
+        // Apply new status
+        switch(status) {
+          case 'completed':
+            stepNav.classList.add('completed');
+            stepStatus.classList.add('completed');
+            break;
+          case 'active':
+            stepNav.classList.add('active');
+            break;
+          case 'locked':
+            stepNav.classList.add('locked');
+            break;
+        }
+      }
+    }
+    
+    // Unlock next step
+    function unlockNextStep(currentStep) {
+      if (currentStep < 6) {
+        const nextStep = currentStep + 1;
+        const nextStepNav = document.getElementById(`stepNav${nextStep}`);
+        if (nextStepNav) {
+          nextStepNav.classList.remove('locked');
+        }
       }
     }
 
@@ -620,8 +1010,10 @@
         sessionStorage.setItem("step", "2");
         sessionStorage.setItem("clientName", selectedClientName);
 
-        clientSection.classList.add("hidden");
-        vinSection.classList.remove("hidden");
+        // Update sidebar and navigate to step 2
+        updateStepStatus(1, 'completed');
+        unlockNextStep(1);
+        navigateToStep(2);
 
         debugPrint(filtered, "Filtered Installations");
       } catch (err) {
@@ -645,8 +1037,10 @@
       sessionStorage.setItem("selectedVIN", selectedVIN);
       sessionStorage.setItem("installationId", selectedInstallationId);
 
-      vinSection.classList.add("hidden");
-      deviceSection.classList.remove("hidden");
+      // Update sidebar and navigate to step 3
+      updateStepStatus(2, 'completed');
+      unlockNextStep(2);
+      navigateToStep(3);
 
       const filtered = JSON.parse(sessionStorage.getItem("filteredInst") || "[]");
       const inst = filtered.find(inst => inst.vehiculo?.serie === vin);
@@ -1308,18 +1702,13 @@
 
     // Restore UI on reload
     function restoreState() {
-  const step = sessionStorage.getItem("step") || "1";
-  // hide everything first
-  clientSection.classList.add("hidden");
-  vinSection.classList.add("hidden");
-  deviceSection.classList.add("hidden");
-  confirmationSection.classList.add("hidden");
-  successMsg.style.display = "none";
-
-                // Reset IMEI verification state
-        imeiVerified = false;
-        startInstallBtn.disabled = true;
-        imeiVerificationStatus.innerHTML = "";
+      const step = sessionStorage.getItem("step") || "1";
+      const currentStep = parseInt(step);
+      
+      // Reset IMEI verification state
+      imeiVerified = false;
+      startInstallBtn.disabled = true;
+      imeiVerificationStatus.innerHTML = "";
       
       // Add location permission request button if geolocation is supported
       if (navigator.geolocation) {
@@ -1329,46 +1718,53 @@
         locationPermissionBtn.style.cssText = "background: linear-gradient(135deg, #17a2b8 0%, #2c5aa0 100%); color: white; font-size: 0.9rem; padding: 10px 18px; margin-top: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; box-shadow: 0 4px 12px rgba(23, 162, 184, 0.3);";
         locationPermissionBtn.addEventListener("click", requestLocationPermission);
         
-        const locationOptionsDiv = document.querySelector(".container").querySelector('[style*="background: #e8f4fd"]');
+        const locationOptionsDiv = document.querySelector(".content-container").querySelector('[style*="background: #e8f4fd"]');
         if (locationOptionsDiv) {
           locationOptionsDiv.appendChild(locationPermissionBtn);
         }
       }
 
-  if (step === "2") {
-    // restore Step 2 UI
-    clientNameInput.value = sessionStorage.getItem("clientName") || "";
-    const filtered = JSON.parse(sessionStorage.getItem("filteredInst") || "[]");
-    vinSelect.innerHTML = `<option value="">-- Select VIN --</option>`;
-    filtered.forEach(inst => {
-      const vin = inst.vehiculo?.serie;
-      if (!vin) return;
-      const opt = document.createElement("option");
-      opt.value = vin;
-      opt.textContent = vin;
-      opt.dataset.installationId = inst._id;
-      if (vin === sessionStorage.getItem("selectedVIN")) opt.selected = true;
-      vinSelect.appendChild(opt);
-    });
-    vinSection.classList.remove("hidden");
+      // Restore step data and update sidebar
+      if (step === "2") {
+        // restore Step 2 data
+        clientNameInput.value = sessionStorage.getItem("clientName") || "";
+        const filtered = JSON.parse(sessionStorage.getItem("filteredInst") || "[]");
+        vinSelect.innerHTML = `<option value="">-- Select VIN --</option>`;
+        filtered.forEach(inst => {
+          const vin = inst.vehiculo?.serie;
+          if (!vin) return;
+          const opt = document.createElement("option");
+          opt.value = vin;
+          opt.textContent = vin;
+          opt.dataset.installationId = inst._id;
+          if (vin === sessionStorage.getItem("selectedVIN")) opt.selected = true;
+          vinSelect.appendChild(opt);
+        });
+        
+        // Update sidebar status
+        updateStepStatus(1, 'completed');
+        unlockNextStep(1);
+        navigateToStep(2);
 
-  } else if (step === "3") {
-    // restore Step 3 UI
-    onNextVin();
-
-  } else if (step === "confirmation") {
-    // restore confirmation step
-    confirmationSection.classList.remove("hidden");
-
-  } else if (step === "done") {
-    // show success message
-    successMsg.style.display = "block";
-
-  } else {
-    // default to Step 1
-    clientSection.classList.remove("hidden");
-  }
-}
+      } else if (step === "3") {
+        // restore Step 3 data
+        onNextVin();
+        
+      } else if (step === "confirmation") {
+        // restore confirmation step
+        updateStepStatus(5, 'completed');
+        unlockNextStep(5);
+        navigateToStep(6);
+        
+      } else if (step === "done") {
+        // show success message
+        successMsg.style.display = "block";
+        
+      } else {
+        // default to Step 1
+        navigateToStep(1);
+      }
+    }
 
     function debugPrint(obj, label = "") {
       const out = document.getElementById("debugOutput");
