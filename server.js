@@ -15,13 +15,19 @@ const ENV_CONFIG = {
     zapierHookInstall: "https://hooks.zapier.com/hooks/catch/21949880/uyym1m7/",
     zapierHookSecondary: "ZAPIER_HOOK_SECONDARY", // Add your secondary hook URL here
     pegasusBaseUrl: "https://qservices.pegasusgateway.com",
-    pegasusToken: "2f2df11d24bba3d071c22ca1c54f42dd64dda64e6bddfe9e6f3cc824"
+    pegasusToken: "2f2df11d24bba3d071c22ca1c54f42dd64dda64e6bddfe9e6f3cc824",
+    // Pegasus SIM verification tokens for both instances
+    pegasus1Token: "96b479a751b420ee030def5e5db4a82c5851ca0db0f8fdb43b71bdf6",
+    pegasus256Token: "2f2df11d24bba3d071c22ca1c54f42dd64dda64e6bddfe9e6f3cc824"
   },
   qa: {
     zapierHookInstall: "https://hooks.zapier.com/hooks/catch/21949880/u6nixws/",
     zapierHookSecondary: "ZAPIER_HOOK_SECONDARY_QA", // Add your QA secondary hook URL here
     pegasusBaseUrl: "https://qservices.pegasusgateway.com/qa",
-    pegasusToken: "cfe06b66972326270ae9d3420336379b9d5176ab424acd417330cc02"
+    pegasusToken: "cfe06b66972326270ae9d3420336379b9d5176ab424acd417330cc02",
+    // Pegasus SIM verification tokens for both instances (QA)
+    pegasus1Token: "96b479a751b420ee030def5e5db4a82c5851ca0db0f8fdb43b71bdf6",
+    pegasus256Token: "cfe06b66972326270ae9d3420336379b9d5176ab424acd417330cc02"
   }
 };
 
@@ -378,6 +384,118 @@ app.post("/api/verify-imei", async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal server error while verifying IMEI"
+    });
+  }
+});
+
+// New endpoint for SIM verification
+app.post("/api/verify-sim", async (req, res) => {
+  try {
+    const { iccid } = req.body;
+    
+    if (!iccid) {
+      return res.status(400).json({
+        success: false,
+        message: "ICCID is required"
+      });
+    }
+
+    console.log("Verifying SIM ICCID:", iccid);
+    
+    // Check both Pegasus instances sequentially
+    const pegasus1Url = `https://api.pegasusgateway.com/m2m/supersims/v1/Sims?Iccid=${iccid}`;
+    const pegasus256Url = `https://api.pegasusgateway.com/m2m/supersims/v1/Sims?Iccid=${iccid}`;
+    
+    let simFound = false;
+    let simData = null;
+    let foundIn = null;
+    
+    // Try Pegasus1 first
+    try {
+      console.log("Checking Pegasus1 for SIM:", iccid);
+      const pegasus1Resp = await fetch(pegasus1Url, {
+        headers: {
+          "Authenticate": currentConfig.pegasus1Token
+        },
+        signal: AbortSignal.timeout(10000) // 10 second timeout
+      });
+      
+      if (pegasus1Resp.ok) {
+        const pegasus1Data = await pegasus1Resp.json();
+        console.log("Pegasus1 response:", pegasus1Data);
+        
+        if (pegasus1Data.sims && pegasus1Data.sims.length > 0) {
+          simFound = true;
+          simData = pegasus1Data.sims[0];
+          foundIn = "Pegasus1";
+          console.log("SIM found in Pegasus1");
+        }
+      } else {
+        console.log(`Pegasus1 returned status: ${pegasus1Resp.status}`);
+      }
+    } catch (error) {
+      console.log("Pegasus1 check failed:", error.message);
+    }
+    
+    // If not found in Pegasus1, try Pegasus256
+    if (!simFound) {
+      try {
+        console.log("Checking Pegasus256 for SIM:", iccid);
+        const pegasus256Resp = await fetch(pegasus256Url, {
+          headers: {
+            "Authenticate": currentConfig.pegasus256Token
+          },
+          signal: AbortSignal.timeout(10000) // 10 second timeout
+        });
+        
+        if (pegasus256Resp.ok) {
+          const pegasus256Data = await pegasus256Resp.json();
+          console.log("Pegasus256 response:", pegasus256Data);
+          
+          if (pegasus256Data.sims && pegasus256Data.sims.length > 0) {
+            simFound = true;
+            simData = pegasus256Data.sims[0];
+            foundIn = "Pegasus256";
+            console.log("SIM found in Pegasus256");
+          }
+        } else {
+          console.log(`Pegasus256 returned status: ${pegasus256Resp.status}`);
+        }
+      } catch (error) {
+        console.log("Pegasus256 check failed:", error.message);
+      }
+    }
+    
+    if (simFound && simData) {
+      // SIM found, return success with details
+      res.json({
+        success: true,
+        message: `SIM verified successfully in ${foundIn}`,
+        simData: {
+          iccid: simData.iccid,
+          status: simData.status,
+          fleet_sid: simData.fleet_sid,
+          account_sid: simData.account_sid,
+          date_created: simData.date_created,
+          date_updated: simData.date_updated,
+          foundIn: foundIn
+        }
+      });
+    } else {
+      // SIM not found in either instance
+      res.status(404).json({
+        success: false,
+        message: "SIM not found in either Pegasus instance",
+        checkedInstances: ["Pegasus1", "Pegasus256"],
+        iccid: iccid
+      });
+    }
+
+  } catch (err) {
+    console.error("Error in /api/verify-sim:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while verifying SIM"
     });
   }
 });

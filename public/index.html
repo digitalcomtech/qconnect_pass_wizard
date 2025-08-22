@@ -587,11 +587,17 @@
       />
 
       <label for="simInput">SIM Card # (Optional)</label>
-      <input
-        type="text"
-        id="simInput"
-        placeholder="Leave blank if no SIM card"
-      />
+      <div style="display:flex; gap:8px; align-items:flex-end;">
+        <input
+          type="text"
+          id="simInput"
+          placeholder="Leave blank if no SIM card"
+          style="flex:1;"
+        />
+        <button id="verifySimBtn" type="button" style="white-space:nowrap;">Verify SIM</button>
+      </div>
+      <div id="simVerificationStatus" style="margin-bottom:14px;"></div>
+      
       <label for="simConfirmInput">Retype SIM Card # (Optional)</label>
       <input
         type="text"
@@ -746,6 +752,7 @@
     let selectedVIN           = "";
     let selectedInstallationId = "";
     let imeiVerified          = false;
+    let simVerified           = false;
     let appConfig             = null;
     let formAlreadyOpened     = false; // Prevent form from opening multiple times
 
@@ -770,6 +777,7 @@
       nextVinBtn.addEventListener("click", onNextVin);
       startInstallBtn.addEventListener("click", onStartInstallation);
       verifyImeiBtn.addEventListener("click", onVerifyImei);
+      verifySimBtn.addEventListener("click", onVerifySim);
       
       // Reset verification when IMEI changes
       imeiInput.addEventListener("input", () => {
@@ -777,6 +785,14 @@
           imeiVerified = false;
           startInstallBtn.disabled = true;
           imeiVerificationStatus.innerHTML = '<span style="color:#f39c12;">⚠️ IMEI changed - please verify again</span>';
+        }
+      });
+      
+      // Reset verification when SIM changes
+      simInput.addEventListener("input", () => {
+        if (simVerified) {
+          simVerified = false;
+          simVerificationStatus.innerHTML = '<span style="color:#f39c12;">⚠️ SIM changed - please verify again</span>';
         }
       });
       
@@ -1096,6 +1112,42 @@
         verifyImeiBtn.disabled = false;
       }
     }
+    
+    // SIM Verification
+    async function onVerifySim() {
+      const iccid = simInput.value.trim();
+      if (!iccid) {
+        simVerificationStatus.innerHTML = '<span style="color:#e74c3c;">🚨 Please enter an ICCID to verify.</span>';
+        return;
+      }
+
+      simVerificationStatus.innerHTML = '<span style="color:#f39c12;">⏳ Verifying SIM...</span>';
+      verifySimBtn.disabled = true;
+
+      try {
+        const resp = await fetch("/api/verify-sim", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ iccid })
+        });
+
+        const data = await resp.json();
+
+        if (resp.ok && data.success) {
+          simVerified = true;
+          simVerificationStatus.innerHTML = `<span style="color:#27ae60;">✅ SIM verified successfully! Found in ${data.simData.foundIn} | Status: ${data.simData.status}</span>`;
+        } else {
+          simVerified = false;
+          simVerificationStatus.innerHTML = `<span style="color:#e74c3c;">❌ ${data.message}</span>`;
+        }
+      } catch (err) {
+        console.error("Error verifying SIM:", err);
+        simVerified = false;
+        simVerificationStatus.innerHTML = '<span style="color:#e74c3c;">❌ Error connecting to verification service</span>';
+      } finally {
+        verifySimBtn.disabled = false;
+      }
+    }
 
     // STEP 3 → STEP 4
     async function onStartInstallation() {
@@ -1116,6 +1168,7 @@
       const simConfirm = document.getElementById("simConfirmInput").value.trim();
       const secondaryImei = document.getElementById("secondaryImeiInput").value.trim();
       const addSecondary = document.getElementById("addSecondaryUnit").checked;
+      
       if (!imei) {
         installStatus.innerText = "🚨 Please enter IMEI.";
         return;
@@ -1124,11 +1177,19 @@
         installStatus.innerText = "🚨 IMEI values do not match.";
         return;
       }
-      // Only validate SIM if provided
-      if (sim && sim !== simConfirm) {
-        installStatus.innerText = "🚨 SIM values do not match.";
-        return;
+      
+      // Validate SIM if provided
+      if (sim) {
+        if (sim !== simConfirm) {
+          installStatus.innerText = "🚨 SIM values do not match.";
+          return;
+        }
+        if (!simVerified) {
+          installStatus.innerText = "🚨 Please verify the SIM card before proceeding with installation.";
+          return;
+        }
       }
+      
       if (addSecondary && !secondaryImei) {
         installStatus.innerText = "🚨 Please enter the secondary IMEI.";
         return;
@@ -1705,10 +1766,12 @@
       const step = sessionStorage.getItem("step") || "1";
       const currentStep = parseInt(step);
       
-      // Reset IMEI verification state
+      // Reset verification states
       imeiVerified = false;
+      simVerified = false;
       startInstallBtn.disabled = true;
       imeiVerificationStatus.innerHTML = "";
+      simVerificationStatus.innerHTML = "";
       
       // Add location permission request button if geolocation is supported
       if (navigator.geolocation) {
