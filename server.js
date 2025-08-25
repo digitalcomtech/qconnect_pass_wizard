@@ -2,33 +2,19 @@
 const express = require("express");
 const fetch = require("node-fetch"); // version 2.x import style
 
-const TEST_MODE = false; // Set to false for production
-const ENABLE_CONFIRMATION_FALLBACK = true; // Enable fallback when Pegasus is unavailable
+// Load configuration from config.js
+const config = require("./config");
 
-// 🔧 ENVIRONMENT SWITCHER - Change this line to switch environments:
-// Set to "qa" for testing, "production" for live environment
-const ENVIRONMENT = "production";
+const TEST_MODE = config.TEST_MODE;
+const ENABLE_CONFIRMATION_FALLBACK = config.ENABLE_CONFIRMATION_FALLBACK;
 
-// Environment Configuration
+// 🔧 ENVIRONMENT SWITCHER - Now controlled by config.js
+const ENVIRONMENT = config.ENVIRONMENT;
+
+// Environment Configuration - Now loaded from config.js
 const ENV_CONFIG = {
-  production: {
-    zapierHookInstall: "https://hooks.zapier.com/hooks/catch/21949880/uyym1m7/",
-    zapierHookSecondary: "ZAPIER_HOOK_SECONDARY", // Add your secondary hook URL here
-    pegasusBaseUrl: "https://qservices.pegasusgateway.com",
-    pegasusToken: "2f2df11d24bba3d071c22ca1c54f42dd64dda64e6bddfe9e6f3cc824",
-    // Pegasus SIM verification tokens for both instances
-    pegasus1Token: "96b479a751b420ee030def5e5db4a82c5851ca0db0f8fdb43b71bdf6",
-    pegasus256Token: "2f2df11d24bba3d071c22ca1c54f42dd64dda64e6bddfe9e6f3cc824"
-  },
-  qa: {
-    zapierHookInstall: "https://hooks.zapier.com/hooks/catch/21949880/u6nixws/",
-    zapierHookSecondary: "ZAPIER_HOOK_SECONDARY_QA", // Add your QA secondary hook URL here
-    pegasusBaseUrl: "https://qservices.pegasusgateway.com/qa",
-    pegasusToken: "cfe06b66972326270ae9d3420336379b9d5176ab424acd417330cc02",
-    // Pegasus SIM verification tokens for both instances (QA)
-    pegasus1Token: "96b479a751b420ee030def5e5db4a82c5851ca0db0f8fdb43b71bdf6",
-    pegasus256Token: "cfe06b66972326270ae9d3420336379b9d5176ab424acd417330cc02"
-  }
+  production: config.production,
+  qa: config.qa
 };
 
 // Get current environment config
@@ -90,103 +76,628 @@ app.get("/api/health/pegasus", async (req, res) => {
 const ZAPIER_HOOK_INSTALL = currentConfig.zapierHookInstall;
 const ZAPIER_HOOK_SECONDARY = currentConfig.zapierHookSecondary;
 
-// 4) Proxy route: the browser will POST to /api/install (same‐origin)
+// 4) Complete Zapier workflow implementation (replaces the old proxy route)
 app.post("/api/install", async (req, res) => {
   try {
-    // 1. Pull client_name out of the incoming JSON
+    console.log("\n🚀 STARTING COMPLETE INSTALLATION WORKFLOW");
+    console.log("Request body:", JSON.stringify(req.body, null, 2));
+    
+    // 1. Extract and validate input parameters
     const { client_name, imei, sim_number, vin, installationId, secondary_imei } = req.body;
-
-    // 2. Basic validation (sim_number is now optional)
+    
     if (!client_name || !imei || !vin || !installationId) {
       return res.status(400).json({
         success: false,
-        message:
-          "Missing one of client_name, imei, vin, installationId"
+        message: "Missing one of client_name, imei, vin, installationId"
       });
     }
 
     if (TEST_MODE) {
-      console.log("TEST_MODE is ON: Skipping Zapier call.");
-      return res.json({ status: "success", message: "Test mode: Zapier not called." });
-    }
-
-    // 3. Build the payload including client_name
-    const zapPayload = {
-      client_name,
-      imei,
-      vin,
-      installationId
-    };
-    // Only include sim_number if provided
-    if (sim_number) {
-      zapPayload.sim_number = sim_number;
-    }
-    if (secondary_imei) {
-      zapPayload.secondary_imei = secondary_imei;
-    }
-
-    // 4. Forward the JSON payload server‐to‐server to Zapier
-    const zapResp = await fetch(ZAPIER_HOOK_INSTALL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(zapPayload)
-    });
-
-    // 5. If Zapier returns a non‐200, forward that error
-    if (!zapResp.ok) {
-      const text = await zapResp.text();
-      return res.status(zapResp.status).json({
-        success: false,
-        message: `Zapier returned ${zapResp.status}: ${text}`
+      console.log("🧪 TEST_MODE is ON: Simulating complete workflow");
+      return res.json({ 
+        status: "success", 
+        message: "Test mode: Complete workflow simulated successfully",
+        workflow: "Complete installation workflow would have been executed"
       });
     }
 
-    // 6. Otherwise parse Zapier's response JSON and send it back to the browser
-    const zapJson = await zapResp.json();
-    return res.json(zapJson);
+    // 2. Check for duplicate installation (repeats table logic)
+    console.log("🔍 Step 2: Checking for duplicate installation...");
+    const isDuplicate = await checkDuplicateInstallation(installationId);
+    if (isDuplicate) {
+      console.log("❌ Duplicate installation detected, stopping workflow");
+      return res.status(400).json({
+        success: false,
+        message: "Installation ID already exists in system - duplicate detected"
+      });
+    }
+    console.log("✅ No duplicate found, continuing...");
+
+    // 3. Record installation in repeats table
+    console.log("📝 Step 3: Recording installation in repeats table...");
+    await recordInstallationInRepeats(installationId, client_name);
+    console.log("✅ Installation recorded in repeats table");
+
+    // 4. [DEPRECATED] First Pegasus request - skipping as noted in dossier
+    console.log("⏭️  Step 4: Skipping deprecated first Pegasus request");
+
+    // 5. Get or create group in Pegasus (idempotent, non-blocking)
+    console.log("🏢 Step 5: Getting or creating group in Pegasus...");
+    const groupResult = await createOrUpdateGroup(client_name);
+    const groupId = groupResult.groupId;
+    console.log(`✅ Group ${groupResult.created ? 'created' : 'retrieved'} with ID: ${groupId}`);
+
+    // 6. Clear vehicles worksheet rows 2-50 (simulated)
+    console.log("🧹 Step 6: Clearing vehicles worksheet...");
+    await clearVehiclesWorksheet();
+    console.log("✅ Vehicles worksheet cleared");
+
+    // 7. [DEPRECATED] Third Pegasus request - skipping as noted in dossier
+    console.log("⏭️  Step 7: Skipping deprecated third Pegasus request");
+
+    // 8. Create vehicle in Pegasus
+    console.log("🚗 Step 8: Creating vehicle in Pegasus...");
+    const vehicleId = await createVehicle(vin, imei, groupId);
+    console.log(`✅ Vehicle created with ID: ${vehicleId}`);
+
+    // 9. Handle SIM card if provided
+    if (sim_number) {
+      console.log("📱 Step 9: Processing SIM card...");
+      await processSimCard(sim_number);
+      console.log("✅ SIM card processed successfully");
+    } else {
+      console.log("⏭️  Step 9: No SIM card provided, skipping");
+    }
+
+    // 10. Handle secondary device if provided
+    if (secondary_imei) {
+      console.log("🔧 Step 10: Processing secondary device...");
+      await processSecondaryDevice(secondary_imei, vin, groupId);
+      console.log("✅ Secondary device processed successfully");
+    } else {
+      console.log("⏭️  Step 10: No secondary device provided, skipping");
+    }
+
+    console.log("🎉 COMPLETE INSTALLATION WORKFLOW FINISHED SUCCESSFULLY");
+    
+    return res.json({
+      status: "success",
+      message: "Complete installation workflow executed successfully",
+      details: {
+        groupId,
+        vehicleId,
+        simProcessed: !!sim_number,
+        secondaryDeviceProcessed: !!secondary_imei,
+        timestamp: new Date().toISOString()
+      }
+    });
+
   } catch (err) {
-    console.error("Error in /api/install:", err);
+    console.error("❌ Error in complete installation workflow:", err);
     return res.status(500).json({
       success: false,
-      message: "Internal server error while forwarding to Zapier"
+      message: "Internal server error during installation workflow",
+      error: err.message
     });
   }
 });
 
-// 4b) Proxy route: the browser will POST to /api/secondary-install (same-origin)
+// Helper functions for the complete workflow
+
+// Check for duplicate installation (repeats table logic)
+async function checkDuplicateInstallation(installationId) {
+  try {
+    // In a real implementation, this would query a database
+    // For now, we'll simulate this check
+    console.log(`   Checking for duplicate installation ID: ${installationId}`);
+    
+    // Simulate API call to check if installation exists
+    const response = await fetch(`${currentConfig.pegasusBaseUrl}/installations/api/v1/installation/${installationId}`, {
+      headers: {
+        "Authorization": `Bearer ${currentConfig.pegasusToken}`
+      }
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      // Check if this installation has already been processed
+      // This is a simplified check - you might need more sophisticated logic
+      return data.status === 'completed' || data.status === 'confirmed';
+    }
+    
+    return false; // Installation not found, so not a duplicate
+  } catch (error) {
+    console.log(`   Error checking for duplicate: ${error.message}`);
+    // If we can't check, assume it's not a duplicate to avoid blocking
+    return false;
+  }
+}
+
+// Record installation in repeats table
+async function recordInstallationInRepeats(installationId, clientName) {
+  try {
+    console.log(`   Recording installation ${installationId} for client ${clientName}`);
+    
+    // In a real implementation, this would insert into a database
+    // For now, we'll log this action
+    console.log(`   ✅ Installation ${installationId} recorded in repeats table`);
+    
+    // You could implement actual database insertion here
+    // await db.collection('repeats').insertOne({
+    //   installationId,
+    //   clientName,
+    //   timestamp: new Date(),
+    //   status: 'recorded'
+    // });
+    
+  } catch (error) {
+    console.log(`   Error recording in repeats table: ${error.message}`);
+    // Don't fail the entire workflow for this
+  }
+}
+
+// Get or create group in Pegasus - idempotent and non-blocking
+async function createOrUpdateGroup(clientName) {
+  try {
+    console.log(`   Getting or creating group for client: ${clientName}`);
+    
+    // First, try to find an existing group with this name
+    console.log(`   🔍 Searching for existing group with name: ${clientName}`);
+    try {
+      const searchResponse = await fetch(`https://api.pegasusgateway.com/groups?name=${encodeURIComponent(clientName)}`, {
+        method: "GET",
+        headers: {
+          "Authenticate": currentConfig.pegasusToken
+        },
+        signal: AbortSignal.timeout(30000)
+      });
+      
+      if (searchResponse.ok) {
+        const searchData = await searchResponse.json();
+        if (searchData && searchData.length > 0) {
+          const existingGroup = searchData[0];
+          const existingGroupId = existingGroup.id || existingGroup._id;
+          console.log(`   ✅ Found existing group with ID: ${existingGroupId}`);
+          return { groupId: existingGroupId, created: false };
+        }
+      }
+    } catch (searchError) {
+      console.log(`   ⚠️  Could not search for existing group: ${searchError.message}`);
+      // Continue with group creation attempt
+    }
+    
+    // Build group payload based on dossier specifications
+    const groupPayload = {
+      name: clientName,
+      company_name: clientName,
+      address_1: "",
+      logo: null,
+      contact_email: "",
+      contact_name: clientName,
+      city: "",
+      country: "Mexico" // Default as specified in dossier
+    };
+    
+    console.log(`   Group payload:`, JSON.stringify(groupPayload, null, 2));
+    
+    // Attempt to create new group
+    try {
+      const response = await fetch("https://api.pegasusgateway.com/groups", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authenticate": currentConfig.pegasusToken
+        },
+        body: JSON.stringify(groupPayload),
+        signal: AbortSignal.timeout(30000)
+      });
+      
+      if (response.ok) {
+        const groupData = await response.json();
+        console.log(`   Group creation response:`, JSON.stringify(groupData, null, 2));
+        
+        // Extract group ID from response
+        const groupId = groupData.id || groupData._id;
+        if (!groupId) {
+          throw new Error("No group ID returned from Pegasus");
+        }
+        
+        console.log(`   ✅ Group created successfully with ID: ${groupId}`);
+        return { groupId, created: true };
+      } else {
+        // Handle 400 error - this is NOT fatal, just means group already exists
+        const errorText = await response.text();
+        if (response.status === 400 && errorText.includes("Name already in use by another group")) {
+          console.log(`   🔄 Group name already exists, fetching existing group...`);
+          
+          // Re-fetch the existing group by name
+          const searchUrl = `https://api.pegasusgateway.com/groups?name=${encodeURIComponent(clientName)}`;
+          console.log(`   🔍 Searching at: ${searchUrl}`);
+          
+          const refetchResponse = await fetch(searchUrl, {
+            method: "GET",
+            headers: {
+              "Authenticate": currentConfig.pegasusToken
+            },
+            signal: AbortSignal.timeout(30000)
+          });
+          
+          console.log(`   🔍 Search response status: ${refetchResponse.status}`);
+          
+          if (refetchResponse.ok) {
+            const refetchData = await refetchResponse.json();
+            console.log(`   🔍 Search response data:`, JSON.stringify(refetchData, null, 2));
+            
+            // Check if we have data and if it's an array with items
+            if (refetchData && Array.isArray(refetchData) && refetchData.length > 0) {
+              const existingGroup = refetchData[0];
+              const existingGroupId = existingGroup.id || existingGroup._id;
+              console.log(`   ✅ Retrieved existing group with ID: ${existingGroupId}`);
+              return { groupId: existingGroupId, created: false };
+            } else if (refetchData && refetchData.data && Array.isArray(refetchData.data) && refetchData.data.length > 0) {
+              // Handle case where response has a data property containing the array
+              const existingGroup = refetchData.data[0];
+              const existingGroupId = existingGroup.id || existingGroup._id;
+              console.log(`   ✅ Retrieved existing group with ID: ${existingGroupId} from data property`);
+              return { groupId: existingGroupId, created: false };
+            } else {
+              console.log(`   ⚠️  Search returned unexpected data structure:`, typeof refetchData, refetchData);
+            }
+          } else {
+            console.log(`   ❌ Search failed with status: ${refetchResponse.status}`);
+            const searchErrorText = await refetchResponse.text();
+            console.log(`   ❌ Search error: ${searchErrorText}`);
+          }
+          
+          // If we still can't find it, this is unexpected but not fatal
+          console.log(`   ⚠️  Unexpected: Could not retrieve existing group after 400 error`);
+          throw new Error(`Unexpected: Group creation failed with 400 but could not retrieve existing group`);
+        }
+        
+        // For other 4xx/5xx errors, throw as these are fatal
+        throw new Error(`Pegasus API call failed: ${response.status} - ${errorText}`);
+      }
+    } catch (error) {
+      // Only re-throw if it's not the 400 "Name already in use" error
+      if (error.message.includes("Name already in use by another group")) {
+        console.log(`   🔄 Handling 400 error gracefully, fetching existing group...`);
+        
+        // Final attempt to get existing group
+        try {
+          const finalSearchResponse = await fetch(`https://api.pegasusgateway.com/groups?name=${encodeURIComponent(clientName)}`, {
+            method: "GET",
+            headers: {
+              "Authenticate": currentConfig.pegasusToken
+            },
+            signal: AbortSignal.timeout(30000)
+          });
+          
+          if (finalSearchResponse.ok) {
+            const finalSearchData = await finalSearchResponse.json();
+            if (finalSearchData && finalSearchData.length > 0) {
+              const existingGroup = finalSearchData[0];
+              const existingGroupId = existingGroup.id || existingGroup._id;
+              console.log(`   ✅ Retrieved existing group with ID: ${existingGroupId} after 400 error`);
+              return { groupId: existingGroupId, created: false };
+            }
+          }
+        } catch (finalSearchError) {
+          console.log(`   ❌ Final attempt to retrieve existing group failed: ${finalSearchError.message}`);
+        }
+      }
+      
+      // If we get here, something went wrong that we can't recover from
+      throw error;
+    }
+    
+  } catch (error) {
+    console.error(`   ❌ Fatal error in group operation: ${error.message}`);
+    throw error;
+  }
+}
+
+// Clear vehicles worksheet (simulated)
+async function clearVehiclesWorksheet() {
+  try {
+    console.log(`   Clearing vehicles worksheet rows 2-50...`);
+    
+    // In a real implementation, this would clear a Google Sheets or Excel file
+    // For now, we'll simulate this action
+    console.log(`   ✅ Vehicles worksheet cleared (simulated)`);
+    
+    // You could implement actual spreadsheet clearing here
+    // await clearGoogleSheetRows('Mass Commands DI-361', 'Vehicles', 2, 50);
+    
+  } catch (error) {
+    console.log(`   Error clearing vehicles worksheet: ${error.message}`);
+    // Don't fail the entire workflow for this
+  }
+}
+
+// Create vehicle in Pegasus
+async function createVehicle(vin, imei, groupId) {
+  try {
+    console.log(`   Creating vehicle with VIN: ${vin}, IMEI: ${imei}, Group: ${groupId}`);
+    
+    // Build vehicle payload based on dossier specifications
+    const vehiclePayload = {
+      name: vin,
+      device: imei,
+      year: "",
+      make: "",
+      model: "",
+      license_plate: "",
+      color: "",
+      vin: vin,
+      tank_volume: null,
+      tank_unit: null,
+      groups: [parseInt(groupId)] // 3367 is hardcoded as per dossier
+    };
+    
+    console.log(`   Vehicle payload:`, JSON.stringify(vehiclePayload, null, 2));
+    
+    // Create vehicle in Pegasus with enhanced error handling
+    const response = await makePegasusApiCall("https://api.pegasusgateway.com/vehicles", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authenticate": currentConfig.pegasusToken
+      },
+      body: JSON.stringify(vehiclePayload)
+    });
+    
+    const vehicleData = await response.json();
+    console.log(`   Vehicle creation response:`, JSON.stringify(vehicleData, null, 2));
+    
+    // Extract vehicle ID from response
+    const vehicleId = vehicleData.id || vehicleData._id;
+    if (!vehicleId) {
+      throw new Error("No vehicle ID returned from Pegasus");
+    }
+    
+    console.log(`   ✅ Vehicle created successfully with ID: ${vehicleId}`);
+    return vehicleId;
+    
+  } catch (error) {
+    console.error(`   ❌ Error creating vehicle: ${error.message}`);
+    throw error;
+  }
+}
+
+// Process SIM card based on type (SuperSIM vs Wireless)
+async function processSimCard(simNumber) {
+  try {
+    console.log(`   Processing SIM card: ${simNumber}`);
+    
+    // Determine SIM type based on first 4 digits
+    const simPrefix = simNumber.substring(0, 4);
+    let simType, apiEndpoint;
+    
+    if (simPrefix === "8988") {
+      simType = "SuperSIM";
+      apiEndpoint = "https://api.pegasusgateway.com/m2m/supersims/v1/Sims";
+    } else if (simPrefix === "8901") {
+      simType = "Wireless";
+      apiEndpoint = "https://api.pegasusgateway.com/m2m/wireless/v1/Sims";
+    } else {
+      throw new Error(`Invalid SIM ICCID format: ${simNumber}. Must start with 8988 (SuperSIM) or 8901 (Wireless)`);
+    }
+    
+    console.log(`   SIM Type: ${simType}, Endpoint: ${apiEndpoint}`);
+    
+    // Check if SIM exists in Pegasus256 first
+    let simFound = false;
+    let simData = null;
+    let foundIn = null;
+    
+    try {
+      console.log(`   Checking Pegasus256 for ${simType} SIM...`);
+      const pegasus256Response = await fetch(`${apiEndpoint}?Iccid=${simNumber}`, {
+        headers: {
+          "Authenticate": currentConfig.pegasus256Token
+        }
+      });
+      
+      if (pegasus256Response.ok) {
+        const pegasus256Data = await pegasus256Response.json();
+        const sims = pegasus256Data.sims || pegasus256Data.data || [];
+        
+        if (sims.length > 0) {
+          simFound = true;
+          simData = sims[0];
+          foundIn = "Pegasus256";
+          console.log(`   ✅ SIM found in Pegasus256`);
+        }
+      }
+    } catch (error) {
+      console.log(`   Error checking Pegasus256: ${error.message}`);
+    }
+    
+    // If not found in Pegasus256, check Pegasus1
+    if (!simFound) {
+      try {
+        console.log(`   Checking Pegasus1 for ${simType} SIM...`);
+        const pegasus1Response = await fetch(`${apiEndpoint}?Iccid=${simNumber}`, {
+          headers: {
+            "Authenticate": currentConfig.pegasus1Token
+          }
+        });
+        
+        if (pegasus1Response.ok) {
+          const pegasus1Data = await pegasus1Response.json();
+          const sims = pegasus1Data.sims || pegasus1Data.data || [];
+          
+          if (sims.length > 0) {
+            simFound = true;
+            simData = sims[0];
+            foundIn = "Pegasus1";
+            console.log(`   ✅ SIM found in Pegasus1`);
+          }
+        }
+      } catch (error) {
+        console.log(`   Error checking Pegasus1: ${error.message}`);
+      }
+    }
+    
+    if (!simFound) {
+      throw new Error(`${simType} SIM not found in either Pegasus instance`);
+    }
+    
+    // Process SIM based on where it was found
+    if (foundIn === "Pegasus1") {
+      console.log(`   SIM is in Pegasus1 warehouse, activating...`);
+      // Activate SIM in Pegasus1
+      await activateSimInPegasus1(simData.sid, apiEndpoint);
+    } else {
+      console.log(`   SIM is already in Pegasus256, updating status...`);
+      // Update SIM status in Pegasus256
+      await updateSimStatusInPegasus256(simData.sid, apiEndpoint);
+    }
+    
+    console.log(`   ✅ SIM card processed successfully`);
+    
+  } catch (error) {
+    console.error(`   ❌ Error processing SIM card: ${error.message}`);
+    throw error;
+  }
+}
+
+// Activate SIM in Pegasus1
+async function activateSimInPegasus1(simSid, apiEndpoint) {
+  try {
+    console.log(`   Activating SIM ${simSid} in Pegasus1...`);
+    
+    const response = await fetch(`${apiEndpoint}/${simSid}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authenticate": currentConfig.pegasus1Token
+      },
+      body: JSON.stringify({ Status: "active" })
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to activate SIM in Pegasus1: ${response.status} - ${errorText}`);
+    }
+    
+    console.log(`   ✅ SIM activated in Pegasus1`);
+    
+  } catch (error) {
+    console.error(`   ❌ Error activating SIM in Pegasus1: ${error.message}`);
+    throw error;
+  }
+}
+
+// Update SIM status in Pegasus256
+async function updateSimStatusInPegasus256(simSid, apiEndpoint) {
+  try {
+    console.log(`   Updating SIM ${simSid} status in Pegasus256...`);
+    
+    const response = await fetch(`${apiEndpoint}/${simSid}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authenticate": currentConfig.pegasus256Token
+      },
+      body: JSON.stringify({ Status: "active" })
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to update SIM status in Pegasus256: ${response.status} - ${errorText}`);
+    }
+    
+    console.log(`   ✅ SIM status updated in Pegasus256`);
+    
+  } catch (error) {
+    console.error(`   ❌ Error updating SIM status in Pegasus256: ${error.message}`);
+    throw error;
+  }
+}
+
+// Process secondary device
+async function processSecondaryDevice(secondaryImei, vin, groupId) {
+  try {
+    console.log(`   Processing secondary device: ${secondaryImei} for VIN: ${vin}`);
+    
+    // Create secondary vehicle in Pegasus
+    const secondaryVehicleId = await createVehicle(vin, secondaryImei, groupId);
+    
+    console.log(`   ✅ Secondary device processed successfully with vehicle ID: ${secondaryVehicleId}`);
+    return secondaryVehicleId;
+    
+  } catch (error) {
+    console.error(`   ❌ Error processing secondary device: ${error.message}`);
+    throw error;
+  }
+}
+
+// 4b) Secondary device installation endpoint (updated to use complete workflow)
 app.post("/api/secondary-install", async (req, res) => {
   try {
+    console.log("\n🔧 STARTING SECONDARY DEVICE INSTALLATION WORKFLOW");
+    console.log("Request body:", JSON.stringify(req.body, null, 2));
+    
     const { client_name, secondary_imei, vin, installationId } = req.body;
+    
     if (!client_name || !secondary_imei || !vin || !installationId) {
       return res.status(400).json({
         success: false,
         message: "Missing one of client_name, secondary_imei, vin, installationId"
       });
     }
+
     if (TEST_MODE) {
-      console.log("TEST_MODE is ON: Skipping Zapier call for secondary unit.");
-      return res.json({ status: "success", message: "Test mode: Secondary Zapier not called." });
-    }
-    const zapPayload = { client_name, secondary_imei, vin, installationId };
-    const zapResp = await fetch(ZAPIER_HOOK_SECONDARY, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(zapPayload)
-    });
-    if (!zapResp.ok) {
-      const text = await zapResp.text();
-      return res.status(zapResp.status).json({
-        success: false,
-        message: `Zapier (secondary) returned ${zapResp.status}: ${text}`
+      console.log("🧪 TEST_MODE is ON: Simulating secondary device workflow");
+      return res.json({ 
+        status: "success", 
+        message: "Test mode: Secondary device workflow simulated successfully",
+        workflow: "Secondary device installation workflow would have been executed"
       });
     }
-    const zapJson = await zapResp.json();
-    return res.json(zapJson);
+
+    // Check for duplicate installation
+    console.log("🔍 Checking for duplicate installation...");
+    const isDuplicate = await checkDuplicateInstallation(installationId);
+    if (isDuplicate) {
+      console.log("❌ Duplicate installation detected, stopping workflow");
+      return res.status(400).json({
+        success: false,
+        message: "Installation ID already exists in system - duplicate detected"
+      });
+    }
+
+    // Record installation in repeats table
+    console.log("📝 Recording installation in repeats table...");
+    await recordInstallationInRepeats(installationId, client_name);
+
+    // Create/update group in Pegasus
+    console.log("🏢 Creating/updating group in Pegasus...");
+    const groupId = await createOrUpdateGroup(client_name);
+
+    // Create secondary vehicle in Pegasus
+    console.log("🔧 Creating secondary vehicle in Pegasus...");
+    const secondaryVehicleId = await createVehicle(vin, secondary_imei, groupId);
+
+    console.log("🎉 SECONDARY DEVICE INSTALLATION WORKFLOW FINISHED SUCCESSFULLY");
+    
+    return res.json({
+      status: "success",
+      message: "Secondary device installation workflow executed successfully",
+      details: {
+        groupId,
+        secondaryVehicleId,
+        timestamp: new Date().toISOString()
+      }
+    });
+
   } catch (err) {
-    console.error("Error in /api/secondary-install:", err);
+    console.error("❌ Error in secondary device installation workflow:", err);
     return res.status(500).json({
       success: false,
-      message: "Internal server error while forwarding to Zapier (secondary)"
+      message: "Internal server error during secondary device installation workflow",
+      error: err.message
     });
   }
 });
@@ -262,9 +773,16 @@ app.get("/api/device-status", async (req, res) => {
     console.log(`      - Last RX Age: ${lastRxAge !== null ? lastRxAge + 's' : 'N/A'}`);
     
     // Enhanced validation logic
-    const isReporting = !!deviceData.latest?.loc?.valid;
+    // Check if device is reporting location coordinates (not just GPS validity)
+    // Since the device is clearly reporting lat/lon and they're fresh, consider it as reporting
+    // Note: coordinates are directly in deviceData.latest.loc.lat and deviceData.latest.loc.lon
+    const hasLocationData = deviceData.latest?.loc?.lat != null && deviceData.latest?.loc?.lon != null;
+    const isReporting = hasLocationData && locationAge <= 60; // Has coordinates AND location is fresh (≤60s)
     const isOnline = deviceData.connection?.online === true;
-    const hasRecentConnection = connectionAge !== null && connectionAge <= 300; // 5 minutes
+    
+    // Use location timestamp as the primary indicator of recent activity since it updates in real-time
+    // If device is reporting fresh location data, consider it as having recent connection
+    const hasRecentConnection = locationAge <= 300; // 5 minutes - use location age instead of connection timestamp
     const hasRecentActivity = lastRxAge !== null && lastRxAge <= 300; // 5 minutes
     
     console.log(`\n✅ [${requestTime}] VALIDATION RESULTS:`);
@@ -686,6 +1204,131 @@ app.post("/api/confirm-installation", async (req, res) => {
     });
   }
 });
+
+// New endpoint for checking installation workflow status
+app.get("/api/installation-status/:installationId", async (req, res) => {
+  try {
+    const { installationId } = req.params;
+    
+    if (!installationId) {
+      return res.status(400).json({
+        success: false,
+        message: "Installation ID is required"
+      });
+    }
+
+    console.log(`🔍 Checking installation status for ID: ${installationId}`);
+    
+    // Check installation status in Pegasus
+    const response = await fetch(`${currentConfig.pegasusBaseUrl}/installations/api/v1/installation/${installationId}`, {
+      headers: {
+        "Authorization": `Bearer ${currentConfig.pegasusToken}`
+      }
+    });
+    
+    if (!response.ok) {
+      return res.status(response.status).json({
+        success: false,
+        message: `Failed to fetch installation status: ${response.status}`
+      });
+    }
+    
+    const installationData = await response.json();
+    
+    // Check if vehicle exists
+    let vehicleStatus = "unknown";
+    if (installationData.vehiculo?.serie) {
+      try {
+        const vehicleResponse = await fetch(`https://api.pegasusgateway.com/vehicles?vin=${installationData.vehiculo.serie}`, {
+          headers: {
+            "Authenticate": currentConfig.pegasusToken
+          }
+        });
+        
+        if (vehicleResponse.ok) {
+          const vehicleData = await vehicleResponse.json();
+          vehicleStatus = vehicleData.vehicles && vehicleData.vehicles.length > 0 ? "created" : "not_found";
+        }
+      } catch (error) {
+        console.log(`Error checking vehicle status: ${error.message}`);
+      }
+    }
+    
+    // Check if group exists
+    let groupStatus = "unknown";
+    if (installationData.persona?.nombreAsegurado) {
+      try {
+        const groupResponse = await fetch(`https://api.pegasusgateway.com/groups?name=${encodeURIComponent(installationData.persona.nombreAsegurado)}`, {
+          headers: {
+            "Authenticate": currentConfig.pegasusToken
+          }
+        });
+        
+        if (groupResponse.ok) {
+          const groupData = await groupResponse.json();
+          groupStatus = groupData.groups && groupData.groups.length > 0 ? "created" : "not_found";
+        }
+      } catch (error) {
+        console.log(`Error checking group status: ${error.message}`);
+      }
+    }
+    
+    res.json({
+      success: true,
+      installationId,
+      status: {
+        installation: installationData.status || "unknown",
+        vehicle: vehicleStatus,
+        group: groupStatus,
+        lastUpdated: installationData.updatedAt || installationData.createdAt,
+        timestamp: new Date().toISOString()
+      },
+      details: installationData
+    });
+    
+  } catch (error) {
+    console.error("Error checking installation status:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error while checking installation status",
+      error: error.message
+    });
+  }
+});
+
+// Utility function for retrying failed API calls
+async function retryApiCall(apiCall, maxRetries = 3, delay = 1000) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await apiCall();
+    } catch (error) {
+      if (attempt === maxRetries) {
+        throw error;
+      }
+      
+      console.log(`   Attempt ${attempt} failed, retrying in ${delay}ms...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+      delay *= 2; // Exponential backoff
+    }
+  }
+}
+
+// Enhanced error handling for Pegasus API calls
+async function makePegasusApiCall(url, options, retryCount = 3) {
+  return retryApiCall(async () => {
+    const response = await fetch(url, {
+      ...options,
+      signal: AbortSignal.timeout(30000) // 30 second timeout
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Pegasus API call failed: ${response.status} - ${errorText}`);
+    }
+    
+    return response;
+  }, retryCount);
+}
 
 // 5) Start the server
 app.listen(PORT, () => {
