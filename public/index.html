@@ -1061,30 +1061,20 @@
 
       try {
         const resp = await fetch(
-          `${appConfig.pegasusBaseUrl}/installations/api/v1/installation`,
+          `/api/search-installations?query=${encodeURIComponent(selectedClientName)}`,
           {
-            headers: {
-             "Authorization": `Bearer ${appConfig.pegasusToken}`,
-              "Content-Type": "application/json"
-            }
+            headers: getAuthHeaders()
           }
         );
-        if (!resp.ok) throw new Error(`Pegasus returned HTTP ${resp.status}`);
-        const installationsArray = await resp.json();
-
-        // Forgiving, dynamic search: match by name or VIN start
-        const normalize = str => str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() : "";
-        const inputNorm = normalize(selectedClientName);
-        const filtered = installationsArray.filter(inst => {
-          const nombre = inst.persona?.nombreAsegurado || "";
-          const apellido = inst.persona?.apellidoPaterno || "";
-          const fullName = [nombre, apellido].filter(Boolean).join(" ");
-          const vin = inst.vehiculo?.serie || "";
-          return (
-            normalize(fullName).includes(inputNorm) ||
-            vin.toUpperCase().startsWith(inputNorm)
-          );
-        });
+        if (!resp.ok) throw new Error(`Search failed: ${resp.status}`);
+        const data = await resp.json();
+        
+        if (!data.success) {
+          throw new Error(data.message || 'Search failed');
+        }
+        
+        const installationsArray = data.installations;
+        const filtered = installationsArray; // Already filtered by backend
 
         if (filtered.length === 0) {
           clientStatus.innerText = `❌ No installations found for "${selectedClientName}".`;

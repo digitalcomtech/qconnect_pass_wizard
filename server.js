@@ -154,6 +154,78 @@ app.get("/api/health/pegasus", authenticateToken, async (req, res) => {
   }
 });
 
+// Search installations endpoint (protected)
+app.get("/api/search-installations", authenticateToken, async (req, res) => {
+  try {
+    const { query } = req.query;
+    
+    if (!query) {
+      return res.status(400).json({
+        success: false,
+        message: "Query parameter is required"
+      });
+    }
+    
+    console.log(`🔍 Searching for installations with query: ${query}`);
+    
+    // Call Pegasus API with proper authentication
+    const response = await fetch(
+      `${currentConfig.pegasusBaseUrl}/installations/api/v1/installation`,
+      {
+        headers: {
+          "Authorization": `Bearer ${currentConfig.pegasusToken}`,
+          "Content-Type": "application/json"
+        },
+        signal: AbortSignal.timeout(30000) // 30 second timeout
+      }
+    );
+    
+    if (!response.ok) {
+      console.error(`❌ Pegasus API returned HTTP ${response.status}`);
+      return res.status(response.status).json({
+        success: false,
+        message: `Pegasus API error: HTTP ${response.status}`,
+        details: await response.text()
+      });
+    }
+    
+    const installationsArray = await response.json();
+    console.log(`✅ Found ${installationsArray.length} total installations`);
+    
+    // Forgiving, dynamic search: match by name or VIN start
+    const normalize = str => str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() : "";
+    const inputNorm = normalize(query);
+    
+    const filtered = installationsArray.filter(inst => {
+      const nombre = inst.persona?.nombreAsegurado || "";
+      const apellido = inst.persona?.apellidoPaterno || "";
+      const fullName = [nombre, apellido].filter(Boolean).join(" ");
+      const vin = inst.vehiculo?.serie || "";
+      return (
+        normalize(fullName).includes(inputNorm) ||
+        vin.toUpperCase().startsWith(inputNorm)
+      );
+    });
+    
+    console.log(`🔍 Filtered to ${filtered.length} matching installations`);
+    
+    res.json({
+      success: true,
+      installations: filtered,
+      totalFound: filtered.length,
+      query: query
+    });
+    
+  } catch (err) {
+    console.error("❌ Error searching installations:", err);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error while searching installations",
+      error: err.message
+    });
+  }
+});
+
 // 3) Zapier URLs from environment config:
 const ZAPIER_HOOK_INSTALL = currentConfig.zapierHookInstall;
 const ZAPIER_HOOK_SECONDARY = currentConfig.zapierHookSecondary;
