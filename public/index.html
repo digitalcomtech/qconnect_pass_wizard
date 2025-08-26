@@ -57,6 +57,52 @@
       margin: 0;
     }
     
+    /* User Info Styles */
+    .user-info {
+      margin-top: 16px;
+      padding: 16px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    
+    .user-details {
+      margin-bottom: 12px;
+    }
+    
+    .user-name {
+      display: block;
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: white;
+      margin-bottom: 4px;
+    }
+    
+    .user-role {
+      display: block;
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.7);
+      text-transform: capitalize;
+    }
+    
+    .logout-btn {
+      width: 100%;
+      padding: 8px 16px;
+      background: rgba(239, 68, 68, 0.8);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .logout-btn:hover {
+      background: rgba(239, 68, 68, 1);
+      transform: translateY(-1px);
+    }
+    
     /* Step navigation */
     .step-nav {
       flex: 1;
@@ -471,6 +517,15 @@
       <div class="sidebar-header">
         <h1 class="sidebar-title">QConnect PASS</h1>
         <p class="sidebar-subtitle">Installation Wizard</p>
+        
+        <!-- User Info and Logout -->
+        <div class="user-info" id="userInfo" style="display: none;">
+          <div class="user-details">
+            <span class="user-name" id="userName"></span>
+            <span class="user-role" id="userRole"></span>
+          </div>
+          <button class="logout-btn" id="logoutBtn">Logout</button>
+        </div>
       </div>
       
       <div class="step-nav">
@@ -720,6 +775,32 @@
   </div>
 
   <script>
+    // Authentication check - redirect to login if not authenticated
+    (function() {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        window.location.href = '/login.html';
+        return;
+      }
+      
+      // Verify token is valid
+      fetch('/api/auth/me', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      .then(response => {
+        if (!response.ok) {
+          localStorage.removeItem('authToken');
+          window.location.href = '/login.html';
+        }
+      })
+      .catch(() => {
+        localStorage.removeItem('authToken');
+        window.location.href = '/login.html';
+      });
+    })();
+    
     sessionStorage.clear();
     // DOM references
     const clientSection       = document.getElementById("clientSection");
@@ -757,6 +838,9 @@
     let formAlreadyOpened     = false; // Prevent form from opening multiple times
 
     document.addEventListener("DOMContentLoaded", async () => {
+      // Setup user info and logout
+      setupUserInfo();
+      
       // Check geolocation support
       if (!navigator.geolocation) {
         console.warn("Geolocation not supported by this browser");
@@ -837,7 +921,9 @@
     // Load app configuration
     async function loadAppConfig() {
       try {
-        const resp = await fetch("/api/config");
+        const resp = await fetch("/api/config", {
+          headers: getAuthHeaders()
+        });
         appConfig = await resp.json();
         console.log(`🔧 Frontend loaded ${appConfig.environment.toUpperCase()} environment config`);
         
@@ -1088,7 +1174,7 @@
       try {
         const resp = await fetch("/api/verify-imei", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: getAuthHeaders(),
           body: JSON.stringify({ imei })
         });
 
@@ -1127,7 +1213,7 @@
       try {
         const resp = await fetch("/api/verify-sim", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: getAuthHeaders(),
           body: JSON.stringify({ iccid })
         });
 
@@ -1212,7 +1298,7 @@
         }
         const resp = await fetch("/api/install", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: getAuthHeaders(),
           body: JSON.stringify(payload)
         });
         const data = await resp.json();
@@ -1366,7 +1452,9 @@
 
         try {
                   // Call backend endpoint to check device status
-        const resp = await fetch(`/api/device-status?imei=${encodeURIComponent(imeiInput.value.trim())}`);
+        const resp = await fetch(`/api/device-status?imei=${encodeURIComponent(imeiInput.value.trim())}`, {
+          headers: getAuthHeaders()
+        });
         const data = await resp.json();
         
         // Log detailed device status for debugging
@@ -1751,7 +1839,7 @@
       try {
         const resp = await fetch("/api/confirm-installation", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: getAuthHeaders(),
           body: JSON.stringify({ 
             installationId: selectedInstallationId 
           })
@@ -1928,6 +2016,49 @@
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
       const distance = R * c; // Distance in km
       return distance;
+    }
+    
+    // User authentication functions
+    function setupUserInfo() {
+      const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+      const userInfoElement = document.getElementById('userInfo');
+      const userNameElement = document.getElementById('userName');
+      const userRoleElement = document.getElementById('userRole');
+      const logoutBtn = document.getElementById('logoutBtn');
+      
+      if (userInfo.name && userInfo.role) {
+        userNameElement.textContent = userInfo.name;
+        userRoleElement.textContent = userInfo.role;
+        userInfoElement.style.display = 'block';
+      }
+      
+      // Setup logout functionality
+      logoutBtn.addEventListener('click', async () => {
+        try {
+          await fetch('/api/auth/logout', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            }
+          });
+        } catch (error) {
+          console.error('Logout error:', error);
+        } finally {
+          // Clear local storage and redirect to login
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('userInfo');
+          window.location.href = '/login.html';
+        }
+      });
+    }
+    
+    // Add authentication headers to all API calls
+    function getAuthHeaders() {
+      const token = localStorage.getItem('authToken');
+      return {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      };
     }
 
   </script>

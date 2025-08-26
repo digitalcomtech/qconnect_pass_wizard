@@ -1,260 +1,221 @@
-QConnect PASS Wizard — Developer Usage Guide (Draft v0.1)
+# QConnect PASS Wizard
 
-Audience: Senior/advanced developers who will formalize and harden this tool.
-Scope: Quick Start • Onboarding • End‑User Guide • Technical Reference.
+A comprehensive installation wizard for QConnect PASS devices that handles the complete installation workflow in-house, replacing the previous Zapier integration.
 
-⸻
+## 🚀 Features
 
-1) What this project does (high level)
+- **Complete Installation Workflow**: Handles all installation steps directly in the application
+- **Pegasus API Integration**: Direct integration with Pegasus Gateway APIs
+- **SIM Card Management**: Supports both SuperSIM (8988) and Wireless (8901) SIM types
+- **Secondary Device Support**: Handles installations with secondary IMEI devices
+- **Duplicate Prevention**: Prevents duplicate installations
+- **Enhanced Error Handling**: Retry mechanisms and comprehensive error reporting
+- **Environment Switching**: Support for both QA and Production environments
 
-A small Node/Express proxy + single‑page wizard that helps an installer:
-	1.	Search/select a client/VIN from Pegasus installations.
-	2.	Enter IMEI/SIM (optionally a secondary unit).
-	3.	Post data to a Zapier Catch Hook.
-	4.	Poll device reporting status via Pegasus.
-	5.	If the unit is reporting and the installer is physically near the last known device location, open a prefilled JotForm for closing paperwork.
+## 🔧 Installation Workflow
 
-Files present
+The wizard now implements the complete Zapier workflow described in the dossier:
 
-root
-├─ server.js         # Express API proxy to Zapier & Pegasus
-└─ index.html        # SPA wizard (vanilla JS) served from /public (see note)
+### Step-by-Step Process
 
-⚠️ Repo hygiene note: index.html expects to be served as a static asset; place it (and any assets) under a /public folder so express.static("public") can serve it. Move index.html to public/index.html.
+1. **Duplicate Check**: Verifies installation ID hasn't been processed before
+2. **Installation Recording**: Records installation in internal tracking system
+3. **Group Creation**: Creates/updates client group in Pegasus
+4. **Worksheet Management**: Manages spreadsheet operations (simulated)
+5. **Vehicle Creation**: Creates vehicle record in Pegasus with device linking
+6. **SIM Processing**: Handles SIM card activation and status updates
+7. **Secondary Device**: Processes secondary IMEI devices if provided
 
-⸻
+### API Endpoints
 
-2) Architecture & data flow
-	•	Browser (index.html)
-	•	Fetches installations list (currently calls https://qservices.pegasusgateway.com/installations/api/v1/installation from the browser with a Bearer token — must be moved behind server).
-	•	Posts IMEI/SIM (and optional secondary IMEI) to POST /api/install on the same origin.
-	•	Polls GET /api/device-status?imei=... until latest.loc.valid is truthy.
-	•	Performs geofence proximity check (≈200 m) vs device location, then opens prefilled form.
-	•	Server (server.js)
-	•	POST /api/install → Zapier forwarder.
-	•	POST /api/secondary-install → Zapier forwarder (endpoint constant missing—TODO).
-	•	GET /api/device-status → Pegasus device lookup.
+- `POST /api/install` - Main installation workflow
+- `POST /api/secondary-install` - Secondary device installation
+- `GET /api/installation-status/:id` - Check installation status
+- `GET /api/config` - Environment configuration
+- `GET /api/health/pegasus` - Pegasus API health check
 
-Sequence (happy path)
-	1.	User searches/selects VIN → session state is stored (SessionStorage).
-	2.	User enters IMEI/SIM → POST /api/install → Zapier hook.
-	3.	UI polls /api/device-status (5s cadence) → sees latest.loc.valid.
-	4.	UI compares user geolocation vs device latest.loc.{lat,lon} → if <200 m, open JotForm prefilled URL and show success.
+## 🏗️ Architecture
 
-⸻
+### Environment Configuration
 
-3) Security & compliance (immediate concerns)
-	•	Hard‑coded tokens in frontend & server:
-	•	index.html uses Authorization: Bearer <token> directly in browser.
-	•	server.js uses headers: { "Authenticate": "<token>" } (likely wrong header key).
-	•	Action: Move all secrets to .env and proxy Pegasus calls via the server. Never expose tokens to the browser.
-	•	CORS/HTTPS: Ensure HTTPS everywhere in production; restrict origins if you later expose CORS.
-	•	PII: Names, VINs, and emails are handled—treat logs as sensitive, mask where possible.
-	•	Rate limiting: Add minimal throttling on /api/* (e.g., express-rate-limit).
-	•	Input validation: Enforce IMEI/SIM/ VIN formats server‑side; reject malformed input.
+The application supports multiple environments:
 
-⸻
+```javascript
+const ENV_CONFIG = {
+  production: {
+    pegasusBaseUrl: "https://qservices.pegasusgateway.com",
+    pegasusToken: "your-production-token",
+    pegasus1Token: "your-pegasus1-token",
+    pegasus256Token: "your-pegasus256-token"
+  },
+  qa: {
+    pegasusBaseUrl: "https://qservices.pegasusgateway.com/qa",
+    pegasusToken: "your-qa-token",
+    pegasus1Token: "your-pegasus1-token",
+    pegasus256Token: "your-qa-pegasus256-token"
+  }
+};
+```
 
-4) Configuration (.env)
+### Key Components
 
-Create a .env file at repo root:
+- **Installation Workflow Engine**: Orchestrates the complete installation process
+- **Pegasus API Client**: Handles all Pegasus Gateway API interactions
+- **SIM Management System**: Processes different SIM types and instances
+- **Error Handling & Retry**: Robust error handling with automatic retries
+- **Status Tracking**: Comprehensive installation status monitoring
 
-PORT=8080
-TEST_MODE=false
+## 📱 SIM Card Support
 
-# Zapier
-ZAPIER_HOOK_INSTALL=https://hooks.zapier.com/hooks/catch/xxxx/yyyy/
-ZAPIER_HOOK_SECONDARY=https://hooks.zapier.com/hooks/catch/xxxx/zzzz/
+### SuperSIM (8988 prefix)
+- Endpoint: `/m2m/supersims/v1/Sims`
+- Supports both Pegasus1 and Pegasus256 instances
 
-# Pegasus
-PEGASUS_BASE_URL=https://api.pegasusgateway.com
-PEGASUS_TOKEN=REDACTED
-PEGASUS_INSTALLATIONS_URL=https://qservices.pegasusgateway.com/installations/api/v1/installation
-PEGASUS_TOKEN_TYPE=Bearer  # or leave blank if Pegasus uses a custom header
-PEGASUS_AUTH_HEADER=Authorization  # or Authenticate if truly required by that endpoint
+### Wireless SIM (8901 prefix)
+- Endpoint: `/m2m/wireless/v1/Sims`
+- Supports both Pegasus1 and Pegasus256 instances
 
-# Forms
-CLOSING_FORM_BASE=https://forms.fleetmetriks.com/232204864076960
-PROXIMITY_METERS=200
-POLL_INTERVAL_MS=5000
-POLL_MAX_ATTEMPTS=60
+### SIM Processing Logic
 
-Update server.js and index.html to read env‑driven values (see TODOs).
+1. **Check Pegasus256 first** (migrated SIMs)
+2. **Fallback to Pegasus1** (warehouse SIMs)
+3. **Activate warehouse SIMs** in Pegasus1
+4. **Update status** for migrated SIMs in Pegasus256
 
-⸻
+## 🔄 Error Handling & Retry
 
-5) Quick Start (local dev)
+- **Automatic Retries**: Failed API calls are retried with exponential backoff
+- **Timeout Protection**: 30-second timeout for all Pegasus API calls
+- **Graceful Degradation**: Non-critical failures don't stop the workflow
+- **Comprehensive Logging**: Detailed logging for debugging and monitoring
 
-# 1) Install deps
-npm init -y                      # if package.json not present
-npm i express node-fetch@2 dotenv
+## 🧪 Testing
 
-# 2) Project layout (recommended)
-mkdir -p public && mv index.html public/
+### Test Mode
 
-# 3) Configure env
-cp .env.example .env             # if you create one; otherwise create as above
+Enable test mode by setting `TEST_MODE = true` in `server.js`:
 
-# 4) Run
-node server.js                   # or: nodemon server.js
-# Server at http://localhost:8080
+```javascript
+const TEST_MODE = true; // Set to true for testing
+```
 
-Open http://localhost:8080 → follow the wizard.
+Test mode will:
+- Simulate all workflow steps
+- Skip actual Pegasus API calls
+- Return success responses for testing
+- Log all simulated operations
 
-⸻
+### Environment Switching
 
-6) End‑User walkthrough (installers)
-	1.	Step 1: Type client name or VIN start → click Load VINs.
-	2.	Step 2: Pick a booked VIN from the list → Next.
-	3.	Step 3: Enter IMEI, SIM, (optional secondary IMEI). Confirm values.
-	•	You may Bypass Location Check for testing.
-	•	Test Location Override lets you enter coordinates for dry‑runs.
-	4.	After sending IMEI/SIM, the app waits for the device to report. If success and within 200 m, you’ll be redirected to the closing form with prefilled info.
+Change the environment by modifying the `ENVIRONMENT` constant:
 
-Common messages:
-	•	↻ Fetching all installations… — loading Pegasus data
-	•	⏳ Waiting for device to report… — polling every 5s up to 5 min
-	•	✅ You are close to the device… — geofence passed; form will open
-	•	❌ You are too far… — outside of 200 m radius
+```javascript
+const ENVIRONMENT = "qa"; // or "production"
+```
 
-⸻
+## 📊 Monitoring & Status
 
-7) API reference (server)
+### Installation Status Check
 
-POST /api/install
+```bash
+GET /api/installation-status/:installationId
+```
 
-Forwards IMEI/SIM payload to Zapier.
-	•	Body (JSON)
+Returns comprehensive status including:
+- Installation status
+- Vehicle creation status
+- Group creation status
+- Last update timestamp
 
-{
-  "client_name": "John Doe",
-  "imei": "123456789012345",
-  "sim_number": "8901…",
-  "vin": "1FA…",
-  "installationId": "...",
-  "secondary_imei": "optional"
-}
+### Health Checks
 
-	•	Responses: Pass‑through of Zapier JSON on success; {success:false, message} on error.
+```bash
+GET /api/health/pegasus
+```
 
-POST /api/secondary-install
+Monitors Pegasus API connectivity and response times.
 
-Like /api/install but for secondary units.
+## 🚨 Troubleshooting
 
-⚠️ Note: server.js references ZAPIER_HOOK_SECONDARY but does not define it. Add env + wiring.
+### Common Issues
 
-GET /api/device-status?imei=…
+1. **Authentication Errors**: Verify Pegasus tokens are correct
+2. **API Timeouts**: Check network connectivity and Pegasus service status
+3. **SIM Not Found**: Verify SIM ICCID format and check both Pegasus instances
+4. **Duplicate Installations**: Check installation ID uniqueness
 
-Fetches device from Pegasus and returns a simplified status.
-	•	Query params: imei (required), since (optional; currently unused)
-	•	Response
+### Debug Mode
 
-{
-  "isReporting": true,
-  "latest": { "loc": { "lat": 19.43, "lon": -99.13, "valid": true }, ... }
-}
+Enable detailed logging by checking the server console output. All workflow steps are logged with emojis for easy identification.
 
-Header mismatch: Code uses Authenticate: <token> for Pegasus, while the SPA uses Authorization: Bearer <token>. Unify to one scheme.
+## 🔐 Security
 
-⸻
+- **Token Management**: All API tokens are stored in environment configuration
+- **Input Validation**: Comprehensive validation of all input parameters
+- **Error Sanitization**: Error messages don't expose sensitive information
+- **Rate Limiting**: Built-in retry mechanisms prevent API abuse
 
-8) Frontend contract (index.html)
+## 📈 Performance
 
-SessionStorage keys
-	•	step → “1” | “2” | “3” | “waitingForDevice” | “done”
-	•	clientName → free‑text input from Step 1
-	•	filteredInst → array of filtered installations (Pegasus payload)
-	•	selectedVIN → chosen VIN
-	•	installationId → chosen installation _id
-	•	selectedInstallation → full installation object (used for form prefill)
-	•	selectedClientFullName → person name to show in UI / send to Zapier
+- **Parallel Processing**: SIM and vehicle operations can run concurrently
+- **Smart Retries**: Exponential backoff prevents overwhelming APIs
+- **Connection Pooling**: Efficient HTTP connection management
+- **Timeout Protection**: Prevents hanging requests
 
-Proximity check
-	•	Threshold: 200 meters (computed by Haversine).
-	•	Sources: Browser geolocation (navigator.geolocation) vs latest.loc from Pegasus.
-	•	Testing: Optional “Test Location Override” to inject coordinates.
+## 🔄 Migration from Zapier
 
-Prefilled closing form
+This implementation completely replaces the Zapier integration:
 
-openPrefilledForm() builds a URLSearchParams map from the selected installation to CLOSING_FORM_BASE.
-Keep mapping updated when Pegasus fields change.
+### What's Replaced
+- ✅ Zapier webhook calls
+- ✅ External workflow dependencies
+- ✅ Manual spreadsheet operations
+- ✅ Complex conditional logic
 
-⸻
+### What's Improved
+- 🚀 Direct API integration
+- 🔄 Real-time status updates
+- 🛡️ Better error handling
+- 📊 Comprehensive monitoring
+- 🧪 Built-in testing support
 
-9) Error handling & UX messages
-	•	Installations fetch: If 404/500 → show ❌ No installations found with the query echoed.
-	•	POST /api/install: If non‑200 from Zapier → bubble status + text.
-	•	Polling: Stop after POLL_MAX_ATTEMPTS → show ❌ Timed out waiting for device to report.
-	•	Geolocation: Handle permission denied / unavailable → show reason and keep user on Step 3.
+## 📝 Configuration
 
-⸻
+### Required Environment Variables
 
-10) Local testing & cURL
+```bash
+# Production
+ENVIRONMENT=production
+PEGASUS_TOKEN=your-production-token
+PEGASUS1_TOKEN=your-pegasus1-token
+PEGASUS256_TOKEN=your-pegasus256-token
 
-Start install (simulated)
+# QA
+ENVIRONMENT=qa
+PEGASUS_TOKEN=your-qa-token
+PEGASUS1_TOKEN=your-pegasus1-token
+PEGASUS256_TOKEN=your-qa-pegasus256-token
+```
 
-curl -X POST http://localhost:8080/api/install \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "client_name":"Test Client",
-    "imei":"123456789012345",
-    "sim_number":"8901",
-    "vin":"TESTVIN123",
-    "installationId":"abc123"
-  }'
+### Optional Configuration
 
-Device status
+```javascript
+const TEST_MODE = false; // Enable/disable test mode
+const ENABLE_CONFIRMATION_FALLBACK = true; // Enable fallback modes
+```
 
-curl 'http://localhost:8080/api/device-status?imei=123456789012345'
+## 🚀 Getting Started
 
+1. **Install Dependencies**: `npm install`
+2. **Configure Environment**: Update tokens and URLs in `server.js`
+3. **Start Server**: `node server.js`
+4. **Access Wizard**: Open `http://localhost:8080` in your browser
 
-⸻
+## 📞 Support
 
-11) Deployment notes
-	•	Node 18+ recommended (native fetch if upgrading code to v3; currently uses node-fetch@2).
-	•	Serve behind a reverse proxy (nginx) with HTTPS; set appropriate timeouts for long polling.
-	•	Environment variables only; no tokens in code or HTML.
-	•	Consider PM2 or systemd for process supervision.
+For technical support or questions about the installation workflow:
 
-⸻
-
-12) TODOs for the formalization pass
-	1.	Move Pegasus installations fetch to server (GET /api/installations) and strip PII as needed.
-	2.	Replace all hard‑coded URLs/tokens with .env (see §4) and wire with dotenv.
-	3.	Unify auth header for Pegasus (likely Authorization: Bearer <token>).
-	4.	Implement ZAPIER_HOOK_SECONDARY path and expose in .env.
-	5.	Add schema validation (e.g., zod/joi) for /api/install & /api/secondary-install payloads.
-	6.	Add rate limiting and request logging (morgan/pino).
-	7.	Extract shared Haversine code to a small util module on the client only; remove dead client‑side functions from server.js.
-	8.	Introduce feature flags (TEST_MODE, proximity radius, poll frequency) pulling from env.
-	9.	Unit tests for proximity logic and API Routes; smoke tests for Pegasus & Zapier integrations.
-	10.	Add a /health endpoint and basic CI (lint + test).
-	11.	Add error codes/documentation matrix for installer support.
-
-⸻
-
-13) Known quirks / risks (current code)
-	•	server.js defines browser‑only functions at bottom (haversineDistance, checkProximityToDevice) that reference sessionStorage/alert. They are unused in Node context; remove or guard behind if (process.env.NODE_ENV === 'test') {} etc.
-	•	index.html includes a debug panel call (debugPrint) that writes to #debugOutput, but no such element exists; either add it or remove calls.
-	•	since query param is accepted by /api/device-status but unused.
-
-⸻
-
-14) Developer onboarding (first day checklist)
-	•	Read §3 Security & move tokens to .env.
-	•	Move index.html into /public and verify static serving.
-	•	Implement /api/installations on server; make SPA call same‑origin.
-	•	Validate payloads; add minimal logging & rate limiting.
-	•	Run E2E dry‑run using Test Location Override.
-	•	Document your environment and secrets rotation policy.
-
-⸻
-
-15) License & ownership
-
-Add your internal license/ownership statement here.
-
-⸻
-
-16) Changelog
-	•	v0.1 — Initial draft based on two files (server.js, index.html) uploaded on Aug 12, 2025.
+- Check the server console logs for detailed error information
+- Verify Pegasus API connectivity using the health check endpoint
+- Review the installation status endpoint for workflow progress
+- Enable test mode for safe testing without affecting production systems

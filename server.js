@@ -1,9 +1,14 @@
 // server.js
 const express = require("express");
 const fetch = require("node-fetch"); // version 2.x import style
+const session = require("express-session");
 
 // Load configuration from config.js
 const config = require("./config");
+
+// Load authentication modules
+const { authenticateUser } = require('./users');
+const { authenticateToken, generateToken } = require('./auth');
 
 const TEST_MODE = config.TEST_MODE;
 const ENABLE_CONFIRMATION_FALLBACK = config.ENABLE_CONFIRMATION_FALLBACK;
@@ -24,24 +29,101 @@ console.log(`🔧 Running in ${ENVIRONMENT.toUpperCase()} environment`);
 const app = express();
 const PORT = process.env.PORT || 8080;
 
+// Session configuration
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-super-secret-session-key-change-this-in-production',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { 
+    secure: false, // Set to true in production with HTTPS
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
+
 // 1) Serve everything in ./public as static files:
 app.use(express.static("public"));
 
 // 2) Parse incoming JSON bodies for POST requests:
 app.use(express.json());
 
-// Environment info endpoint for frontend
-app.get("/api/config", (req, res) => {
-  res.json({
-    environment: ENVIRONMENT,
-    testMode: TEST_MODE,
-    pegasusBaseUrl: currentConfig.pegasusBaseUrl,
-    pegasusToken: currentConfig.pegasusToken
+// Authentication endpoints
+app.post("/api/auth/login", async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    
+    if (!username || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Username and password are required"
+      });
+    }
+    
+    const user = await authenticateUser(username, password);
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid username or password"
+      });
+    }
+    
+    // Generate JWT token
+    const token = generateToken(user);
+    
+    // Store user info in session
+    req.session.user = user;
+    
+    res.json({
+      success: true,
+      message: "Login successful",
+      user: user,
+      token: token
+    });
+    
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error during login"
+    });
+  }
+});
+
+app.post("/api/auth/logout", (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      return res.status(500).json({
+        success: false,
+        message: "Error during logout"
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: "Logout successful"
+    });
   });
 });
 
-// Health check endpoint for Pegasus API connectivity
-app.get("/api/health/pegasus", async (req, res) => {
+app.get("/api/auth/me", authenticateToken, (req, res) => {
+  res.json({
+    success: true,
+    user: req.user
+  });
+});
+
+// Environment info endpoint for frontend (now protected)
+app.get("/api/config", authenticateToken, (req, res) => {
+  res.json({
+    environment: ENVIRONMENT,
+    testMode: TEST_MODE,
+    pegasusBaseUrl: currentConfig.pegasusBaseUrl
+    // Note: pegasusToken is no longer exposed to frontend!
+  });
+});
+
+// Health check endpoint for Pegasus API connectivity (now protected)
+app.get("/api/health/pegasus", authenticateToken, async (req, res) => {
   try {
     const startTime = Date.now();
     const healthResp = await fetch(`${currentConfig.pegasusBaseUrl}/health`, {
@@ -76,8 +158,8 @@ app.get("/api/health/pegasus", async (req, res) => {
 const ZAPIER_HOOK_INSTALL = currentConfig.zapierHookInstall;
 const ZAPIER_HOOK_SECONDARY = currentConfig.zapierHookSecondary;
 
-// 4) Complete Zapier workflow implementation (replaces the old proxy route)
-app.post("/api/install", async (req, res) => {
+// 4) Complete Zapier workflow implementation (now protected)
+app.post("/api/install", authenticateToken, async (req, res) => {
   try {
     console.log("\n🚀 STARTING COMPLETE INSTALLATION WORKFLOW");
     console.log("Request body:", JSON.stringify(req.body, null, 2));
@@ -634,7 +716,7 @@ async function processSecondaryDevice(secondaryImei, vin, groupId) {
 }
 
 // 4b) Secondary device installation endpoint (updated to use complete workflow)
-app.post("/api/secondary-install", async (req, res) => {
+app.post("/api/secondary-install", authenticateToken, async (req, res) => {
   try {
     console.log("\n🔧 STARTING SECONDARY DEVICE INSTALLATION WORKFLOW");
     console.log("Request body:", JSON.stringify(req.body, null, 2));
@@ -702,7 +784,7 @@ app.post("/api/secondary-install", async (req, res) => {
   }
 });
 
-app.get("/api/device-status", async (req, res) => {
+app.get("/api/device-status", authenticateToken, async (req, res) => {
   const { imei, since } = req.query;
   const requestTime = new Date().toISOString();
   
@@ -826,7 +908,7 @@ app.get("/api/device-status", async (req, res) => {
 });
 
 // New endpoint for IMEI verification
-app.post("/api/verify-imei", async (req, res) => {
+app.post("/api/verify-imei", authenticateToken, async (req, res) => {
   try {
     const { imei } = req.body;
     
@@ -907,7 +989,7 @@ app.post("/api/verify-imei", async (req, res) => {
 });
 
 // New endpoint for SIM verification
-app.post("/api/verify-sim", async (req, res) => {
+app.post("/api/verify-sim", authenticateToken, async (req, res) => {
   try {
     const { iccid } = req.body;
     
@@ -1046,7 +1128,7 @@ app.post("/api/verify-sim", async (req, res) => {
 });
 
 // New endpoint for installation confirmation
-app.post("/api/confirm-installation", async (req, res) => {
+app.post("/api/confirm-installation", authenticateToken, async (req, res) => {
   try {
     const { installationId } = req.body;
     
@@ -1206,7 +1288,7 @@ app.post("/api/confirm-installation", async (req, res) => {
 });
 
 // New endpoint for checking installation workflow status
-app.get("/api/installation-status/:installationId", async (req, res) => {
+app.get("/api/installation-status/:installationId", authenticateToken, async (req, res) => {
   try {
     const { installationId } = req.params;
     
