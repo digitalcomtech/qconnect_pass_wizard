@@ -1195,12 +1195,14 @@
       e.preventDefault();
       clientStatus.innerText = "";
 
-      // Clear previous workflow status and start fresh
-      clearWorkflowStatus();
-      updateWorkflowStatus({
-                  currentStep: '1',
-        status: 'Starting new workflow...'
-      });
+      // Clear previous workflow status and start fresh (only if status bar exists)
+      if (document.getElementById('workflowStatusBar')) {
+        clearWorkflowStatus();
+        updateWorkflowStatus({
+          currentStep: '1',
+          status: 'Starting new workflow...'
+        });
+      }
 
       selectedClientName = clientNameInput.value.trim();
       if (!selectedClientName) {
@@ -2822,37 +2824,62 @@
     // Workflow Status Bar Functions
     function showWorkflowStatusBar() {
       const statusBar = document.getElementById('workflowStatusBar');
-      statusBar.style.display = 'block';
+      if (statusBar) {
+        statusBar.style.display = 'block';
+      }
     }
     
     function updateWorkflowStatus(updates) {
+      // Check if status bar exists before proceeding
+      const statusBar = document.getElementById('workflowStatusBar');
+      if (!statusBar) {
+        return; // Exit early if status bar doesn't exist
+      }
+      
       // Show the status bar if it's hidden
       showWorkflowStatusBar();
       
-      // Update each field if provided
+      // Update each field if provided, with null checks
       if (updates.currentStep) {
-        document.getElementById('currentStepDisplay').textContent = updates.currentStep;
+        const stepElement = document.getElementById('currentStepDisplay');
+        if (stepElement) stepElement.textContent = updates.currentStep;
       }
       if (updates.vin) {
-        document.getElementById('currentVinDisplay').textContent = updates.vin;
+        const vinElement = document.getElementById('currentVinDisplay');
+        if (vinElement) vinElement.textContent = updates.vin;
       }
       if (updates.primaryImei) {
-        document.getElementById('currentPrimaryImeiDisplay').textContent = updates.primaryImei;
+        const primaryElement = document.getElementById('currentPrimaryImeiDisplay');
+        if (primaryElement) primaryElement.textContent = updates.primaryImei;
       }
       if (updates.secondaryImei) {
-        document.getElementById('currentSecondaryImeiDisplay').textContent = updates.secondaryImei;
+        const secondaryElement = document.getElementById('currentSecondaryImeiDisplay');
+        if (secondaryElement) secondaryElement.textContent = updates.secondaryImei;
       }
       if (updates.status) {
-        document.getElementById('currentStatusDisplay').textContent = updates.status;
+        const statusElement = document.getElementById('currentStatusDisplay');
+        if (statusElement) statusElement.textContent = updates.status;
       }
     }
     
     function clearWorkflowStatus() {
-      document.getElementById('currentStepDisplay').textContent = '1';
-      document.getElementById('currentVinDisplay').textContent = '-';
-      document.getElementById('currentPrimaryImeiDisplay').textContent = '-';
-      document.getElementById('currentSecondaryImeiDisplay').textContent = '-';
-      document.getElementById('currentStatusDisplay').textContent = 'Ready to start';
+      // Check if status bar exists before proceeding
+      const statusBar = document.getElementById('workflowStatusBar');
+      if (!statusBar) {
+        return; // Exit early if status bar doesn't exist
+      }
+      
+      const stepElement = document.getElementById('currentStepDisplay');
+      const vinElement = document.getElementById('currentVinDisplay');
+      const primaryElement = document.getElementById('currentPrimaryImeiDisplay');
+      const secondaryElement = document.getElementById('currentSecondaryImeiDisplay');
+      const statusElement = document.getElementById('currentStatusDisplay');
+      
+      if (stepElement) stepElement.textContent = '1';
+      if (vinElement) vinElement.textContent = '-';
+      if (primaryElement) primaryElement.textContent = '-';
+      if (secondaryElement) secondaryElement.textContent = '-';
+      if (statusElement) statusElement.textContent = 'Ready to start';
     }
     
     // User authentication functions
