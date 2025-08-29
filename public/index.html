@@ -506,6 +506,99 @@
         font-size: 1.6rem;
       }
     }
+
+    /* Workflow Status Bar Styles */
+    .workflow-status-bar {
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      margin: 16px 20px 20px 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .workflow-status-bar:hover {
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+      transform: translateY(-1px);
+    }
+
+    .status-bar-header {
+      background: linear-gradient(135deg, #6B21A8 0%, #862BAB 100%);
+      color: white;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+    }
+
+    .status-icon {
+      font-size: 1.2rem;
+    }
+
+    .status-title {
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .status-bar-content {
+      padding: 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+    }
+
+    .status-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .status-label {
+      font-size: 0.8rem;
+      color: #6b7280;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .status-value {
+      font-size: 1rem;
+      color: #1f2937;
+      font-weight: 600;
+      padding: 8px 12px;
+      background: #f3f4f6;
+      border-radius: 6px;
+      border-left: 3px solid #6B21A8;
+      min-height: 20px;
+      display: flex;
+      align-items: center;
+    }
+
+    .status-value:empty::after {
+      content: "-";
+      color: #9ca3af;
+      font-style: italic;
+    }
+
+    /* Responsive adjustments for status bar */
+    @media (max-width: 768px) {
+      .workflow-status-bar {
+        margin: 12px 16px 16px 16px;
+      }
+      
+      .status-bar-content {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        padding: 16px;
+      }
+      
+      .status-value {
+        font-size: 0.9rem;
+        padding: 6px 10px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -587,6 +680,36 @@
     
     <!-- Main Content Area -->
     <div class="main-content">
+      <!-- Status Bar - Shows accumulated information throughout the workflow -->
+      <div id="workflowStatusBar" class="workflow-status-bar" style="display: none;">
+        <div class="status-bar-header">
+          <span class="status-icon">📋</span>
+          <span class="status-title">Workflow Status</span>
+        </div>
+        <div class="status-bar-content">
+          <div class="status-item">
+            <span class="status-label">Current Step:</span>
+            <span id="currentStepDisplay" class="status-value">Step 1</span>
+          </div>
+          <div class="status-item">
+            <span class="status-label">VIN:</span>
+            <span id="currentVinDisplay" class="status-value">-</span>
+          </div>
+          <div class="status-item">
+            <span class="status-label">Primary IMEI:</span>
+            <span id="currentPrimaryImeiDisplay" class="status-value">-</span>
+          </div>
+          <div class="status-item">
+            <span class="status-label">Secondary IMEI:</span>
+            <span id="currentSecondaryImeiDisplay" class="status-value">-</span>
+          </div>
+          <div class="status-item">
+            <span class="status-label">Status:</span>
+            <span id="currentStatusDisplay" class="status-value">Ready to start</span>
+          </div>
+        </div>
+      </div>
+
       <div class="content-container">
         <h1 style="text-align:center; font-size:1.8rem; margin-bottom:32px; color:#1e293b;">QConnect PASS Wizard</h1>
 
@@ -1052,6 +1175,13 @@
       e.preventDefault();
       clientStatus.innerText = "";
 
+      // Clear previous workflow status and start fresh
+      clearWorkflowStatus();
+      updateWorkflowStatus({
+        currentStep: 'Step 1: Client Selection',
+        status: 'Starting new workflow...'
+      });
+
       selectedClientName = clientNameInput.value.trim();
       if (!selectedClientName) {
         clientStatus.innerText = "🚨 Please enter a client name or VIN start.";
@@ -1102,6 +1232,12 @@
         sessionStorage.setItem("step", "2");
         sessionStorage.setItem("clientName", selectedClientName);
 
+        // Update workflow status
+        updateWorkflowStatus({
+          currentStep: 'Step 2: VIN Selection',
+          status: `Found ${filtered.length} installation(s) for "${selectedClientName}"`
+        });
+
         // Update sidebar and navigate to step 2
         updateStepStatus(1, 'completed');
         unlockNextStep(1);
@@ -1128,6 +1264,13 @@
       sessionStorage.setItem("step", "3");
       sessionStorage.setItem("selectedVIN", selectedVIN);
       sessionStorage.setItem("installationId", selectedInstallationId);
+
+      // Update workflow status
+      updateWorkflowStatus({
+        currentStep: 'Step 3: Device Setup',
+        vin: selectedVIN,
+        status: `Selected VIN: ${selectedVIN}`
+      });
 
       // Update sidebar and navigate to step 3
       updateStepStatus(2, 'completed');
@@ -1174,6 +1317,12 @@
           imeiVerified = true;
           startInstallBtn.disabled = false;
           imeiVerificationStatus.innerHTML = `<span style="color:#27ae60;">✅ IMEI verified successfully! Device state: ${data.deviceState}</span>`;
+          
+          // Update workflow status
+          updateWorkflowStatus({
+            primaryImei: imei,
+            status: `Primary IMEI verified: ${data.deviceState}`
+          });
         } else {
           imeiVerified = false;
           startInstallBtn.disabled = true;
@@ -1295,6 +1444,13 @@
         if (!resp.ok || data.status !== "success") throw new Error(data.message || `Status: ${data.status}`);
 
         sessionStorage.setItem("step", "waitingForDevice");
+        
+        // Update workflow status for device monitoring
+        updateWorkflowStatus({
+          currentStep: 'Step 4: Location Check',
+          status: 'Monitoring device location...'
+        });
+        
         const testModeNote = document.getElementById("enableTestMode").checked ? 
           '<div class="info-box" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 2px solid #f59e0b; margin-top: 12px; color: #92400e;">🧪 <strong>Test Mode Active:</strong> Will use custom coordinates instead of GPS</div>' : '';
         
@@ -1485,6 +1641,11 @@
           // Comprehensive validation - ALL conditions must be true
           if (data.isReporting && hasValidLocation && isDeviceOnline && hasRecentConnection && hasRecentActivity && locationAge <= 60) {
             console.log("Device is online and reporting fresh location, checking proximity...");
+            
+            // Update workflow status
+            updateWorkflowStatus({
+              status: `Device ready! Location age: ${locationAge}s`
+            });
             
             // Get device location data
             const deviceLat = data.latest.loc.lat;
@@ -2311,6 +2472,13 @@
         primaryImei: imeiInput.value.trim() // Include primary IMEI for reference
       });
       
+      // Update workflow status for secondary device
+      updateWorkflowStatus({
+        currentStep: 'Secondary Device Form',
+        secondaryImei: document.getElementById("secondaryImeiInput").value.trim(),
+        status: `Secondary device form opened for ${secondaryVinName}`
+      });
+      
       // Open the form in a new tab
       const formUrl = `https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAAO__c8nLFtUMjE2NldORzYyTy4u&${params.toString()}`;
       window.open(formUrl, '_blank');
@@ -2393,6 +2561,13 @@
       const formId = appConfig.environment === "qa" ? "252054474420955" : "232983887026974";
       const url = `https://forms.fleetmetriks.com/${formId}?${params.toString()}`;
       console.log(`🔗 Opening ${appConfig.environment.toUpperCase()} form: ${url}`);
+      
+      // Update workflow status
+      updateWorkflowStatus({
+        currentStep: 'Step 5: Form Completion',
+        status: 'Form opened - Complete installation details'
+      });
+      
       window.open(url, "_blank"); // or use location.href = url; to redirect in the same tab
     }
 
@@ -2434,6 +2609,12 @@
         if (resp.ok && data.success) {
           // Update sidebar: Step 6 completed
           updateStepStatus(6, 'completed');
+          
+          // Update workflow status
+          updateWorkflowStatus({
+            currentStep: 'Step 6: Complete',
+            status: 'Installation confirmed successfully! 🎉'
+          });
           
           confirmationStatus.innerText = "✅ Installation confirmed successfully!";
           setTimeout(() => {
@@ -2496,6 +2677,12 @@
           vinSelect.appendChild(opt);
         });
         
+        // Restore workflow status
+        updateWorkflowStatus({
+          currentStep: 'Step 2: VIN Selection',
+          status: `Found ${filtered.length} installation(s) for "${sessionStorage.getItem("clientName")}"`
+        });
+        
         // Update sidebar status
         updateStepStatus(1, 'completed');
         unlockNextStep(1);
@@ -2504,6 +2691,16 @@
       } else if (step === "3") {
         // restore Step 3 data
         onNextVin();
+        
+        // Restore workflow status for step 3
+        const selectedVIN = sessionStorage.getItem("selectedVIN");
+        if (selectedVIN) {
+          updateWorkflowStatus({
+            currentStep: 'Step 3: Device Setup',
+            vin: selectedVIN,
+            status: `Selected VIN: ${selectedVIN}`
+          });
+        }
         
       } else if (step === "confirmation") {
         // restore confirmation step
@@ -2600,6 +2797,42 @@
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
       const distance = R * c; // Distance in km
       return distance;
+    }
+    
+    // Workflow Status Bar Functions
+    function showWorkflowStatusBar() {
+      const statusBar = document.getElementById('workflowStatusBar');
+      statusBar.style.display = 'block';
+    }
+    
+    function updateWorkflowStatus(updates) {
+      // Show the status bar if it's hidden
+      showWorkflowStatusBar();
+      
+      // Update each field if provided
+      if (updates.currentStep) {
+        document.getElementById('currentStepDisplay').textContent = updates.currentStep;
+      }
+      if (updates.vin) {
+        document.getElementById('currentVinDisplay').textContent = updates.vin;
+      }
+      if (updates.primaryImei) {
+        document.getElementById('currentPrimaryImeiDisplay').textContent = updates.primaryImei;
+      }
+      if (updates.secondaryImei) {
+        document.getElementById('currentSecondaryImeiDisplay').textContent = updates.secondaryImei;
+      }
+      if (updates.status) {
+        document.getElementById('currentStatusDisplay').textContent = updates.status;
+      }
+    }
+    
+    function clearWorkflowStatus() {
+      document.getElementById('currentStepDisplay').textContent = 'Step 1';
+      document.getElementById('currentVinDisplay').textContent = '-';
+      document.getElementById('currentPrimaryImeiDisplay').textContent = '-';
+      document.getElementById('currentSecondaryImeiDisplay').textContent = '-';
+      document.getElementById('currentStatusDisplay').textContent = 'Ready to start';
     }
     
     // User authentication functions
