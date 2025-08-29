@@ -509,94 +509,110 @@
 
     /* Workflow Status Bar Styles */
     .workflow-status-bar {
-      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-      border: 2px solid #e2e8f0;
-      border-radius: 12px;
-      margin: 16px 20px 20px 20px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-      overflow: hidden;
-      transition: all 0.3s ease;
-    }
-
-    .workflow-status-bar:hover {
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
-      transform: translateY(-1px);
-    }
-
-    .status-bar-header {
       background: linear-gradient(135deg, #6B21A8 0%, #862BAB 100%);
       color: white;
       padding: 12px 20px;
+      margin: 0 0 20px 0;
       display: flex;
       align-items: center;
-      gap: 10px;
-      font-weight: 600;
-    }
-
-    .status-icon {
-      font-size: 1.2rem;
-    }
-
-    .status-title {
-      font-size: 1rem;
-      font-weight: 700;
-    }
-
-    .status-bar-content {
-      padding: 20px;
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 16px;
+      justify-content: space-between;
+      gap: 24px;
+      box-shadow: 0 2px 8px rgba(107, 33, 168, 0.2);
+      border-radius: 0;
+      font-weight: 500;
+      position: sticky;
+      top: 0;
+      z-index: 100;
     }
 
     .status-item {
       display: flex;
-      flex-direction: column;
-      gap: 4px;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
     }
 
     .status-label {
-      font-size: 0.8rem;
-      color: #6b7280;
+      font-size: 0.75rem;
+      color: rgba(255, 255, 255, 0.8);
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.5px;
+      white-space: nowrap;
     }
 
     .status-value {
-      font-size: 1rem;
-      color: #1f2937;
+      font-size: 0.9rem;
+      color: white;
       font-weight: 600;
-      padding: 8px 12px;
-      background: #f3f4f6;
-      border-radius: 6px;
-      border-left: 3px solid #6B21A8;
-      min-height: 20px;
-      display: flex;
-      align-items: center;
+      background: rgba(255, 255, 255, 0.15);
+      padding: 4px 8px;
+      border-radius: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      min-width: 60px;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .status-value:empty::after {
       content: "-";
-      color: #9ca3af;
+      color: rgba(255, 255, 255, 0.6);
       font-style: italic;
     }
 
+    .status-status {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .status-status .status-value {
+      flex: 1;
+      min-width: 0;
+      text-align: left;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
     /* Responsive adjustments for status bar */
-    @media (max-width: 768px) {
+    @media (max-width: 1024px) {
       .workflow-status-bar {
-        margin: 12px 16px 16px 16px;
+        padding: 10px 16px;
+        gap: 16px;
+        flex-wrap: wrap;
       }
       
-      .status-bar-content {
-        grid-template-columns: 1fr;
-        gap: 12px;
-        padding: 16px;
+      .status-item {
+        min-width: 80px;
       }
       
       .status-value {
-        font-size: 0.9rem;
-        padding: 6px 10px;
+        font-size: 0.8rem;
+        padding: 3px 6px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .workflow-status-bar {
+        padding: 8px 12px;
+        gap: 12px;
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      .status-item {
+        justify-content: space-between;
+        min-width: 0;
+      }
+      
+      .status-status {
+        order: -1;
+        margin-bottom: 8px;
+      }
+      
+      .status-value {
+        font-size: 0.85rem;
+        padding: 4px 8px;
       }
     }
   </style>
@@ -682,31 +698,25 @@
     <div class="main-content">
       <!-- Status Bar - Shows accumulated information throughout the workflow -->
       <div id="workflowStatusBar" class="workflow-status-bar" style="display: none;">
-        <div class="status-bar-header">
-          <span class="status-icon">📋</span>
-          <span class="status-title">Workflow Status</span>
+        <div class="status-item">
+          <span class="status-label">Step:</span>
+          <span id="currentStepDisplay" class="status-value">1</span>
         </div>
-        <div class="status-bar-content">
-          <div class="status-item">
-            <span class="status-label">Current Step:</span>
-            <span id="currentStepDisplay" class="status-value">Step 1</span>
-          </div>
-          <div class="status-item">
-            <span class="status-label">VIN:</span>
-            <span id="currentVinDisplay" class="status-value">-</span>
-          </div>
-          <div class="status-item">
-            <span class="status-label">Primary IMEI:</span>
-            <span id="currentPrimaryImeiDisplay" class="status-value">-</span>
-          </div>
-          <div class="status-item">
-            <span class="status-label">Secondary IMEI:</span>
-            <span id="currentSecondaryImeiDisplay" class="status-value">-</span>
-          </div>
-          <div class="status-item">
-            <span class="status-label">Status:</span>
-            <span id="currentStatusDisplay" class="status-value">Ready to start</span>
-          </div>
+        <div class="status-item">
+          <span class="status-label">VIN:</span>
+          <span id="currentVinDisplay" class="status-value">-</span>
+        </div>
+        <div class="status-item">
+          <span class="status-label">Primary:</span>
+          <span id="currentPrimaryImeiDisplay" class="status-value">-</span>
+        </div>
+        <div class="status-item">
+          <span class="status-label">Secondary:</span>
+          <span id="currentSecondaryImeiDisplay" class="status-value">-</span>
+        </div>
+        <div class="status-item status-status">
+          <span class="status-label">Status:</span>
+          <span id="currentStatusDisplay" class="status-value">Ready to start</span>
         </div>
       </div>
 
@@ -1178,7 +1188,7 @@
       // Clear previous workflow status and start fresh
       clearWorkflowStatus();
       updateWorkflowStatus({
-        currentStep: 'Step 1: Client Selection',
+                  currentStep: '1',
         status: 'Starting new workflow...'
       });
 
@@ -1234,7 +1244,7 @@
 
         // Update workflow status
         updateWorkflowStatus({
-          currentStep: 'Step 2: VIN Selection',
+          currentStep: '2',
           status: `Found ${filtered.length} installation(s) for "${selectedClientName}"`
         });
 
@@ -1267,7 +1277,7 @@
 
       // Update workflow status
       updateWorkflowStatus({
-        currentStep: 'Step 3: Device Setup',
+        currentStep: '3',
         vin: selectedVIN,
         status: `Selected VIN: ${selectedVIN}`
       });
@@ -1447,7 +1457,7 @@
         
         // Update workflow status for device monitoring
         updateWorkflowStatus({
-          currentStep: 'Step 4: Location Check',
+          currentStep: '4',
           status: 'Monitoring device location...'
         });
         
@@ -2564,7 +2574,7 @@
       
       // Update workflow status
       updateWorkflowStatus({
-        currentStep: 'Step 5: Form Completion',
+        currentStep: '5',
         status: 'Form opened - Complete installation details'
       });
       
@@ -2612,7 +2622,7 @@
           
           // Update workflow status
           updateWorkflowStatus({
-            currentStep: 'Step 6: Complete',
+            currentStep: '6',
             status: 'Installation confirmed successfully! 🎉'
           });
           
@@ -2679,7 +2689,7 @@
         
         // Restore workflow status
         updateWorkflowStatus({
-          currentStep: 'Step 2: VIN Selection',
+          currentStep: '2',
           status: `Found ${filtered.length} installation(s) for "${sessionStorage.getItem("clientName")}"`
         });
         
@@ -2696,7 +2706,7 @@
         const selectedVIN = sessionStorage.getItem("selectedVIN");
         if (selectedVIN) {
           updateWorkflowStatus({
-            currentStep: 'Step 3: Device Setup',
+            currentStep: '3',
             vin: selectedVIN,
             status: `Selected VIN: ${selectedVIN}`
           });
@@ -2828,7 +2838,7 @@
     }
     
     function clearWorkflowStatus() {
-      document.getElementById('currentStepDisplay').textContent = 'Step 1';
+      document.getElementById('currentStepDisplay').textContent = '1';
       document.getElementById('currentVinDisplay').textContent = '-';
       document.getElementById('currentPrimaryImeiDisplay').textContent = '-';
       document.getElementById('currentSecondaryImeiDisplay').textContent = '-';
