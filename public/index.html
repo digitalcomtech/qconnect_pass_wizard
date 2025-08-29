@@ -515,21 +515,22 @@
       margin: 0 0 20px 0;
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 24px;
+      justify-content: space-around;
+      gap: 0;
       box-shadow: 0 2px 8px rgba(107, 33, 168, 0.2);
       border-radius: 0;
       font-weight: 500;
       position: sticky;
       top: 0;
       z-index: 100;
+      width: 100%;
     }
 
     .status-item {
       display: flex;
       align-items: center;
       gap: 8px;
-      min-width: 0;
+      flex-shrink: 0;
     }
 
     .status-label {
@@ -549,7 +550,7 @@
       padding: 4px 8px;
       border-radius: 4px;
       border: 1px solid rgba(255, 255, 255, 0.2);
-      min-width: 60px;
+      min-width: 80px;
       text-align: center;
       white-space: nowrap;
       overflow: hidden;
@@ -563,30 +564,37 @@
     }
 
     .status-status {
-      flex: 1;
+      flex: 0 1 auto;
       min-width: 0;
     }
 
     .status-status .status-value {
-      flex: 1;
-      min-width: 0;
+      min-width: 120px;
       text-align: left;
       background: rgba(255, 255, 255, 0.1);
     }
 
     /* Responsive adjustments for status bar */
-    @media (max-width: 1024px) {
+    @media (max-width: 1200px) {
       .workflow-status-bar {
         padding: 10px 16px;
-        gap: 16px;
-        flex-wrap: wrap;
-      }
-      
-      .status-item {
-        min-width: 80px;
+        gap: 24px;
       }
       
       .status-value {
+        min-width: 70px;
+        font-size: 0.85rem;
+      }
+    }
+
+    @media (max-width: 1024px) {
+      .workflow-status-bar {
+        padding: 10px 16px;
+        gap: 20px;
+      }
+      
+      .status-value {
+        min-width: 65px;
         font-size: 0.8rem;
         padding: 3px 6px;
       }
@@ -595,24 +603,26 @@
     @media (max-width: 768px) {
       .workflow-status-bar {
         padding: 8px 12px;
-        gap: 12px;
-        flex-direction: column;
-        align-items: stretch;
+        gap: 16px;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        justify-content: flex-start;
       }
       
       .status-item {
-        justify-content: space-between;
+        flex-shrink: 0;
         min-width: 0;
       }
       
       .status-status {
-        order: -1;
-        margin-bottom: 8px;
+        margin-left: 0;
+        flex-shrink: 0;
       }
       
       .status-value {
-        font-size: 0.85rem;
-        padding: 4px 8px;
+        font-size: 0.8rem;
+        padding: 3px 6px;
+        min-width: 60px;
       }
     }
   </style>
