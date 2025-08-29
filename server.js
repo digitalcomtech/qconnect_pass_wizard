@@ -946,6 +946,15 @@ app.get("/api/device-status", authenticateToken, async (req, res) => {
     console.log(`   - Recent Activity: ${hasRecentActivity} (≤5min)`);
     console.log(`   - Overall Status: ${isReporting && isOnline && hasRecentConnection && hasRecentActivity ? 'VALID' : 'INVALID'}`);
     
+    // Debug: Check the isReporting variable
+    console.log(`\n🔍 DEBUG isReporting variable:`, {
+      isReporting,
+      hasLocationData,
+      locationAge,
+      isReportingType: typeof isReporting,
+      isReportingValue: isReporting
+    });
+    
     // Return enhanced data with validation flags
     const response = {
       isReporting,
@@ -967,6 +976,8 @@ app.get("/api/device-status", authenticateToken, async (req, res) => {
     };
     
     console.log(`\n📤 [${requestTime}] SENDING RESPONSE:`, JSON.stringify(response, null, 2));
+    console.log(`\n🔍 FINAL CHECK - isReporting value:`, isReporting);
+    console.log(`\n🔍 FINAL CHECK - response object keys:`, Object.keys(response));
     res.json(response);
     
   } catch (error) {
