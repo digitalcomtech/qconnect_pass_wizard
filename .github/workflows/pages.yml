@@ -1,0 +1,193 @@
+name: Deploy QConnect PASS Wizard to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build static site
+        run: |
+          # Create a simple static build process
+          mkdir -p dist
+          
+          # Copy public files
+          cp -r public/* dist/
+          
+          # Copy server files for reference (but won't be used in static deployment)
+          cp server.js dist/
+          cp package.json dist/
+          cp config.js dist/
+          
+          # Create a simple index.html that explains this is a Node.js app
+          cat > dist/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>QConnect PASS Wizard - Deployment Info</title>
+              <style>
+                  body {
+                      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                      max-width: 800px;
+                      margin: 0 auto;
+                      padding: 2rem;
+                      line-height: 1.6;
+                      color: #333;
+                  }
+                  .header {
+                      text-align: center;
+                      margin-bottom: 2rem;
+                      padding: 2rem;
+                      background: linear-gradient(135deg, #862BAB 0%, #6B21A8 100%);
+                      color: white;
+                      border-radius: 10px;
+                  }
+                  .info-box {
+                      background: #f8f9fa;
+                      border: 1px solid #e9ecef;
+                      border-radius: 8px;
+                      padding: 1.5rem;
+                      margin: 1rem 0;
+                  }
+                  .warning {
+                      background: #fff3cd;
+                      border: 1px solid #ffeaa7;
+                      color: #856404;
+                  }
+                  .success {
+                      background: #d4edda;
+                      border: 1px solid #c3e6cb;
+                      color: #155724;
+                  }
+                  code {
+                      background: #f1f3f4;
+                      padding: 0.2rem 0.4rem;
+                      border-radius: 4px;
+                      font-family: 'Monaco', 'Menlo', monospace;
+                  }
+                  .button {
+                      display: inline-block;
+                      background: #862BAB;
+                      color: white;
+                      padding: 0.75rem 1.5rem;
+                      text-decoration: none;
+                      border-radius: 6px;
+                      margin: 0.5rem 0;
+                      transition: background 0.2s;
+                  }
+                  .button:hover {
+                      background: #6B21A8;
+                  }
+              </style>
+          </head>
+          <body>
+              <div class="header">
+                  <h1>🚀 QConnect PASS Wizard</h1>
+                  <p>Device Installation Management System</p>
+              </div>
+
+              <div class="info-box success">
+                  <h3>✅ Successfully Deployed!</h3>
+                  <p>Your QConnect PASS Wizard has been deployed to GitHub Pages.</p>
+              </div>
+
+              <div class="info-box warning">
+                  <h3>⚠️ Important Note</h3>
+                  <p>This is a <strong>Node.js application</strong> that requires a server environment to run properly. GitHub Pages only serves static files, so the full application functionality is not available here.</p>
+              </div>
+
+              <div class="info-box">
+                  <h3>🔧 How to Run the Full Application</h3>
+                  <p>To use the complete QConnect PASS Wizard with all features:</p>
+                  <ol>
+                      <li>Clone the repository: <code>git clone https://github.com/digitalcomtech/qconnect_pass_wizard.git</code></li>
+                      <li>Install dependencies: <code>npm install</code></li>
+                      <li>Configure environment variables in <code>config.js</code></li>
+                      <li>Start the server: <code>node server.js</code></li>
+                      <li>Access at <code>http://localhost:8080</code></li>
+                  </ol>
+              </div>
+
+              <div class="info-box">
+                  <h3>📚 Documentation</h3>
+                  <p>Complete documentation is available in the repository:</p>
+                  <ul>
+                      <li><a href="https://github.com/digitalcomtech/qconnect_pass_wizard/blob/main/INSTALLER_GUIDE.md">📖 Installer Guide</a> - Complete step-by-step instructions</li>
+                      <li><a href="https://github.com/digitalcomtech/qconnect_pass_wizard/blob/main/QUICK_REFERENCE.md">⚡ Quick Reference</a> - Print-friendly reference card</li>
+                      <li><a href="https://github.com/digitalcomtech/qconnect_pass_wizard/blob/main/TROUBLESHOOTING_GUIDE.md">🔧 Troubleshooting Guide</a> - Technical issue resolution</li>
+                  </ul>
+              </div>
+
+              <div class="info-box">
+                  <h3>🌐 Deployment Options</h3>
+                  <p>For production deployment, consider these platforms:</p>
+                  <ul>
+                      <li><strong>Heroku</strong> - Easy Node.js deployment</li>
+                      <li><strong>Railway</strong> - Modern deployment platform</li>
+                      <li><strong>DigitalOcean App Platform</strong> - Scalable hosting</li>
+                      <li><strong>Vercel</strong> - Serverless deployment</li>
+                      <li><strong>Your own server</strong> - Full control</li>
+                  </ul>
+              </div>
+
+              <div style="text-align: center; margin-top: 2rem;">
+                  <a href="https://github.com/digitalcomtech/qconnect_pass_wizard" class="button">View on GitHub</a>
+                  <a href="https://github.com/digitalcomtech/qconnect_pass_wizard/blob/main/README.md" class="button">Read Documentation</a>
+              </div>
+
+              <div style="text-align: center; margin-top: 2rem; color: #666; font-size: 0.9rem;">
+                  <p>Deployed from commit: <code>${{ github.sha }}</code></p>
+                  <p>Last updated: <span id="timestamp"></span></p>
+              </div>
+
+              <script>
+                  document.getElementById('timestamp').textContent = new Date().toLocaleString();
+              </script>
+          </body>
+          </html>
+          EOF
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './dist'
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

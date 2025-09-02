@@ -206,10 +206,40 @@ const ENABLE_CONFIRMATION_FALLBACK = true; // Enable fallback modes
 
 ## 🚀 Getting Started
 
+### Local Development
+
 1. **Install Dependencies**: `npm install`
 2. **Configure Environment**: Update tokens and URLs in `server.js`
 3. **Start Server**: `node server.js`
 4. **Access Wizard**: Open `http://localhost:8080` in your browser
+
+### Quick Deploy to GitHub Pages
+
+1. **Enable GitHub Pages**:
+   - Go to repository Settings → Pages
+   - Source: Select "GitHub Actions"
+   - Push to main branch to trigger deployment
+
+2. **Access Your Site**:
+   - Your wizard will be available at: `https://digitalcomtech.github.io/qconnect_pass_wizard`
+   - Note: This shows documentation only (static deployment)
+
+### Full Application Deployment
+
+For the complete application with all features, see the [Deployment Guide](DEPLOYMENT_GUIDE.md) for options including:
+
+- **Heroku** - Quick deployment with free tier
+- **Railway** - Modern platform with automatic deployments
+- **DigitalOcean** - Full control with app platform
+- **Vercel** - Serverless deployment
+- **Your own server** - Maximum control
+
+## 📚 Documentation
+
+- **[Installer Guide](INSTALLER_GUIDE.md)** - Complete step-by-step instructions for field installers
+- **[Quick Reference](QUICK_REFERENCE.md)** - Print-friendly reference card
+- **[Troubleshooting Guide](TROUBLESHOOTING_GUIDE.md)** - Technical issue resolution
+- **[Deployment Guide](DEPLOYMENT_GUIDE.md)** - Production deployment options
 
 ## 📞 Support
 
@@ -219,3 +249,4 @@ For technical support or questions about the installation workflow:
 - Verify Pegasus API connectivity using the health check endpoint
 - Review the installation status endpoint for workflow progress
 - Enable test mode for safe testing without affecting production systems
+- Consult the troubleshooting guide for common issues
