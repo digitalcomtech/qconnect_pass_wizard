@@ -645,33 +645,6 @@
           </div>
           <button class="logout-btn" id="logoutBtn">Logout</button>
         </div>
-        
-        <!-- Session Management -->
-        <div class="session-management" id="sessionManagement" style="display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);">
-          <button class="clear-session-btn" id="clearSessionBtn" style="
-            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: 600;
-            width: 100%;
-            margin-bottom: 8px;
-            transition: all 0.2s ease;
-          " onmouseover="this.style.background='linear-gradient(135deg, #c0392b 0%, #a93226 100%)'" onmouseout="this.style.background='linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)'">
-            🗑️ Clear Session
-          </button>
-          <div class="session-info" id="sessionInfo" style="
-            font-size: 11px;
-            color: rgba(255,255,255,0.7);
-            text-align: center;
-            line-height: 1.3;
-          ">
-            Session auto-saves every 5s
-          </div>
-        </div>
       </div>
       
       <div class="step-nav">
@@ -971,9 +944,7 @@
       });
     })();
     
-    // Initialize session persistence system
-    initializeSessionPersistence();
-    
+    sessionStorage.clear();
     // DOM references
     const clientSection       = document.getElementById("clientSection");
     const clientForm          = document.getElementById("clientForm");
@@ -1000,329 +971,6 @@
     const confirmationStatus  = document.getElementById("confirmationStatus");
     const successMsg          = document.getElementById("successMsg");
 
-    // ===== SESSION PERSISTENCE SYSTEM =====
-    
-    // Session persistence configuration
-    const SESSION_CONFIG = {
-      STORAGE_KEY: 'qconnect_workflow_state',
-      BACKUP_KEY: 'qconnect_workflow_backup',
-      CRITICAL_STEPS: ['3', '4', '5', '6'], // Steps that need special recovery
-      AUTO_SAVE_INTERVAL: 5000, // Auto-save every 5 seconds
-      MAX_BACKUP_AGE: 24 * 60 * 60 * 1000 // 24 hours
-    };
-
-    // Initialize session persistence
-    function initializeSessionPersistence() {
-      console.log('🔄 Initializing session persistence system...');
-      
-      // Set up auto-save interval
-      setInterval(autoSaveWorkflowState, SESSION_CONFIG.AUTO_SAVE_INTERVAL);
-      
-      // Set up beforeunload event to save state
-      window.addEventListener('beforeunload', saveWorkflowState);
-      
-      // Set up visibility change event (tab switching)
-      document.addEventListener('visibilitychange', () => {
-        if (document.hidden) {
-          saveWorkflowState();
-        }
-      });
-      
-      // Clean up old backups
-      cleanupOldBackups();
-      
-      console.log('✅ Session persistence system initialized');
-    }
-
-    // Save complete workflow state
-    function saveWorkflowState() {
-      try {
-        const workflowState = {
-          timestamp: Date.now(),
-          version: '1.0',
-          currentStep: getCurrentStep(),
-          clientName: selectedClientName,
-          selectedVIN: selectedVIN,
-          installationId: selectedInstallationId,
-          primaryImei: imeiInput?.value?.trim() || '',
-          secondaryImei: document.getElementById('secondaryImeiInput')?.value?.trim() || '',
-          simCard: simInput?.value?.trim() || '',
-          primaryImeiVerified: window.primaryImeiVerified || false,
-          secondaryImeiVerified: window.secondaryImeiVerified || false,
-          simVerified: window.simVerified || false,
-          deviceReporting: window.deviceReporting || false,
-          locationChecked: window.locationChecked || false,
-          formOpened: window.formOpened || false,
-          installationConfirmed: window.installationConfirmed || false,
-          // Store critical session data
-          filteredInst: sessionStorage.getItem('filteredInst'),
-          selectedInstallation: sessionStorage.getItem('selectedInstallation'),
-          selectedClientFullName: sessionStorage.getItem('selectedClientFullName'),
-          // Store form states
-          addSecondary: document.getElementById('addSecondaryCheckbox')?.checked || false,
-          testMode: document.getElementById('testModeCheckbox')?.checked || false,
-          // Store UI states
-          currentStepNumber: getCurrentStepNumber(),
-          stepStatuses: getStepStatuses()
-        };
-
-        // Save to localStorage (persistent)
-        localStorage.setItem(SESSION_CONFIG.STORAGE_KEY, JSON.stringify(workflowState));
-        
-        // Create backup
-        localStorage.setItem(SESSION_CONFIG.BACKUP_KEY, JSON.stringify(workflowState));
-        
-        console.log('💾 Workflow state saved:', {
-          step: workflowState.currentStep,
-          vin: workflowState.selectedVIN,
-          primaryImei: workflowState.primaryImei,
-          timestamp: new Date(workflowState.timestamp).toLocaleString()
-        });
-        
-        return true;
-      } catch (error) {
-        console.error('❌ Failed to save workflow state:', error);
-        return false;
-      }
-    }
-
-    // Auto-save workflow state
-    function autoSaveWorkflowState() {
-      const currentStep = getCurrentStep();
-      // Only auto-save if we're past step 2 (critical workflow state)
-      if (currentStep && parseInt(currentStep) >= 3) {
-        saveWorkflowState();
-      }
-    }
-
-    // Restore workflow state
-    function restoreWorkflowState() {
-      try {
-        const savedState = localStorage.getItem(SESSION_CONFIG.STORAGE_KEY);
-        if (!savedState) {
-          console.log('📝 No saved workflow state found');
-          return false;
-        }
-
-        const workflowState = JSON.parse(savedState);
-        
-        // Check if state is too old (more than 24 hours)
-        const stateAge = Date.now() - workflowState.timestamp;
-        if (stateAge > SESSION_CONFIG.MAX_BACKUP_AGE) {
-          console.log('⏰ Saved state is too old, clearing...');
-          clearWorkflowState();
-          return false;
-        }
-
-        console.log('🔄 Restoring workflow state:', {
-          step: workflowState.currentStep,
-          vin: workflowState.selectedVIN,
-          primaryImei: workflowState.primaryImei,
-          age: Math.round(stateAge / 1000 / 60) + ' minutes ago'
-        });
-
-        // Restore basic state
-        selectedClientName = workflowState.clientName || '';
-        selectedVIN = workflowState.selectedVIN || '';
-        selectedInstallationId = workflowState.installationId || '';
-
-        // Restore form values
-        if (imeiInput && workflowState.primaryImei) {
-          imeiInput.value = workflowState.primaryImei;
-        }
-        if (simInput && workflowState.simCard) {
-          simInput.value = workflowState.simCard;
-        }
-        const secondaryImeiInput = document.getElementById('secondaryImeiInput');
-        if (secondaryImeiInput && workflowState.secondaryImei) {
-          secondaryImeiInput.value = workflowState.secondaryImei;
-        }
-
-        // Restore checkboxes
-        const addSecondaryCheckbox = document.getElementById('addSecondaryCheckbox');
-        if (addSecondaryCheckbox) {
-          addSecondaryCheckbox.checked = workflowState.addSecondary || false;
-        }
-        const testModeCheckbox = document.getElementById('testModeCheckbox');
-        if (testModeCheckbox) {
-          testModeCheckbox.checked = workflowState.testMode || false;
-        }
-
-        // Restore verification states
-        window.primaryImeiVerified = workflowState.primaryImeiVerified || false;
-        window.secondaryImeiVerified = workflowState.secondaryImeiVerified || false;
-        window.simVerified = workflowState.simVerified || false;
-        window.deviceReporting = workflowState.deviceReporting || false;
-        window.locationChecked = workflowState.locationChecked || false;
-        window.formOpened = workflowState.formOpened || false;
-        window.installationConfirmed = workflowState.installationConfirmed || false;
-
-        // Restore session storage data
-        if (workflowState.filteredInst) {
-          sessionStorage.setItem('filteredInst', workflowState.filteredInst);
-        }
-        if (workflowState.selectedInstallation) {
-          sessionStorage.setItem('selectedInstallation', workflowState.selectedInstallation);
-        }
-        if (workflowState.selectedClientFullName) {
-          sessionStorage.setItem('selectedClientFullName', workflowState.selectedClientFullName);
-        }
-
-        // Restore step statuses
-        if (workflowState.stepStatuses) {
-          restoreStepStatuses(workflowState.stepStatuses);
-        }
-
-        // Show recovery notification
-        showRecoveryNotification(workflowState);
-
-        return true;
-      } catch (error) {
-        console.error('❌ Failed to restore workflow state:', error);
-        return false;
-      }
-    }
-
-    // Show recovery notification
-    function showRecoveryNotification(workflowState) {
-      const notification = document.createElement('div');
-      notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
-        color: white;
-        padding: 16px 20px;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        z-index: 10000;
-        max-width: 350px;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        font-size: 14px;
-        line-height: 1.4;
-      `;
-      
-      const stepName = getStepName(workflowState.currentStep);
-      const timeAgo = Math.round((Date.now() - workflowState.timestamp) / 1000 / 60);
-      
-      notification.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-          <span style="font-size: 18px;">🔄</span>
-          <strong>Workflow Restored</strong>
-        </div>
-        <div style="font-size: 13px; opacity: 0.9;">
-          <div>Step: ${stepName}</div>
-          <div>VIN: ${workflowState.selectedVIN || 'Not selected'}</div>
-          <div>IMEI: ${workflowState.primaryImei || 'Not entered'}</div>
-          <div>Saved: ${timeAgo} minutes ago</div>
-        </div>
-        <button onclick="this.parentElement.remove()" style="
-          background: rgba(255,255,255,0.2);
-          border: none;
-          color: white;
-          padding: 4px 8px;
-          border-radius: 4px;
-          cursor: pointer;
-          font-size: 12px;
-          margin-top: 8px;
-        ">Dismiss</button>
-      `;
-      
-      document.body.appendChild(notification);
-      
-      // Auto-remove after 10 seconds
-      setTimeout(() => {
-        if (notification.parentElement) {
-          notification.remove();
-        }
-      }, 10000);
-    }
-
-    // Clear workflow state
-    function clearWorkflowState() {
-      localStorage.removeItem(SESSION_CONFIG.STORAGE_KEY);
-      localStorage.removeItem(SESSION_CONFIG.BACKUP_KEY);
-      sessionStorage.clear();
-      console.log('🗑️ Workflow state cleared');
-    }
-
-    // Get current step
-    function getCurrentStep() {
-      return sessionStorage.getItem('step') || '1';
-    }
-
-    // Get current step number
-    function getCurrentStepNumber() {
-      const step = getCurrentStep();
-      if (step === 'waitingForDevice') return 4;
-      if (step === 'confirmation') return 6;
-      if (step === 'done') return 6;
-      return parseInt(step) || 1;
-    }
-
-    // Get step name
-    function getStepName(step) {
-      const stepNames = {
-        '1': 'Client Selection',
-        '2': 'VIN Selection', 
-        '3': 'Device Setup',
-        '4': 'Location Check',
-        'waitingForDevice': 'Location Check',
-        '5': 'Form Completion',
-        'confirmation': 'Final Confirmation',
-        '6': 'Final Confirmation',
-        'done': 'Complete'
-      };
-      return stepNames[step] || 'Unknown';
-    }
-
-    // Get step statuses
-    function getStepStatuses() {
-      const statuses = {};
-      for (let i = 1; i <= 6; i++) {
-        const stepNav = document.getElementById(`stepNav${i}`);
-        if (stepNav) {
-          statuses[i] = {
-            active: stepNav.classList.contains('active'),
-            completed: stepNav.classList.contains('completed'),
-            locked: stepNav.classList.contains('locked')
-          };
-        }
-      }
-      return statuses;
-    }
-
-    // Restore step statuses
-    function restoreStepStatuses(statuses) {
-      for (let i = 1; i <= 6; i++) {
-        const stepNav = document.getElementById(`stepNav${i}`);
-        if (stepNav && statuses[i]) {
-          stepNav.classList.toggle('active', statuses[i].active);
-          stepNav.classList.toggle('completed', statuses[i].completed);
-          stepNav.classList.toggle('locked', statuses[i].locked);
-        }
-      }
-    }
-
-    // Clean up old backups
-    function cleanupOldBackups() {
-      try {
-        const backup = localStorage.getItem(SESSION_CONFIG.BACKUP_KEY);
-        if (backup) {
-          const backupState = JSON.parse(backup);
-          const backupAge = Date.now() - backupState.timestamp;
-          if (backupAge > SESSION_CONFIG.MAX_BACKUP_AGE) {
-            localStorage.removeItem(SESSION_CONFIG.BACKUP_KEY);
-            console.log('🧹 Cleaned up old backup');
-          }
-        }
-      } catch (error) {
-        console.error('❌ Failed to cleanup old backups:', error);
-      }
-    }
-
-    // ===== END SESSION PERSISTENCE SYSTEM =====
-
     // State
     let selectedClientName    = "";
     let selectedVIN           = "";
@@ -1335,9 +983,6 @@
     document.addEventListener("DOMContentLoaded", async () => {
       // Setup user info and logout
       setupUserInfo();
-      
-      // Setup session management
-      setupSessionManagement();
       
       // Check geolocation support
       if (!navigator.geolocation) {
@@ -1564,9 +1209,6 @@
           status: 'Starting new workflow...'
         });
       }
-      
-      // Clear any previous workflow state when starting fresh
-      clearWorkflowState();
 
       selectedClientName = clientNameInput.value.trim();
       if (!selectedClientName) {
@@ -1617,9 +1259,6 @@
         // Persist
         sessionStorage.setItem("step", "2");
         sessionStorage.setItem("clientName", selectedClientName);
-        
-        // Save workflow state
-        saveWorkflowState();
 
         // Update workflow status
         updateWorkflowStatus({
@@ -1653,9 +1292,6 @@
       sessionStorage.setItem("step", "3");
       sessionStorage.setItem("selectedVIN", selectedVIN);
       sessionStorage.setItem("installationId", selectedInstallationId);
-      
-      // Save workflow state
-      saveWorkflowState();
 
       // Update workflow status
       updateWorkflowStatus({
@@ -1715,9 +1351,6 @@
             primaryImei: imei,
             status: `Primary IMEI verified: ${data.deviceState}`
           });
-          
-          // Save workflow state after IMEI verification
-          saveWorkflowState();
         } else {
           imeiVerified = false;
           startInstallBtn.disabled = true;
@@ -1845,9 +1478,6 @@
           currentStep: '4',
           status: 'Monitoring device location...'
         });
-        
-        // Save workflow state after starting installation
-        saveWorkflowState();
         
         const testModeNote = document.getElementById("enableTestMode").checked ? 
           '<div class="info-box" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 2px solid #f59e0b; margin-top: 12px; color: #92400e;">🧪 <strong>Test Mode Active:</strong> Will use custom coordinates instead of GPS</div>' : '';
@@ -3032,26 +2662,8 @@
       }
     }
 
-    // Restore UI on reload - Enhanced with session persistence
+    // Restore UI on reload
     function restoreState() {
-      console.log('🔄 Starting state restoration...');
-      
-      // First, try to restore from the new session persistence system
-      const restored = restoreWorkflowState();
-      
-      if (restored) {
-        console.log('✅ Workflow state restored from persistence system');
-        // The restoreWorkflowState function already handles most restoration
-        // We just need to navigate to the correct step
-        const currentStep = getCurrentStepNumber();
-        if (currentStep > 1) {
-          navigateToStep(currentStep);
-        }
-        return;
-      }
-      
-      // Fallback to original session storage restoration
-      console.log('📝 Using fallback session storage restoration');
       const step = sessionStorage.getItem("step") || "1";
       const currentStep = parseInt(step);
       
@@ -3324,84 +2936,6 @@
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       };
-    }
-
-    // Setup session management UI
-    function setupSessionManagement() {
-      const sessionManagement = document.getElementById('sessionManagement');
-      const clearSessionBtn = document.getElementById('clearSessionBtn');
-      
-      if (sessionManagement && clearSessionBtn) {
-        // Show session management UI
-        sessionManagement.style.display = 'block';
-        
-        // Add event listener for clear session button
-        clearSessionBtn.addEventListener('click', () => {
-          if (confirm('Are you sure you want to clear the current session? This will reset your workflow progress.')) {
-            clearWorkflowState();
-            
-            // Reset UI to step 1
-            navigateToStep(1);
-            
-            // Clear form values
-            if (clientNameInput) clientNameInput.value = '';
-            if (imeiInput) imeiInput.value = '';
-            if (simInput) simInput.value = '';
-            const secondaryImeiInput = document.getElementById('secondaryImeiInput');
-            if (secondaryImeiInput) secondaryImeiInput.value = '';
-            
-            // Reset verification states
-            window.primaryImeiVerified = false;
-            window.secondaryImeiVerified = false;
-            window.simVerified = false;
-            window.deviceReporting = false;
-            window.locationChecked = false;
-            window.formOpened = false;
-            window.installationConfirmed = false;
-            
-            // Clear status displays
-            const statusElements = [
-              'clientStatus', 'vinStatus', 'imeiVerificationStatus', 
-              'simVerificationStatus', 'installStatus', 'confirmationStatus'
-            ];
-            statusElements.forEach(id => {
-              const element = document.getElementById(id);
-              if (element) element.innerText = '';
-            });
-            
-            // Clear workflow status
-            if (typeof clearWorkflowStatus === 'function') {
-              clearWorkflowStatus();
-            }
-            
-            // Show success message
-            const notification = document.createElement('div');
-            notification.style.cssText = `
-              position: fixed;
-              top: 20px;
-              right: 20px;
-              background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
-              color: white;
-              padding: 12px 16px;
-              border-radius: 6px;
-              box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-              z-index: 10000;
-              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-              font-size: 14px;
-            `;
-            notification.textContent = '✅ Session cleared successfully';
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-              if (notification.parentElement) {
-                notification.remove();
-              }
-            }, 3000);
-            
-            console.log('🗑️ Session cleared by user');
-          }
-        });
-      }
     }
 
   </script>
