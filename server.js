@@ -294,22 +294,34 @@ app.post("/api/install", authenticateToken, async (req, res) => {
     const vehicleId = await createVehicle(vin, imei, groupId);
     console.log(`✅ Vehicle created with ID: ${vehicleId}`);
 
-    // 9. Handle SIM card if provided
+    // 9. Configure HOS segment for primary device
+    console.log("⚙️  Step 9: Configuring HOS segment for primary device...");
+    const primaryHosResult = await processHosSegmentConfiguration(imei);
+    console.log(`✅ Primary device HOS configuration: ${primaryHosResult.reason}`);
+
+    // 10. Handle SIM card if provided
     if (sim_number) {
-      console.log("📱 Step 9: Processing SIM card...");
+      console.log("📱 Step 10: Processing SIM card...");
       await processSimCard(sim_number);
       console.log("✅ SIM card processed successfully");
     } else {
-      console.log("⏭️  Step 9: No SIM card provided, skipping");
+      console.log("⏭️  Step 10: No SIM card provided, skipping");
     }
 
-    // 10. Handle secondary device if provided
+    // 11. Handle secondary device if provided
+    let secondaryHosResult = null;
     if (secondary_imei) {
-      console.log("🔧 Step 10: Processing secondary device...");
-      await processSecondaryDevice(secondary_imei, vin, groupId);
+      console.log("🔧 Step 11: Processing secondary device...");
+      const secondaryVehicleId = await processSecondaryDevice(secondary_imei, vin, groupId);
+      
+      // Configure HOS segment for secondary device
+      console.log("⚙️  Step 11b: Configuring HOS segment for secondary device...");
+      secondaryHosResult = await processHosSegmentConfiguration(secondary_imei);
+      console.log(`✅ Secondary device HOS configuration: ${secondaryHosResult.reason}`);
+      
       console.log("✅ Secondary device processed successfully");
     } else {
-      console.log("⏭️  Step 10: No secondary device provided, skipping");
+      console.log("⏭️  Step 11: No secondary device provided, skipping");
     }
 
     console.log("🎉 COMPLETE INSTALLATION WORKFLOW FINISHED SUCCESSFULLY");
@@ -322,6 +334,10 @@ app.post("/api/install", authenticateToken, async (req, res) => {
         vehicleId,
         simProcessed: !!sim_number,
         secondaryDeviceProcessed: !!secondary_imei,
+        hosConfiguration: {
+          primary: primaryHosResult,
+          secondary: secondaryHosResult
+        },
         timestamp: new Date().toISOString()
       }
     });
@@ -770,6 +786,128 @@ async function updateSimStatusInPegasus256(simSid, apiEndpoint) {
   }
 }
 
+// Check if device has HOS segment configuration
+async function checkHosSegmentConfiguration(imei) {
+  try {
+    console.log(`   Checking HOS segment configuration for IMEI: ${imei}`);
+    
+    const response = await fetch(`https://api.pegasusgateway.com/devices?imeis=${imei}&select=segments`, {
+      headers: {
+        "Authenticate": currentConfig.pegasusToken
+      },
+      signal: AbortSignal.timeout(30000) // 30 second timeout
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to check HOS segment configuration: ${response.status} - ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    console.log(`   HOS segment check response:`, JSON.stringify(data, null, 2));
+    
+    // Check if device has HOS segment configuration
+    const deviceData = data.data && data.data[0];
+    if (!deviceData) {
+      console.log(`   ❌ No device data found for IMEI: ${imei}`);
+      return { hasConfiguration: false, reason: 'Device not found' };
+    }
+    
+    const hasHosConfiguration = deviceData.segments && 
+                               deviceData.segments.setup && 
+                               deviceData.segments.setup.hos;
+    
+    console.log(`   HOS configuration status: ${hasHosConfiguration ? 'EXISTS' : 'MISSING'}`);
+    
+    return { 
+      hasConfiguration: hasHosConfiguration,
+      deviceData: deviceData,
+      reason: hasHosConfiguration ? 'Configuration exists' : 'No HOS segment configuration found'
+    };
+    
+  } catch (error) {
+    console.error(`   ❌ Error checking HOS segment configuration: ${error.message}`);
+    throw error;
+  }
+}
+
+// Set HOS segment configuration with default values
+async function setHosSegmentConfiguration(imei) {
+  try {
+    console.log(`   Setting HOS segment configuration for IMEI: ${imei}`);
+    
+    const hosPayload = {
+      segment_type: "hos",
+      signal: "speed_distance",
+      max_work_hours: 14,
+      min_rest_hours: 8,
+      max_continuous_work_hours: 5,
+      min_continuous_break_hours: 0.50,
+      min_break_hours: 0.25
+    };
+    
+    console.log(`   HOS segment payload:`, JSON.stringify(hosPayload, null, 2));
+    
+    const response = await fetch(`https://api.pegasusgateway.com/devices/${imei}/remote/segment_setup`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authenticate": currentConfig.pegasusToken
+      },
+      body: JSON.stringify(hosPayload),
+      signal: AbortSignal.timeout(30000) // 30 second timeout
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to set HOS segment configuration: ${response.status} - ${errorText}`);
+    }
+    
+    const responseData = await response.json();
+    console.log(`   HOS segment setup response:`, JSON.stringify(responseData, null, 2));
+    
+    console.log(`   ✅ HOS segment configuration set successfully for IMEI: ${imei}`);
+    return responseData;
+    
+  } catch (error) {
+    console.error(`   ❌ Error setting HOS segment configuration: ${error.message}`);
+    throw error;
+  }
+}
+
+// Process HOS segment configuration for a device
+async function processHosSegmentConfiguration(imei) {
+  try {
+    console.log(`   Processing HOS segment configuration for IMEI: ${imei}`);
+    
+    // Check if device already has HOS configuration
+    const hosCheck = await checkHosSegmentConfiguration(imei);
+    
+    if (hosCheck.hasConfiguration) {
+      console.log(`   ✅ Device already has HOS segment configuration, skipping setup`);
+      return { 
+        configured: false, 
+        reason: 'Already configured',
+        existingConfiguration: hosCheck.deviceData.segments.setup.hos
+      };
+    }
+    
+    // Set HOS configuration with default values
+    console.log(`   Setting up HOS segment configuration with default values...`);
+    const setupResult = await setHosSegmentConfiguration(imei);
+    
+    console.log(`   ✅ HOS segment configuration completed for IMEI: ${imei}`);
+    return { 
+      configured: true, 
+      reason: 'Configuration set with default values',
+      setupResult: setupResult
+    };
+    
+  } catch (error) {
+    console.error(`   ❌ Error processing HOS segment configuration: ${error.message}`);
+    throw error;
+  }
+}
+
 // Process secondary device
 async function processSecondaryDevice(secondaryImei, vin, groupId) {
   try {
@@ -834,6 +972,11 @@ app.post("/api/secondary-install", authenticateToken, async (req, res) => {
     console.log("🔧 Creating secondary vehicle in Pegasus...");
     const secondaryVehicleId = await createVehicle(vin, secondary_imei, groupId);
 
+    // Configure HOS segment for secondary device
+    console.log("⚙️  Configuring HOS segment for secondary device...");
+    const secondaryHosResult = await processHosSegmentConfiguration(secondary_imei);
+    console.log(`✅ Secondary device HOS configuration: ${secondaryHosResult.reason}`);
+
     console.log("🎉 SECONDARY DEVICE INSTALLATION WORKFLOW FINISHED SUCCESSFULLY");
     
     return res.json({
@@ -842,6 +985,9 @@ app.post("/api/secondary-install", authenticateToken, async (req, res) => {
       details: {
         groupId,
         secondaryVehicleId,
+        hosConfiguration: {
+          secondary: secondaryHosResult
+        },
         timestamp: new Date().toISOString()
       }
     });
