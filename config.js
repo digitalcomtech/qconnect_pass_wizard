@@ -4,7 +4,7 @@
 
 module.exports = {
   // Environment selection: "production" or "qa"
-  ENVIRONMENT: "qa",
+  ENVIRONMENT: "production",
   
   // Test mode (set to true for testing without making actual API calls)
   TEST_MODE: false,
@@ -26,6 +26,8 @@ module.exports = {
     zapierHookInstall: "https://hooks.zapier.com/hooks/catch/21949880/uyym1m7/",
     zapierHookSecondary: "your-secondary-zapier-hook-here"
   },
+  
+
   
   // QA/Testing environment configuration
   qa: {
