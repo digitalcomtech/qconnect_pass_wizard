@@ -217,18 +217,18 @@
     
     /* Environment indicator in sidebar */
     .sidebar-environment {
-      position: absolute;
-      top: 16px;
-      right: 16px;
+      display: inline-block;
       background: linear-gradient(135deg, #862BAB 0%, #6B21A8 100%);
       color: white;
-      padding: 6px 12px;
-      border-radius: 20px;
-      font-size: 0.75rem;
-      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 16px;
+      font-size: 0.7rem;
+      font-weight: 600;
       letter-spacing: 0.5px;
-      box-shadow: 0 2px 8px rgba(134, 43, 171, 0.3);
-      border: 2px solid rgba(255,255,255,0.2);
+      box-shadow: 0 2px 6px rgba(134, 43, 171, 0.3);
+      border: 1px solid rgba(255,255,255,0.2);
+      margin-top: 8px;
+      align-self: flex-start;
     }
     h1 {
       font-size: 2rem;
@@ -631,10 +631,11 @@
   <div class="app-container">
     <!-- Sidebar Navigation -->
     <div class="sidebar">
-      <div class="sidebar-environment" id="sidebarEnvironment">PROD</div>
-      
       <div class="sidebar-header">
-        <h1 class="sidebar-title">QConnect PASS</h1>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+          <h1 class="sidebar-title" style="margin: 0;">QConnect PASS</h1>
+          <div class="sidebar-environment" id="sidebarEnvironment">PROD</div>
+        </div>
         <p class="sidebar-subtitle">Installation Wizard</p>
         
         <!-- User Info and Logout -->
@@ -821,11 +822,11 @@
           The app will verify your location is within 200 meters of the device before proceeding with installation.
         </div>
         
-        <!-- Test Mode Location Spoofing -->
-        <div style="margin-top: 16px; padding-top: 16px; border-top: 2px solid #e2e8f0;">
+        <!-- Test Mode Location Spoofing (Admin Only) -->
+        <div id="adminTestModeSection" class="hidden" style="margin-top: 16px; padding-top: 16px; border-top: 2px solid #e2e8f0;">
           <label style="display:flex;align-items:center;margin-bottom:12px;cursor:pointer;">
             <input type="checkbox" id="enableTestMode" style="margin-right:10px; transform: scale(1.2);" />
-            <span style="font-weight: 600; color: #ea580c; font-size: 1rem;">🧪 Enable Test Mode (Location Spoofing)</span>
+            <span style="font-weight: 600; color: #ea580c; font-size: 1rem;">🧪 Enable Test Mode (Location Spoofing) - Admin Only</span>
           </label>
           <div id="testModeFields" class="hidden" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 2px solid #f59e0b; border-radius: 10px; padding: 16px; margin-top: 12px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15);">
             <div style="font-size: 0.95rem; color: #92400e; margin-bottom: 12px; font-weight: 600;">
@@ -1027,8 +1028,16 @@
         document.getElementById("secondaryUnitFields").classList.toggle("hidden", !e.target.checked);
       });
       
-      // Test mode toggle
+      // Test mode toggle (Admin only)
       document.getElementById("enableTestMode").addEventListener("change", function(e) {
+        // Check if user is admin before allowing test mode
+        const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+        if (userInfo.role !== 'admin') {
+          e.target.checked = false;
+          alert('Test mode is only available for admin users.');
+          return;
+        }
+        
         document.getElementById("testModeFields").classList.toggle("hidden", !e.target.checked);
         if (e.target.checked) {
           updateDeviceLocationDisplay();
@@ -1080,12 +1089,15 @@
           if (envIndicator) {
             envIndicator.textContent = "QA";
             envIndicator.style.background = "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)";
+            envIndicator.style.boxShadow = "0 2px 6px rgba(245, 158, 11, 0.3)";
           }
         } else {
           document.title = "QConnect PASS Wizard";
           if (contentH1) contentH1.textContent = "QConnect PASS Wizard";
           if (envIndicator) {
+            envIndicator.textContent = "PROD";
             envIndicator.style.background = "linear-gradient(135deg, #862BAB 0%, #6B21A8 100%)";
+            envIndicator.style.boxShadow = "0 2px 6px rgba(134, 43, 171, 0.3)";
           }
         }
       } catch (err) {
@@ -1540,6 +1552,10 @@
         
         const nextCheckIn = Math.ceil(currentInterval / 1000);
         
+        // Reset form opened flag when starting device monitoring
+        formAlreadyOpened = false;
+        console.log("🔍 Reset formAlreadyOpened flag to false");
+        
         installStatus.innerHTML = `
           <div style="margin-bottom: 20px;">
             <div style="font-size: 1.2rem; color: #6B21A8; margin-bottom: 12px; font-weight: 700;">
@@ -1700,7 +1716,9 @@
             }
 
             // Now check user proximity to device (only if form hasn't been opened yet)
+            console.log("🔍 About to check proximity. formAlreadyOpened:", formAlreadyOpened);
             if (!formAlreadyOpened) {
+              console.log("🔍 Calling checkUserProximity with device coordinates:", deviceLat, deviceLon);
               await checkUserProximity(deviceLat, deviceLon);
             } else {
               console.log("Form already opened, skipping proximity check");
@@ -1769,6 +1787,8 @@
 
               // Function to check user proximity to device
         async function checkUserProximity(deviceLat, deviceLon) {
+          console.log("🔍 checkUserProximity called with:", deviceLat, deviceLon);
+          
           // Double-check to prevent multiple form openings
           if (formAlreadyOpened) {
             console.log("Form already opened, skipping proximity check");
@@ -1776,10 +1796,13 @@
           }
           
           try {
-            // Check if test mode is enabled
+            // Check if test mode is enabled (Admin only)
             const testModeEnabled = document.getElementById("enableTestMode").checked;
+            const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
             
-            if (testModeEnabled) {
+            console.log("🔍 Test mode enabled:", testModeEnabled, "User role:", userInfo.role);
+            
+            if (testModeEnabled && userInfo.role === 'admin') {
               // Use test coordinates
               const testLat = parseFloat(document.getElementById("testLatInput").value);
               const testLon = parseFloat(document.getElementById("testLonInput").value);
@@ -1802,19 +1825,26 @@
               }
             } else {
               // Use GPS location
+              console.log("🔍 Using GPS location for proximity check");
               navigator.geolocation.getCurrentPosition(
                 function(position) {
+                  console.log("🔍 GPS position received:", position.coords);
                   const userLat = position.coords.latitude;
                   const userLon = position.coords.longitude;
                   const distance = haversineDistance(userLat, userLon, deviceLat, deviceLon);
                   
+                  console.log("🔍 GPS proximity check - User:", userLat, userLon, "Device:", deviceLat, deviceLon, "Distance:", distance);
+                  
                   if (distance < 200) {
+                    console.log("🔍 GPS proximity check PASSED");
                     handleProximitySuccess("GPS");
                   } else {
+                    console.log("🔍 GPS proximity check FAILED - too far");
                     handleProximityFailure(distance, "GPS");
                   }
                 },
                 function(error) {
+                  console.log("🔍 GPS error:", error);
                   console.log("GPS error, showing manual location options...");
                   showManualLocationOverride(deviceLat, deviceLon);
                 },
@@ -2248,10 +2278,11 @@
       // Function to check user proximity to secondary device
       async function checkSecondaryDeviceProximity(deviceLat, deviceLon) {
         try {
-          // Check if test mode is enabled
+          // Check if test mode is enabled (Admin only)
           const testModeEnabled = document.getElementById("enableTestMode").checked;
+          const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
           
-          if (testModeEnabled) {
+          if (testModeEnabled && userInfo.role === 'admin') {
             // Use test coordinates
             const testLat = parseFloat(document.getElementById("testLatInput").value);
             const testLon = parseFloat(document.getElementById("testLonInput").value);
@@ -2902,11 +2933,17 @@
       const userNameElement = document.getElementById('userName');
       const userRoleElement = document.getElementById('userRole');
       const logoutBtn = document.getElementById('logoutBtn');
+      const adminTestModeSection = document.getElementById('adminTestModeSection');
       
       if (userInfo.name && userInfo.role) {
         userNameElement.textContent = userInfo.name;
         userRoleElement.textContent = userInfo.role;
         userInfoElement.style.display = 'block';
+        
+        // Show test mode section only for admin users
+        if (userInfo.role === 'admin' && adminTestModeSection) {
+          adminTestModeSection.classList.remove('hidden');
+        }
       }
       
       // Setup logout functionality
@@ -2936,6 +2973,7 @@
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       };
+
     }
 
   </script>
