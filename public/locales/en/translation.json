@@ -1,0 +1,121 @@
+{
+  "app": {
+    "title": "QConnect PASS Wizard",
+    "language": "Language",
+    "selectLanguage": "Select Language"
+  },
+  "login": {
+    "title": "Login",
+    "username": "Username",
+    "password": "Password",
+    "loginButton": "Login",
+    "invalidCredentials": "Invalid username or password",
+    "loginSuccess": "Login successful"
+  },
+  "installation": {
+    "title": "Device Installation",
+    "clientSelection": "Client Selection",
+    "enterClientName": "Enter client name or VIN",
+    "vinSelection": "VIN Selection",
+    "chooseVin": "Choose installation VIN",
+    "deviceSetup": "Device Setup",
+    "enterImeiSim": "Enter IMEI & SIM details",
+    "locationCheck": "Location Check",
+    "verifyProximity": "Verify proximity to device",
+    "imei": "IMEI",
+    "verifyImei": "Verify IMEI",
+    "simCard": "SIM Card (Optional)",
+    "verifySim": "Verify SIM",
+    "clientName": "Client Name",
+    "vin": "VIN",
+    "installationId": "Installation ID",
+    "secondaryImei": "Secondary IMEI (Optional)",
+    "startInstallation": "Start Installation",
+    "deviceStatus": "Device Status",
+    "locationCheck": "Location Check",
+    "waitingForDevice": "Waiting for device to report location...",
+    "elapsedTime": "Elapsed time",
+    "nextCheckIn": "Next check in",
+    "attempts": "Attempts",
+    "currentInterval": "Current interval",
+    "tip": "Tip",
+    "deviceMayTakeTime": "Device may take up to 30 minutes to report. We'll check every minute at a steady pace.",
+    "enhancedRequirements": "Enhanced Requirements",
+    "requirementsText": "Device must be online, have recent connection data (≤5min), recent network activity (≤5min), AND fresh location data (≤60s old)",
+    "bypassAvailable": "Bypass Available",
+    "bypassText": "After 15 minutes, you can bypass the location check and proceed with installation",
+    "stopWaiting": "Stop Waiting",
+    "checkNow": "Check Now",
+    "bypassLocationCheck": "Bypass Location Check",
+    "continueWaiting": "Continue Waiting",
+    "locationCheckPassed": "Location check passed!",
+    "locationCheckBypassed": "Location check bypassed!",
+    "formOpened": "Form Opened",
+    "formOpenedText": "The installation form has been opened. Please fill out the required information to complete the installation.",
+    "timeLimitReached": "Time limit reached (30 minutes)",
+    "timeLimitText": "The device has not reported location within the expected timeframe. This could indicate:",
+    "timeLimitReasons": [
+      "Device is not properly connected or powered",
+      "Network connectivity issues",
+      "Device configuration problems"
+    ],
+    "options": "Options",
+    "restartPolling": "Restart Polling",
+    "fifteenMinutesElapsed": "15 minutes elapsed - Bypass option available",
+    "fifteenMinutesText": "The device has not reported location yet. You can continue waiting or bypass the location check:",
+    "fifteenMinutesOptions": [
+      "Continue waiting (up to 30 minutes total)",
+      "Bypass location check and proceed with installation"
+    ],
+    "bypassWarning": "Note: Location validation was bypassed. Please ensure you are at the correct installation site.",
+    "proximityCheck": "Proximity Check",
+    "within200Meters": "You are within 200 meters of the device. Opening installation form...",
+    "openingForm": "Opening installation form...",
+    "testModeActive": "Test Mode Active",
+    "testModeText": "Using custom coordinates for proximity check"
+  },
+  "secondaryDevice": {
+    "title": "Secondary Device Installation",
+    "startingInstallation": "Starting Secondary Device Installation",
+    "secondaryImei": "Secondary IMEI",
+    "noLocationValidation": "No location validation required - proceeding directly to installation form.",
+    "locationCheckPassed": "Secondary Device Location Check Passed!",
+    "within200Meters": "You are within 200 meters of the secondary device. Opening secondary device installation form...",
+    "openingForm": "Opening secondary device installation form..."
+  },
+  "confirmation": {
+    "title": "Installation Confirmation",
+    "confirmInstallation": "Confirm Installation",
+    "installationConfirmed": "Installation confirmed successfully"
+  },
+  "errors": {
+    "imeiRequired": "IMEI is required",
+    "imeiNotFound": "Device not found - IMEI does not exist in the system",
+    "imeiAlreadyLinked": "Device is already linked to a vehicle and cannot be used for installation",
+    "simRequired": "ICCID is required",
+    "simNotFound": "SIM not found in either Pegasus instance",
+    "invalidSimFormat": "Invalid ICCID format. Must start with 8988 (SuperSIM) or 8901 (Wireless)",
+    "installationIdRequired": "Installation ID is required",
+    "missingRequiredFields": "Missing one of client_name, imei, vin, installationId",
+    "networkError": "Network error while connecting to Pegasus API",
+    "timeoutError": "Request timed out while confirming installation",
+    "internalError": "Internal server error"
+  },
+  "success": {
+    "imeiVerified": "IMEI verified successfully",
+    "simVerified": "SIM verified successfully",
+    "installationStarted": "Installation started successfully",
+    "installationCompleted": "Installation completed successfully"
+  },
+  "buttons": {
+    "verify": "Verify",
+    "start": "Start",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "retry": "Retry",
+    "skip": "Skip",
+    "next": "Next",
+    "previous": "Previous",
+    "finish": "Finish"
+  }
+}

@@ -633,10 +633,21 @@
     <div class="sidebar">
       <div class="sidebar-header">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
-          <h1 class="sidebar-title" style="margin: 0;">QConnect PASS</h1>
+          <h1 class="sidebar-title" style="margin: 0;" data-i18n="app.title">QConnect PASS Wizard</h1>
           <div class="sidebar-environment" id="sidebarEnvironment">PROD</div>
         </div>
-        <p class="sidebar-subtitle">Installation Wizard</p>
+        <p class="sidebar-subtitle" data-i18n="installation.title">Device Installation</p>
+        
+        <!-- Language Selector -->
+        <div class="language-selector" style="margin-bottom: 16px;">
+          <label for="languageSelector" style="display: block; font-size: 0.85rem; color: #cbd5e1; margin-bottom: 6px; font-weight: 500;">
+            <span data-i18n="app.language">Language</span>:
+          </label>
+          <select id="languageSelector" style="width: 100%; padding: 8px 12px; border: 1px solid #475569; border-radius: 6px; background: #1e293b; color: white; font-size: 0.9rem; cursor: pointer;">
+            <option value="en">English</option>
+            <option value="es">Español</option>
+          </select>
+        </div>
         
         <!-- User Info and Logout -->
         <div class="user-info" id="userInfo" style="display: none;">
@@ -644,7 +655,7 @@
             <span class="user-name" id="userName"></span>
             <span class="user-role" id="userRole"></span>
           </div>
-          <button class="logout-btn" id="logoutBtn">Logout</button>
+          <button class="logout-btn" id="logoutBtn" data-i18n="buttons.logout">Logout</button>
         </div>
       </div>
       
@@ -652,8 +663,8 @@
         <div class="step-item active" data-step="1" id="stepNav1">
           <div class="step-number">1</div>
           <div class="step-info">
-            <div class="step-title">Client Selection</div>
-            <div class="step-description">Enter client name or VIN</div>
+            <div class="step-title" data-i18n="installation.clientSelection">Client Selection</div>
+            <div class="step-description" data-i18n="installation.enterClientName">Enter client name or VIN</div>
           </div>
           <div class="step-status" id="stepStatus1"></div>
         </div>
@@ -661,8 +672,8 @@
         <div class="step-item locked" data-step="2" id="stepNav2">
           <div class="step-number">2</div>
           <div class="step-info">
-            <div class="step-title">VIN Selection</div>
-            <div class="step-description">Choose installation VIN</div>
+            <div class="step-title" data-i18n="installation.vinSelection">VIN Selection</div>
+            <div class="step-description" data-i18n="installation.chooseVin">Choose installation VIN</div>
           </div>
           <div class="step-status" id="stepStatus2"></div>
         </div>
@@ -670,8 +681,8 @@
         <div class="step-item locked" data-step="3" id="stepNav3">
           <div class="step-number">3</div>
           <div class="step-info">
-            <div class="step-title">Device Setup</div>
-            <div class="step-description">Enter IMEI & SIM details</div>
+            <div class="step-title" data-i18n="installation.deviceSetup">Device Setup</div>
+            <div class="step-description" data-i18n="installation.enterImeiSim">Enter IMEI & SIM details</div>
           </div>
           <div class="step-status" id="stepStatus3"></div>
         </div>
@@ -679,8 +690,8 @@
         <div class="step-item locked" data-step="4" id="stepNav4">
           <div class="step-number">4</div>
           <div class="step-info">
-            <div class="step-title">Location Check</div>
-            <div class="step-description">Verify proximity to device</div>
+            <div class="step-title" data-i18n="installation.locationCheck">Location Check</div>
+            <div class="step-description" data-i18n="installation.verifyProximity">Verify proximity to device</div>
           </div>
           <div class="step-status" id="stepStatus4"></div>
         </div>
@@ -688,8 +699,8 @@
         <div class="step-item locked" data-step="5" id="stepNav5">
           <div class="step-number">5</div>
           <div class="step-info">
-            <div class="step-title">Form Completion</div>
-            <div class="step-description">Complete installation form</div>
+            <div class="step-title" data-i18n="installation.formCompletion">Form Completion</div>
+            <div class="step-description" data-i18n="installation.completeForm">Complete installation form</div>
           </div>
           <div class="step-status" id="stepStatus5"></div>
         </div>
@@ -697,8 +708,8 @@
         <div class="step-item locked" data-step="6" id="stepNav6">
           <div class="step-number">6</div>
           <div class="step-info">
-            <div class="step-title">Final Confirmation</div>
-            <div class="step-description">Confirm installation complete</div>
+            <div class="step-title" data-i18n="installation.finalConfirmation">Final Confirmation</div>
+            <div class="step-description" data-i18n="installation.confirmComplete">Confirm installation complete</div>
           </div>
           <div class="step-status" id="stepStatus6"></div>
         </div>
@@ -710,63 +721,63 @@
       <!-- Status Bar - Shows accumulated information throughout the workflow -->
       <div id="workflowStatusBar" class="workflow-status-bar" style="display: none;">
         <div class="status-item">
-          <span class="status-label">Step:</span>
+          <span class="status-label" data-i18n="header.step">Step:</span>
           <span id="currentStepDisplay" class="status-value">1</span>
         </div>
         <div class="status-item">
-          <span class="status-label">VIN:</span>
+          <span class="status-label" data-i18n="header.vin">VIN:</span>
           <span id="currentVinDisplay" class="status-value">-</span>
         </div>
         <div class="status-item">
-          <span class="status-label">Primary:</span>
+          <span class="status-label" data-i18n="header.primary">Primary:</span>
           <span id="currentPrimaryImeiDisplay" class="status-value">-</span>
         </div>
         <div class="status-item">
-          <span class="status-label">Secondary:</span>
+          <span class="status-label" data-i18n="header.secondary">Secondary:</span>
           <span id="currentSecondaryImeiDisplay" class="status-value">-</span>
         </div>
         <div class="status-item status-status">
-          <span class="status-label">Status:</span>
+          <span class="status-label" data-i18n="header.status">Status:</span>
           <span id="currentStatusDisplay" class="status-value">Ready to start</span>
         </div>
       </div>
 
       <div class="content-container">
-        <h1 style="text-align:center; font-size:1.8rem; margin-bottom:32px; color:#1e293b;">QConnect PASS Wizard</h1>
+        <h1 style="text-align:center; font-size:1.8rem; margin-bottom:32px; color:#1e293b;" data-i18n="app.title">QConnect PASS Wizard</h1>
 
     <!-- STEP 1: Client Name -->
     <div id="clientSection" class="section">
-      <h2 style="text-align:center; font-size:1.2rem; margin-bottom:12px;">Step 1: Enter / Select Client Name</h2>
+      <h2 style="text-align:center; font-size:1.2rem; margin-bottom:12px;" data-i18n="installation.clientSelection">Step 1: Enter / Select Client Name</h2>
       <form id="clientForm">
-        <label for="clientNameInput">Client Name or VIN Start:</label>
+        <label for="clientNameInput" data-i18n="installation.clientName">Client Name or VIN Start:</label>
         <input
           type="text"
           id="clientNameInput"
           placeholder=""
           autocomplete="off"
         />
-        <button type="submit">Submit ▶ Load VINs</button>
+        <button type="submit" data-i18n="buttons.next">Submit ▶ Load VINs</button>
       </form>
       <p id="clientStatus"></p>
     </div>
 
     <!-- STEP 2: VIN Selection -->
     <div id="vinSection" class="section hidden">
-      <h2 style="text-align:center; font-size:1.2rem; margin-bottom:12px;">Step 2: Choose a VIN (Booked)</h2>
+      <h2 style="text-align:center; font-size:1.2rem; margin-bottom:12px;" data-i18n="installation.vinSelection">Step 2: Choose a VIN (Booked)</h2>
       <div id="selectedPersonName" style="margin-bottom:10px; font-weight:bold;"></div>
       <label for="vinSelect">VIN #:</label>
       <select id="vinSelect">
         <option value="">-- Select VIN --</option>
       </select>
-      <button id="backToClientBtn" type="button">◀ Back</button>
-      <button id="nextVinBtn">Next ▶ Enter IMEI & SIM</button>
+      <button id="backToClientBtn" type="button" data-i18n="buttons.back">◀ Back</button>
+      <button id="nextVinBtn" data-i18n="buttons.next">Next ▶ Enter IMEI & SIM</button>
       <p id="vinStatus"></p>
     </div>
 
     <!-- STEP 3: IMEI & SIM (POST to `/api/install`) -->
     <div id="deviceSection" class="section hidden">
-      <h2 style="text-align:center; font-size:1.2rem; margin-bottom:12px;">Step 3: Enter IMEI & SIM</h2>
-      <label for="imeiInput">IMEI (Primary Device)</label>
+      <h2 style="text-align:center; font-size:1.2rem; margin-bottom:12px;" data-i18n="installation.enterImeiSim">Step 3: Enter IMEI & SIM</h2>
+      <label for="imeiInput" data-i18n="installation.imei">IMEI (Primary Device)</label>
       <div style="display:flex; gap:8px; align-items:flex-end;">
         <input
           type="text"
@@ -774,7 +785,7 @@
           placeholder="Enter IMEI"
           style="flex:1;"
         />
-        <button id="verifyImeiBtn" type="button" style="white-space:nowrap;">Verify IMEI</button>
+        <button id="verifyImeiBtn" type="button" style="white-space:nowrap;" data-i18n="buttons.verify">Verify IMEI</button>
       </div>
       <div id="imeiVerificationStatus" style="margin-bottom:14px;"></div>
       
@@ -813,12 +824,12 @@
         <input type="text" id="secondaryImeiInput" placeholder="Enter secondary IMEI" />
       </div>
 
-      <button id="backToVinBtn" type="button">◀ Back</button>
-      <button id="startInstallBtn" type="button" disabled>Start Installation ▶</button>
+      <button id="backToVinBtn" type="button" data-i18n="buttons.back">◀ Back</button>
+      <button id="startInstallBtn" type="button" disabled data-i18n="buttons.startInstallation">Start Installation ▶</button>
       
       <div class="info-box" style="margin-top: 16px; margin-bottom: 16px;">
-        <div style="font-weight: 600; color: #6B21A8; margin-bottom: 8px; font-size: 1rem;">📍 Location Verification</div>
-        <div style="font-size: 0.9rem; color: #374151; margin-bottom: 12px;">
+        <div style="font-weight: 600; color: #6B21A8; margin-bottom: 8px; font-size: 1rem;" data-i18n="location.title">📍 Location Verification</div>
+        <div style="font-size: 0.9rem; color: #374151; margin-bottom: 12px;" data-i18n="location.description">
           The app will verify your location is within 200 meters of the device before proceeding with installation.
         </div>
         
@@ -917,6 +928,9 @@
       </div>
     </div>
   </div>
+
+  <!-- i18next Scripts -->
+  <script src="./js/i18n-simple.js"></script>
 
   <script>
     // Authentication check - redirect to login if not authenticated
@@ -1534,6 +1548,7 @@
     function pollForDeviceReporting() {
       // Steady polling at 1 per minute
       const MAX_DURATION = 30 * 60 * 1000; // 30 minutes total
+      const BYPASS_OPTION_TIME = 15 * 60 * 1000; // 15 minutes - show bypass option
       const STEADY_INTERVAL = 60000; // Steady 1 minute between checks
       
       let attempts = 0;
@@ -1573,6 +1588,7 @@
             <div class="info-box" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 2px solid #f59e0b; color: #92400e;">
               🔍 <strong>Enhanced Requirements:</strong> Device must be online, have recent connection data (≤5min), recent network activity (≤5min), AND fresh location data (≤60s old)
             </div>
+            ${elapsed >= 15 ? '<div class="info-box" style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border: 2px solid #3b82f6; color: #1e40af; margin-top: 12px;"><strong>💡 Bypass Available:</strong> After 15 minutes, you can bypass the location check and proceed with installation</div>' : ''}
           </div>
           <button id="stopPollingBtn" type="button" style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); margin-top: 12px; font-size: 0.95rem; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);">🛑 Stop Waiting</button>
                       <button id="forceLocationCheckBtn" type="button" style="background: linear-gradient(135deg, #862BAB 0%, #6B21A8 100%); margin-left: 12px; font-size: 0.95rem; box-shadow: 0 4px 12px rgba(134, 43, 171, 0.3);">🔍 Check Now</button>
@@ -1598,7 +1614,45 @@
           return;
         }
 
-        // Check if we've exceeded the maximum duration
+        // Check if we've exceeded the bypass option time (15 minutes)
+        if (Date.now() - startTime > BYPASS_OPTION_TIME && Date.now() - startTime <= MAX_DURATION) {
+          installStatus.innerHTML = `
+            <div style="color: #f59e0b; margin-bottom: 20px;">
+              <div style="font-size: 1.2rem; margin-bottom: 10px; font-weight: 700;">⏰ 15 minutes elapsed - Bypass option available</div>
+              <div style="font-size: 0.95rem; margin-bottom: 16px; line-height: 1.5;">
+                The device has not reported location yet. You can continue waiting or bypass the location check:
+              </div>
+              <ul style="font-size: 0.95rem; margin-bottom: 16px; padding-left: 24px; line-height: 1.6;">
+                <li>Continue waiting (up to 30 minutes total)</li>
+                <li>Bypass location check and proceed with installation</li>
+              </ul>
+            </div>
+            <div class="info-box" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 2px solid #f59e0b; margin-bottom: 16px; color: #92400e;">
+              <strong>Options:</strong>
+              <div style="margin-top: 12px;">
+                <button id="bypassLocationCheckBtn" type="button" style="background: linear-gradient(135deg, #059669 0%, #047857 100%); margin-right: 12px; font-size: 0.95rem; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);">✅ Bypass Location Check</button>
+                <button id="continueWaitingBtn" type="button" style="background: linear-gradient(135deg, #862BAB 0%, #6B21A8 100%); font-size: 0.95rem; box-shadow: 0 4px 12px rgba(134, 43, 171, 0.3);">⏳ Continue Waiting</button>
+              </div>
+            </div>
+          `;
+
+          // Add event listeners for the options
+          document.getElementById("bypassLocationCheckBtn").addEventListener("click", () => {
+            console.log("User chose to bypass location check");
+            // Proceed to the next step without location validation
+            proceedWithoutLocationCheck();
+          });
+
+          document.getElementById("continueWaitingBtn").addEventListener("click", () => {
+            console.log("User chose to continue waiting");
+            // Continue with normal polling
+            checkStatus();
+          });
+
+          return;
+        }
+
+        // Check if we've exceeded the maximum duration (30 minutes)
         if (Date.now() - startTime > MAX_DURATION) {
           installStatus.innerHTML = `
             <div style="color: #dc2626; margin-bottom: 20px;">
@@ -1615,12 +1669,18 @@
             <div class="info-box" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 2px solid #f59e0b; margin-bottom: 16px; color: #92400e;">
               <strong>Options:</strong>
               <div style="margin-top: 12px;">
-                <button id="retryPollingBtn" type="button" style="background: linear-gradient(135deg, #862BAB 0%, #6B21A8 100%); margin-right: 12px; font-size: 0.95rem; box-shadow: 0 4px 12px rgba(134, 43, 171, 0.3);">🔄 Restart Polling</button>
+                <button id="bypassLocationCheckBtn" type="button" style="background: linear-gradient(135deg, #059669 0%, #047857 100%); margin-right: 12px; font-size: 0.95rem; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);">✅ Bypass Location Check</button>
+                <button id="retryPollingBtn" type="button" style="background: linear-gradient(135deg, #862BAB 0%, #6B21A8 100%); font-size: 0.95rem; box-shadow: 0 4px 12px rgba(134, 43, 171, 0.3);">🔄 Restart Polling</button>
               </div>
             </div>
           `;
 
           // Add event listeners for the options
+          document.getElementById("bypassLocationCheckBtn").addEventListener("click", () => {
+            console.log("User chose to bypass location check after timeout");
+            proceedWithoutLocationCheck();
+          });
+
           document.getElementById("retryPollingBtn").addEventListener("click", () => {
             startTime = Date.now();
             attempts = 0;
@@ -1862,6 +1922,43 @@
         }
       }
 
+      // Handle bypassing location check
+      function proceedWithoutLocationCheck() {
+        console.log("Proceeding without location check - bypassing proximity validation");
+        
+        // Prevent multiple form openings
+        if (formAlreadyOpened) {
+          console.log("Form already opened, skipping bypass");
+          return;
+        }
+        
+        formAlreadyOpened = true; // Set flag to prevent multiple openings
+        
+        installStatus.innerHTML = `
+          <div style="color: #f59e0b; margin-bottom: 20px;">
+            <div style="font-size: 1.2rem; margin-bottom: 10px; font-weight: 700;">⚠️ Location check bypassed</div>
+            <div style="font-size: 0.95rem; margin-bottom: 16px; line-height: 1.5;">
+              You have chosen to bypass the location check. Opening installation form...
+            </div>
+            <div class="info-box" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 2px solid #f59e0b; margin-bottom: 16px; color: #92400e;">
+              ⚠️ <strong>Note:</strong> Location validation was bypassed. Please ensure you are at the correct installation site.
+            </div>
+          </div>
+          <div style="color: #059669; margin-bottom: 12px; font-weight: 700;">✅ Location check bypassed!</div>
+          <div class="info-box" style="margin-bottom: 12px;">
+            <div style="font-weight: 700; color: #6B21A8; margin-bottom: 10px; font-size: 1rem;">📋 Form Opened</div>
+            <div style="font-size: 0.95rem; color: #374151; margin-bottom: 16px; line-height: 1.5;">
+              The installation form has been opened. Please fill out the required information to complete the installation.
+            </div>
+          </div>
+        `;
+        
+        // Open the installation form
+        setTimeout(() => {
+          openInstallationForm();
+        }, 1000);
+      }
+
       // Handle successful proximity check
       function handleProximitySuccess(method) {
         // Prevent multiple form openings
@@ -2062,6 +2159,7 @@
     function pollForSecondaryDeviceReporting(secondaryImei) {
       // Smart polling with progressive backoff and extended timeout
       const MAX_DURATION = 30 * 60 * 1000; // 30 minutes total
+      const BYPASS_OPTION_TIME = 15 * 60 * 1000; // 15 minutes - show bypass option
       const INITIAL_INTERVAL = 10000; // Start with 10 seconds
       const MAX_INTERVAL = 120000; // Max 2 minutes between checks
       const BACKOFF_MULTIPLIER = 1.5; // Increase interval by 50% each time

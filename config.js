@@ -4,7 +4,7 @@
 
 module.exports = {
   // Environment selection: "production" or "qa"
-  ENVIRONMENT: "production",
+  ENVIRONMENT: "qa",
   
   // Test mode (set to true for testing without making actual API calls)
   TEST_MODE: false,

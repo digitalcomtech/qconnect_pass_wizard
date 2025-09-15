@@ -1,0 +1,121 @@
+{
+  "app": {
+    "title": "Asistente QConnect PASS",
+    "language": "Idioma",
+    "selectLanguage": "Seleccionar Idioma"
+  },
+  "login": {
+    "title": "Iniciar Sesión",
+    "username": "Nombre de Usuario",
+    "password": "Contraseña",
+    "loginButton": "Iniciar Sesión",
+    "invalidCredentials": "Nombre de usuario o contraseña inválidos",
+    "loginSuccess": "Inicio de sesión exitoso"
+  },
+  "installation": {
+    "title": "Instalación de Dispositivo",
+    "clientSelection": "Selección de Cliente",
+    "enterClientName": "Ingrese nombre del cliente o VIN",
+    "vinSelection": "Selección de VIN",
+    "chooseVin": "Elija VIN de instalación",
+    "deviceSetup": "Configuración del Dispositivo",
+    "enterImeiSim": "Ingrese detalles de IMEI y SIM",
+    "locationCheck": "Verificación de Ubicación",
+    "verifyProximity": "Verificar proximidad al dispositivo",
+    "imei": "IMEI",
+    "verifyImei": "Verificar IMEI",
+    "simCard": "Tarjeta SIM (Opcional)",
+    "verifySim": "Verificar SIM",
+    "clientName": "Nombre del Cliente",
+    "vin": "VIN",
+    "installationId": "ID de Instalación",
+    "secondaryImei": "IMEI Secundario (Opcional)",
+    "startInstallation": "Iniciar Instalación",
+    "deviceStatus": "Estado del Dispositivo",
+    "locationCheck": "Verificación de Ubicación",
+    "waitingForDevice": "Esperando que el dispositivo reporte su ubicación...",
+    "elapsedTime": "Tiempo transcurrido",
+    "nextCheckIn": "Próxima verificación en",
+    "attempts": "Intentos",
+    "currentInterval": "Intervalo actual",
+    "tip": "Consejo",
+    "deviceMayTakeTime": "El dispositivo puede tardar hasta 30 minutos en reportar. Verificaremos cada minuto a un ritmo constante.",
+    "enhancedRequirements": "Requisitos Mejorados",
+    "requirementsText": "El dispositivo debe estar en línea, tener datos de conexión recientes (≤5min), actividad de red reciente (≤5min), Y datos de ubicación frescos (≤60s de antigüedad)",
+    "bypassAvailable": "Omisión Disponible",
+    "bypassText": "Después de 15 minutos, puedes omitir la verificación de ubicación y proceder con la instalación",
+    "stopWaiting": "Dejar de Esperar",
+    "checkNow": "Verificar Ahora",
+    "bypassLocationCheck": "Omitir Verificación de Ubicación",
+    "continueWaiting": "Continuar Esperando",
+    "locationCheckPassed": "¡Verificación de ubicación exitosa!",
+    "locationCheckBypassed": "¡Verificación de ubicación omitida!",
+    "formOpened": "Formulario Abierto",
+    "formOpenedText": "El formulario de instalación ha sido abierto. Por favor completa la información requerida para finalizar la instalación.",
+    "timeLimitReached": "Límite de tiempo alcanzado (30 minutos)",
+    "timeLimitText": "El dispositivo no ha reportado su ubicación dentro del tiempo esperado. Esto podría indicar:",
+    "timeLimitReasons": [
+      "El dispositivo no está conectado o encendido correctamente",
+      "Problemas de conectividad de red",
+      "Problemas de configuración del dispositivo"
+    ],
+    "options": "Opciones",
+    "restartPolling": "Reiniciar Verificación",
+    "fifteenMinutesElapsed": "15 minutos transcurridos - Opción de omisión disponible",
+    "fifteenMinutesText": "El dispositivo aún no ha reportado su ubicación. Puedes continuar esperando u omitir la verificación de ubicación:",
+    "fifteenMinutesOptions": [
+      "Continuar esperando (hasta 30 minutos en total)",
+      "Omitir verificación de ubicación y proceder con la instalación"
+    ],
+    "bypassWarning": "Nota: La validación de ubicación fue omitida. Por favor asegúrate de estar en el sitio de instalación correcto.",
+    "proximityCheck": "Verificación de Proximidad",
+    "within200Meters": "Estás dentro de 200 metros del dispositivo. Abriendo formulario de instalación...",
+    "openingForm": "Abriendo formulario de instalación...",
+    "testModeActive": "Modo de Prueba Activo",
+    "testModeText": "Usando coordenadas personalizadas para verificación de proximidad"
+  },
+  "secondaryDevice": {
+    "title": "Instalación de Dispositivo Secundario",
+    "startingInstallation": "Iniciando Instalación de Dispositivo Secundario",
+    "secondaryImei": "IMEI Secundario",
+    "noLocationValidation": "No se requiere validación de ubicación - procediendo directamente al formulario de instalación.",
+    "locationCheckPassed": "¡Verificación de Ubicación del Dispositivo Secundario Exitosa!",
+    "within200Meters": "Estás dentro de 200 metros del dispositivo secundario. Abriendo formulario de instalación del dispositivo secundario...",
+    "openingForm": "Abriendo formulario de instalación del dispositivo secundario..."
+  },
+  "confirmation": {
+    "title": "Confirmación de Instalación",
+    "confirmInstallation": "Confirmar Instalación",
+    "installationConfirmed": "Instalación confirmada exitosamente"
+  },
+  "errors": {
+    "imeiRequired": "IMEI es requerido",
+    "imeiNotFound": "Dispositivo no encontrado - IMEI no existe en el sistema",
+    "imeiAlreadyLinked": "El dispositivo ya está vinculado a un vehículo y no puede ser usado para instalación",
+    "simRequired": "ICCID es requerido",
+    "simNotFound": "SIM no encontrado en ninguna instancia de Pegasus",
+    "invalidSimFormat": "Formato de ICCID inválido. Debe comenzar con 8988 (SuperSIM) o 8901 (Wireless)",
+    "installationIdRequired": "ID de Instalación es requerido",
+    "missingRequiredFields": "Falta uno de: client_name, imei, vin, installationId",
+    "networkError": "Error de red al conectar con la API de Pegasus",
+    "timeoutError": "La solicitud expiró mientras se confirmaba la instalación",
+    "internalError": "Error interno del servidor"
+  },
+  "success": {
+    "imeiVerified": "IMEI verificado exitosamente",
+    "simVerified": "SIM verificado exitosamente",
+    "installationStarted": "Instalación iniciada exitosamente",
+    "installationCompleted": "Instalación completada exitosamente"
+  },
+  "buttons": {
+    "verify": "Verificar",
+    "start": "Iniciar",
+    "confirm": "Confirmar",
+    "cancel": "Cancelar",
+    "retry": "Reintentar",
+    "skip": "Omitir",
+    "next": "Siguiente",
+    "previous": "Anterior",
+    "finish": "Finalizar"
+  }
+}

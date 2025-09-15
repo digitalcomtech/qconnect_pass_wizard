@@ -1,3 +1,4 @@
+
 // server.js
 const express = require("express");
 const fetch = require("node-fetch"); // version 2.x import style
@@ -599,9 +600,10 @@ async function createVehicle(vin, imei, groupId) {
       license_plate: "",
       color: "",
       vin: vin,
+      primary: parseInt(groupId),
       tank_volume: null,
       tank_unit: null,
-      groups: [parseInt(groupId)] // 3367 is hardcoded as per dossier
+      groups: [3367,parseInt(groupId)] // 3367 is hardcoded as per dossier
     };
     
     console.log(`   Vehicle payload:`, JSON.stringify(vehiclePayload, null, 2));
@@ -630,6 +632,57 @@ async function createVehicle(vin, imei, groupId) {
     
   } catch (error) {
     console.error(`   ❌ Error creating vehicle: ${error.message}`);
+    throw error;
+  }
+}
+
+// Create secondary vehicle with hardcoded group 4126
+async function createSecondaryVehicle(vin, imei, groupId) {
+  try {
+    console.log(`   Creating secondary vehicle with VIN: ${vin}, IMEI: ${imei}, Group: ${groupId}`);
+    
+    // Build vehicle payload for secondary device with hardcoded group 4126
+    const vehiclePayload = {
+      name: `${vin} (2)`,
+      device: imei,
+      year: "",
+      make: "",
+      model: "",
+      license_plate: "",
+      color: "",
+      vin: vin,
+      primary: parseInt(groupId),
+      tank_volume: null,
+      tank_unit: null,
+      groups: [3367, 4126] // Hardcoded group 4126 for secondary devices
+    };
+    
+    console.log(`   Secondary vehicle payload:`, JSON.stringify(vehiclePayload, null, 2));
+    
+    // Create secondary vehicle in Pegasus with enhanced error handling
+    const response = await makePegasusApiCall("https://api.pegasusgateway.com/vehicles", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authenticate": currentConfig.pegasusToken
+      },
+      body: JSON.stringify(vehiclePayload)
+    });
+    
+    const vehicleData = await response.json();
+    console.log(`   Secondary vehicle creation response:`, JSON.stringify(vehicleData, null, 2));
+    
+    // Extract vehicle ID from response
+    const vehicleId = vehicleData.id || vehicleData._id;
+    if (!vehicleId) {
+      throw new Error("No vehicle ID returned from Pegasus for secondary vehicle");
+    }
+    
+    console.log(`   ✅ Secondary vehicle created successfully with ID: ${vehicleId}`);
+    return vehicleId;
+    
+  } catch (error) {
+    console.error(`   ❌ Error creating secondary vehicle: ${error.message}`);
     throw error;
   }
 }
@@ -913,8 +966,8 @@ async function processSecondaryDevice(secondaryImei, vin, groupId) {
   try {
     console.log(`   Processing secondary device: ${secondaryImei} for VIN: ${vin}`);
     
-    // Create secondary vehicle in Pegasus
-    const secondaryVehicleId = await createVehicle(vin, secondaryImei, groupId);
+    // Create secondary vehicle in Pegasus with hardcoded group 4126
+    const secondaryVehicleId = await createSecondaryVehicle(vin, secondaryImei, groupId);
     
     console.log(`   ✅ Secondary device processed successfully with vehicle ID: ${secondaryVehicleId}`);
     return secondaryVehicleId;
@@ -968,9 +1021,9 @@ app.post("/api/secondary-install", authenticateToken, async (req, res) => {
     console.log("🏢 Creating/updating group in Pegasus...");
     const groupId = await createOrUpdateGroup(client_name);
 
-    // Create secondary vehicle in Pegasus
+    // Create secondary vehicle in Pegasus with hardcoded group 4126
     console.log("🔧 Creating secondary vehicle in Pegasus...");
-    const secondaryVehicleId = await createVehicle(vin, secondary_imei, groupId);
+    const secondaryVehicleId = await createSecondaryVehicle(vin, secondary_imei, groupId);
 
     // Configure HOS segment for secondary device
     console.log("⚙️  Configuring HOS segment for secondary device...");
@@ -1682,4 +1735,7 @@ function checkProximityToDevice(userLat, userLon) {
     alert("You are too far from the device location to proceed.");
   }
 }
+
+
+
 
