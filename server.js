@@ -313,7 +313,7 @@ app.post("/api/install", authenticateToken, async (req, res) => {
     let secondaryHosResult = null;
     if (secondary_imei) {
       console.log("🔧 Step 11: Processing secondary device...");
-      const secondaryVehicleId = await processSecondaryDevice(secondary_imei, vin, groupId);
+      const secondaryVehicleId = await processSecondaryDevice(secondary_imei, vin, client_name);
       
       // Configure HOS segment for secondary device
       console.log("⚙️  Step 11b: Configuring HOS segment for secondary device...");
@@ -636,12 +636,173 @@ async function createVehicle(vin, imei, groupId) {
   }
 }
 
-// Create secondary vehicle with hardcoded group 4126
-async function createSecondaryVehicle(vin, imei, groupId) {
+// Create or get secondary group with naming pattern "client (2)"
+async function createOrUpdateSecondaryGroup(clientName) {
   try {
-    console.log(`   Creating secondary vehicle with VIN: ${vin}, IMEI: ${imei}, Group: ${groupId}`);
+    const secondaryGroupName = `${clientName} (2)`;
+    console.log(`   Getting or creating secondary group for client: ${secondaryGroupName}`);
     
-    // Build vehicle payload for secondary device with hardcoded group 4126
+    // First, try to find an existing secondary group with this name
+    console.log(`   🔍 Searching for existing secondary group with name: ${secondaryGroupName}`);
+    try {
+      const searchResponse = await fetch(`https://api.pegasusgateway.com/groups?name=${encodeURIComponent(secondaryGroupName)}`, {
+        method: "GET",
+        headers: {
+          "Authenticate": currentConfig.pegasusToken
+        },
+        signal: AbortSignal.timeout(30000)
+      });
+      
+      if (searchResponse.ok) {
+        const searchData = await searchResponse.json();
+        if (searchData && searchData.length > 0) {
+          const existingGroup = searchData[0];
+          const existingGroupId = existingGroup.id || existingGroup._id;
+          console.log(`   ✅ Found existing secondary group with ID: ${existingGroupId}`);
+          return { groupId: existingGroupId, created: false };
+        }
+      }
+    } catch (searchError) {
+      console.log(`   ⚠️  Could not search for existing secondary group: ${searchError.message}`);
+      // Continue with group creation attempt
+    }
+    
+    // Build secondary group payload based on dossier specifications
+    const groupPayload = {
+      name: secondaryGroupName,
+      company_name: secondaryGroupName,
+      address_1: "",
+      logo: null,
+      contact_email: "",
+      contact_name: secondaryGroupName,
+      city: "",
+      country: "Mexico" // Default as specified in dossier
+    };
+    
+    console.log(`   Secondary group payload:`, JSON.stringify(groupPayload, null, 2));
+    
+    // Attempt to create new secondary group
+    try {
+      const response = await fetch("https://api.pegasusgateway.com/groups", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authenticate": currentConfig.pegasusToken
+        },
+        body: JSON.stringify(groupPayload),
+        signal: AbortSignal.timeout(30000)
+      });
+      
+      if (response.ok) {
+        const groupData = await response.json();
+        console.log(`   Secondary group creation response:`, JSON.stringify(groupData, null, 2));
+        
+        // Extract group ID from response
+        const groupId = groupData.id || groupData._id;
+        if (!groupId) {
+          throw new Error("No secondary group ID returned from Pegasus");
+        }
+        
+        console.log(`   ✅ Secondary group created successfully with ID: ${groupId}`);
+        return { groupId, created: true };
+      } else {
+        // Handle 400 error - this is NOT fatal, just means group already exists
+        const errorText = await response.text();
+        if (response.status === 400 && errorText.includes("Name already in use by another group")) {
+          console.log(`   🔄 Secondary group name already exists, fetching existing group...`);
+          
+          // Re-fetch the existing group by name
+          const searchUrl = `https://api.pegasusgateway.com/groups?name=${encodeURIComponent(secondaryGroupName)}`;
+          console.log(`   🔍 Searching at: ${searchUrl}`);
+          
+          const refetchResponse = await fetch(searchUrl, {
+            method: "GET",
+            headers: {
+              "Authenticate": currentConfig.pegasusToken
+            },
+            signal: AbortSignal.timeout(30000)
+          });
+          
+          console.log(`   🔍 Search response status: ${refetchResponse.status}`);
+          
+          if (refetchResponse.ok) {
+            const refetchData = await refetchResponse.json();
+            console.log(`   🔍 Search response data:`, JSON.stringify(refetchData, null, 2));
+            
+            // Check if we have data and if it's an array with items
+            if (refetchData && Array.isArray(refetchData) && refetchData.length > 0) {
+              const existingGroup = refetchData[0];
+              const existingGroupId = existingGroup.id || existingGroup._id;
+              console.log(`   ✅ Retrieved existing secondary group with ID: ${existingGroupId}`);
+              return { groupId: existingGroupId, created: false };
+            } else if (refetchData && refetchData.data && Array.isArray(refetchData.data) && refetchData.data.length > 0) {
+              // Handle case where response has a data property containing the array
+              const existingGroup = refetchData.data[0];
+              const existingGroupId = existingGroup.id || existingGroup._id;
+              console.log(`   ✅ Retrieved existing secondary group with ID: ${existingGroupId} from data property`);
+              return { groupId: existingGroupId, created: false };
+            } else {
+              console.log(`   ⚠️  Search returned unexpected data structure:`, typeof refetchData, refetchData);
+            }
+          } else {
+            console.log(`   ❌ Search failed with status: ${refetchResponse.status}`);
+            const searchErrorText = await refetchResponse.text();
+            console.log(`   ❌ Search error: ${searchErrorText}`);
+          }
+          
+          // If we still can't find it, this is unexpected but not fatal
+          console.log(`   ⚠️  Unexpected: Could not retrieve existing secondary group after 400 error`);
+          throw new Error(`Unexpected: Secondary group creation failed with 400 but could not retrieve existing group`);
+        }
+        
+        // For other 4xx/5xx errors, throw as these are fatal
+        throw new Error(`Pegasus API call failed: ${response.status} - ${errorText}`);
+      }
+    } catch (error) {
+      // Only re-throw if it's not the 400 "Name already in use" error
+      if (error.message.includes("Name already in use by another group")) {
+        console.log(`   🔄 Handling 400 error gracefully, fetching existing secondary group...`);
+        
+        // Final attempt to get existing group
+        try {
+          const finalSearchResponse = await fetch(`https://api.pegasusgateway.com/groups?name=${encodeURIComponent(secondaryGroupName)}`, {
+            method: "GET",
+            headers: {
+              "Authenticate": currentConfig.pegasusToken
+            },
+            signal: AbortSignal.timeout(30000)
+          });
+          
+          if (finalSearchResponse.ok) {
+            const finalSearchData = await finalSearchResponse.json();
+            if (finalSearchData && finalSearchData.length > 0) {
+              const existingGroup = finalSearchData[0];
+              const existingGroupId = existingGroup.id || existingGroup._id;
+              console.log(`   ✅ Retrieved existing secondary group with ID: ${existingGroupId} after 400 error`);
+              return { groupId: existingGroupId, created: false };
+            }
+          }
+        } catch (finalSearchError) {
+          console.log(`   ❌ Final attempt to retrieve existing secondary group failed: ${finalSearchError.message}`);
+        }
+      }
+      
+      // If we get here, something went wrong that we can't recover from
+      throw error;
+    }
+    
+  } catch (error) {
+    console.error(`   ❌ Fatal error in secondary group operation: ${error.message}`);
+    throw error;
+  }
+}
+
+// Create secondary vehicle with secondary group ID
+async function createSecondaryVehicle(vin, imei, groupId2) {
+  try {
+    console.log(`   Creating secondary vehicle with VIN: ${vin}, IMEI: ${imei}, Secondary Group: ${groupId2}`);
+    
+    // Build vehicle payload for secondary device with secondary group ID
     const vehiclePayload = {
       name: `${vin} (2)`,
       device: imei,
@@ -651,10 +812,10 @@ async function createSecondaryVehicle(vin, imei, groupId) {
       license_plate: "",
       color: "",
       vin: vin,
-      primary: parseInt(groupId),
+      primary: parseInt(groupId2), // Use secondary group ID as primary key
       tank_volume: null,
       tank_unit: null,
-      groups: [3367, 4126] // Hardcoded group 4126 for secondary devices
+      groups: [3367, parseInt(groupId2)] // Use secondary group ID instead of hardcoded 4126
     };
     
     console.log(`   Secondary vehicle payload:`, JSON.stringify(vehiclePayload, null, 2));
@@ -962,12 +1123,18 @@ async function processHosSegmentConfiguration(imei) {
 }
 
 // Process secondary device
-async function processSecondaryDevice(secondaryImei, vin, groupId) {
+async function processSecondaryDevice(secondaryImei, vin, clientName) {
   try {
     console.log(`   Processing secondary device: ${secondaryImei} for VIN: ${vin}`);
     
-    // Create secondary vehicle in Pegasus with hardcoded group 4126
-    const secondaryVehicleId = await createSecondaryVehicle(vin, secondaryImei, groupId);
+    // Create or get secondary group with naming pattern "client (2)"
+    console.log(`   🏢 Creating/getting secondary group for client: ${clientName}`);
+    const secondaryGroupResult = await createOrUpdateSecondaryGroup(clientName);
+    const groupId2 = secondaryGroupResult.groupId;
+    console.log(`   ✅ Secondary group ${secondaryGroupResult.created ? 'created' : 'retrieved'} with ID: ${groupId2}`);
+    
+    // Create secondary vehicle in Pegasus with secondary group ID
+    const secondaryVehicleId = await createSecondaryVehicle(vin, secondaryImei, groupId2);
     
     console.log(`   ✅ Secondary device processed successfully with vehicle ID: ${secondaryVehicleId}`);
     return secondaryVehicleId;
@@ -1019,11 +1186,12 @@ app.post("/api/secondary-install", authenticateToken, async (req, res) => {
 
     // Create/update group in Pegasus
     console.log("🏢 Creating/updating group in Pegasus...");
-    const groupId = await createOrUpdateGroup(client_name);
+    const groupResult = await createOrUpdateGroup(client_name);
+    const groupId = groupResult.groupId;
 
-    // Create secondary vehicle in Pegasus with hardcoded group 4126
+    // Create secondary vehicle in Pegasus with secondary group
     console.log("🔧 Creating secondary vehicle in Pegasus...");
-    const secondaryVehicleId = await createSecondaryVehicle(vin, secondary_imei, groupId);
+    const secondaryVehicleId = await processSecondaryDevice(secondary_imei, vin, client_name);
 
     // Configure HOS segment for secondary device
     console.log("⚙️  Configuring HOS segment for secondary device...");
