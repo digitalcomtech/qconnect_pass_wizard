@@ -1,0 +1,450 @@
+[
+  {
+    "sessionId": "session_1758810668032_5tx378u9z",
+    "userId": 2,
+    "username": "installer",
+    "userRole": "installer",
+    "userName": "Field Installer",
+    "status": "in_progress",
+    "progress": 0,
+    "startTime": "2025-09-25T14:31:08.032Z",
+    "endTime": null,
+    "duration": null,
+    "steps": {
+      "clientSelection": {
+        "completed": false,
+        "timestamp": null,
+        "data": null
+      },
+      "vinSelection": {
+        "completed": false,
+        "timestamp": null,
+        "data": null
+      },
+      "deviceSetup": {
+        "completed": false,
+        "timestamp": null,
+        "data": null
+      },
+      "locationCheck": {
+        "completed": false,
+        "timestamp": null,
+        "data": null
+      },
+      "formCompletion": {
+        "completed": false,
+        "timestamp": null,
+        "data": null
+      },
+      "finalConfirmation": {
+        "completed": false,
+        "timestamp": null,
+        "data": null
+      }
+    },
+    "inputData": {
+      "client_name": "Valerio GUILLERMO Gonzales HERNÁNDEZ",
+      "installationId": "45",
+      "vin": null,
+      "imei": null,
+      "sim_number": null,
+      "secondary_imei": null,
+      "location": null,
+      "formData": null
+    },
+    "errors": [],
+    "completionReason": null,
+    "lastActivity": "2025-09-25T14:31:08.032Z"
+  },
+  {
+    "sessionId": "session_1758810906837_iaov93y6s",
+    "userId": 2,
+    "username": "installer",
+    "userRole": "installer",
+    "userName": "Field Installer",
+    "status": "in_progress",
+    "progress": 0,
+    "startTime": "2025-09-25T14:35:06.837Z",
+    "endTime": null,
+    "duration": null,
+    "steps": {
+      "clientSelection": {
+        "completed": false,
+        "timestamp": null,
+        "data": null
+      },
+      "vinSelection": {
+        "completed": false,
+        "timestamp": null,
+        "data": null
+      },
+      "deviceSetup": {
+        "completed": false,
+        "timestamp": null,
+        "data": null
+      },
+      "locationCheck": {
+        "completed": false,
+        "timestamp": null,
+        "data": null
+      },
+      "formCompletion": {
+        "completed": false,
+        "timestamp": null,
+        "data": null
+      },
+      "finalConfirmation": {
+        "completed": false,
+        "timestamp": null,
+        "data": null
+      }
+    },
+    "inputData": {
+      "client_name": "Valerio GUILLERMO Gonzales HERNÁNDEZ",
+      "installationId": "45",
+      "vin": null,
+      "imei": null,
+      "sim_number": null,
+      "secondary_imei": null,
+      "location": null,
+      "formData": null
+    },
+    "errors": [],
+    "completionReason": null,
+    "lastActivity": "2025-09-25T14:35:06.837Z"
+  },
+  {
+    "sessionId": "session_1758811288144_egi405xev",
+    "userId": 2,
+    "username": "installer",
+    "userRole": "installer",
+    "userName": "Field Installer",
+    "status": "in_progress",
+    "progress": 0,
+    "startTime": "2025-09-25T14:41:28.144Z",
+    "endTime": null,
+    "duration": null,
+    "steps": {
+      "clientSelection": {
+        "completed": false,
+        "timestamp": null,
+        "data": null
+      },
+      "vinSelection": {
+        "completed": false,
+        "timestamp": null,
+        "data": null
+      },
+      "deviceSetup": {
+        "completed": false,
+        "timestamp": null,
+        "data": null
+      },
+      "locationCheck": {
+        "completed": false,
+        "timestamp": null,
+        "data": null
+      },
+      "formCompletion": {
+        "completed": false,
+        "timestamp": null,
+        "data": null
+      },
+      "finalConfirmation": {
+        "completed": false,
+        "timestamp": null,
+        "data": null
+      }
+    },
+    "inputData": {
+      "client_name": "Valerio GUILLERMO Gonzales HERNÁNDEZ",
+      "installationId": "45",
+      "vin": null,
+      "imei": null,
+      "sim_number": null,
+      "secondary_imei": null,
+      "location": null,
+      "formData": null
+    },
+    "errors": [],
+    "completionReason": null,
+    "lastActivity": "2025-09-25T14:41:28.144Z"
+  },
+  {
+    "sessionId": "session_1758811781771_3nz2duxnd",
+    "userId": 2,
+    "username": "installer",
+    "userRole": "installer",
+    "userName": "Field Installer",
+    "status": "in_progress",
+    "progress": 0,
+    "startTime": "2025-09-25T14:49:41.771Z",
+    "endTime": null,
+    "duration": null,
+    "steps": {
+      "clientSelection": {
+        "completed": false,
+        "timestamp": null,
+        "data": null
+      },
+      "vinSelection": {
+        "completed": false,
+        "timestamp": null,
+        "data": null
+      },
+      "deviceSetup": {
+        "completed": false,
+        "timestamp": null,
+        "data": null
+      },
+      "locationCheck": {
+        "completed": false,
+        "timestamp": null,
+        "data": null
+      },
+      "formCompletion": {
+        "completed": false,
+        "timestamp": null,
+        "data": null
+      },
+      "finalConfirmation": {
+        "completed": false,
+        "timestamp": null,
+        "data": null
+      }
+    },
+    "inputData": {
+      "client_name": "Valerio GUILLERMO Gonzales HERNÁNDEZ",
+      "installationId": "45",
+      "vin": null,
+      "imei": null,
+      "sim_number": null,
+      "secondary_imei": null,
+      "location": null,
+      "formData": null
+    },
+    "errors": [],
+    "completionReason": null,
+    "lastActivity": "2025-09-25T14:49:41.771Z"
+  },
+  {
+    "sessionId": "session_1758812282512_zwsph1dzd",
+    "userId": 2,
+    "username": "installer",
+    "userRole": "installer",
+    "userName": "Field Installer",
+    "status": "incomplete",
+    "progress": 83,
+    "startTime": "2025-09-25T14:58:02.512Z",
+    "endTime": "2025-09-26T15:57:00.155Z",
+    "duration": 89938,
+    "steps": {
+      "clientSelection": {
+        "completed": true,
+        "timestamp": "2025-09-25T15:23:28.090Z",
+        "data": {
+          "client_name": "valerio",
+          "timestamp": "2025-09-25T15:23:28.083Z",
+          "url": "http://localhost:8080/",
+          "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
+        }
+      },
+      "vinSelection": {
+        "completed": true,
+        "timestamp": "2025-09-25T15:24:28.884Z",
+        "data": {
+          "vin": "1ABC234567AQWERTY",
+          "client_name": "valerio",
+          "timestamp": "2025-09-25T15:24:28.876Z",
+          "url": "http://localhost:8080/",
+          "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
+        }
+      },
+      "deviceSetup": {
+        "completed": true,
+        "timestamp": "2025-09-25T15:24:31.580Z",
+        "data": {
+          "imei": "867698041094437",
+          "sim_number": null,
+          "secondary_imei": null,
+          "timestamp": "2025-09-25T15:24:31.574Z",
+          "url": "http://localhost:8080/",
+          "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
+        }
+      },
+      "locationCheck": {
+        "completed": false,
+        "timestamp": null,
+        "data": null
+      },
+      "formCompletion": {
+        "completed": true,
+        "timestamp": "2025-09-25T15:27:35.803Z",
+        "data": {
+          "formData": {
+            "timestamp": "2025-09-25T15:27:35.794Z",
+            "step": "finalConfirmation"
+          },
+          "timestamp": "2025-09-25T15:27:35.794Z",
+          "url": "http://localhost:8080/",
+          "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
+        }
+      },
+      "finalConfirmation": {
+        "completed": true,
+        "timestamp": "2025-09-25T14:58:04.411Z",
+        "data": {
+          "success": true,
+          "groupId": 2,
+          "vehicleId": 6828,
+          "timestamp": "2025-09-25T14:58:04.411Z"
+        }
+      }
+    },
+    "inputData": {
+      "client_name": "valerio",
+      "vin": "1ABC234567AQWERTY",
+      "imei": "867698041094437",
+      "sim_number": null,
+      "secondary_imei": null,
+      "location": null,
+      "formData": {
+        "timestamp": "2025-09-25T15:27:35.794Z",
+        "step": "finalConfirmation"
+      },
+      "reason": "Session timeout",
+      "timestamp": "2025-09-26T15:57:00.108Z"
+    },
+    "errors": [],
+    "completionReason": "abandoned",
+    "lastActivity": "2025-09-25T15:27:35.804Z"
+  },
+  {
+    "sessionId": "session_1758813292898_tiryq7byu",
+    "userId": 2,
+    "username": "installer",
+    "userRole": "installer",
+    "userName": "Field Installer",
+    "status": "incomplete",
+    "progress": 17,
+    "startTime": "2025-09-25T15:14:52.898Z",
+    "endTime": "2025-09-26T15:57:00.175Z",
+    "duration": 88927,
+    "steps": {
+      "clientSelection": {
+        "completed": false,
+        "timestamp": null,
+        "data": null
+      },
+      "vinSelection": {
+        "completed": false,
+        "timestamp": null,
+        "data": null
+      },
+      "deviceSetup": {
+        "completed": false,
+        "timestamp": null,
+        "data": null
+      },
+      "locationCheck": {
+        "completed": false,
+        "timestamp": null,
+        "data": null
+      },
+      "formCompletion": {
+        "completed": false,
+        "timestamp": null,
+        "data": null
+      },
+      "finalConfirmation": {
+        "completed": true,
+        "timestamp": "2025-09-25T15:14:53.881Z",
+        "data": {
+          "success": true,
+          "groupId": 2,
+          "vehicleId": 6861,
+          "timestamp": "2025-09-25T15:14:53.881Z"
+        }
+      }
+    },
+    "inputData": {
+      "client_name": "Valerio GUILLERMO Gonzales HERNÁNDEZ",
+      "installationId": "45",
+      "vin": null,
+      "imei": null,
+      "sim_number": null,
+      "secondary_imei": null,
+      "location": null,
+      "formData": null,
+      "reason": "Session timeout",
+      "timestamp": "2025-09-26T15:57:00.175Z"
+    },
+    "errors": [],
+    "completionReason": "abandoned",
+    "lastActivity": "2025-09-25T15:14:53.881Z"
+  },
+  {
+    "sessionId": "session_1758813877126_ai6lh96zv",
+    "userId": 2,
+    "username": "installer",
+    "userRole": "installer",
+    "userName": "Field Installer",
+    "status": "incomplete",
+    "progress": 17,
+    "startTime": "2025-09-25T15:24:37.126Z",
+    "endTime": "2025-09-26T15:57:00.176Z",
+    "duration": 88343,
+    "steps": {
+      "clientSelection": {
+        "completed": false,
+        "timestamp": null,
+        "data": null
+      },
+      "vinSelection": {
+        "completed": false,
+        "timestamp": null,
+        "data": null
+      },
+      "deviceSetup": {
+        "completed": false,
+        "timestamp": null,
+        "data": null
+      },
+      "locationCheck": {
+        "completed": false,
+        "timestamp": null,
+        "data": null
+      },
+      "formCompletion": {
+        "completed": false,
+        "timestamp": null,
+        "data": null
+      },
+      "finalConfirmation": {
+        "completed": true,
+        "timestamp": "2025-09-25T15:24:38.204Z",
+        "data": {
+          "success": true,
+          "groupId": 2,
+          "vehicleId": 6894,
+          "timestamp": "2025-09-25T15:24:38.204Z"
+        }
+      }
+    },
+    "inputData": {
+      "client_name": "Valerio GUILLERMO Gonzales HERNÁNDEZ",
+      "installationId": "45",
+      "vin": null,
+      "imei": null,
+      "sim_number": null,
+      "secondary_imei": null,
+      "location": null,
+      "formData": null,
+      "reason": "Session timeout",
+      "timestamp": "2025-09-26T15:57:00.175Z"
+    },
+    "errors": [],
+    "completionReason": "abandoned",
+    "lastActivity": "2025-09-25T15:24:38.204Z"
+  }
+]

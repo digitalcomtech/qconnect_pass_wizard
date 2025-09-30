@@ -9,7 +9,17 @@ const config = require("./config");
 
 // Load authentication modules
 const { authenticateUser } = require('./users');
-const { authenticateToken, generateToken } = require('./auth');
+const { authenticateToken, generateToken, requireRole } = require('./auth');
+
+// Load activity tracking modules
+const { initializeActivityTracker } = require('./activity-tracker');
+const {
+  trackInstallationStart,
+  trackInstallationComplete,
+  trackInstallationErrors,
+  trackStepProgress,
+  addSessionIdHeader
+} = require('./activity-middleware');
 
 const TEST_MODE = config.TEST_MODE;
 const ENABLE_CONFIRMATION_FALLBACK = config.ENABLE_CONFIRMATION_FALLBACK;
@@ -47,6 +57,17 @@ app.use(express.static("public"));
 
 // 2) Parse incoming JSON bodies for POST requests:
 app.use(express.json());
+
+// 2.5) Initialize activity tracking
+initializeActivityTracker();
+
+// 2.6) Activity tracking middleware
+app.use(addSessionIdHeader);
+app.use(trackStepProgress);
+
+// 2.7) Add completion tracking middleware to installation endpoints
+app.use('/api/install', trackInstallationComplete);
+app.use('/api/secondary-install', trackInstallationComplete);
 
 // Authentication endpoints
 app.post("/api/auth/login", async (req, res) => {
@@ -232,13 +253,13 @@ const ZAPIER_HOOK_INSTALL = currentConfig.zapierHookInstall;
 const ZAPIER_HOOK_SECONDARY = currentConfig.zapierHookSecondary;
 
 // 4) Complete Zapier workflow implementation (now protected)
-app.post("/api/install", authenticateToken, async (req, res) => {
+app.post("/api/install", authenticateToken, trackInstallationStart, async (req, res) => {
   try {
     console.log("\n🚀 STARTING COMPLETE INSTALLATION WORKFLOW");
     console.log("Request body:", JSON.stringify(req.body, null, 2));
     
     // 1. Extract and validate input parameters
-    const { client_name, imei, sim_number, vin, installationId, secondary_imei } = req.body;
+    const { client_name, imei, sim_number, vin, installationId, secondary_imei, secondary_sim_number } = req.body;
     
     if (!client_name || !imei || !vin || !installationId) {
       return res.status(400).json({
@@ -313,6 +334,16 @@ app.post("/api/install", authenticateToken, async (req, res) => {
     let secondaryHosResult = null;
     if (secondary_imei) {
       console.log("🔧 Step 11: Processing secondary device...");
+      
+      // Process secondary SIM if provided
+      if (secondary_sim_number) {
+        console.log("📱 Step 11a: Processing secondary SIM card...");
+        await processSimCard(secondary_sim_number);
+        console.log("✅ Secondary SIM card processed successfully");
+      } else {
+        console.log("⏭️  Step 11a: No secondary SIM provided, skipping");
+      }
+      
       const secondaryVehicleId = await processSecondaryDevice(secondary_imei, vin, client_name);
       
       // Configure HOS segment for secondary device
@@ -327,6 +358,17 @@ app.post("/api/install", authenticateToken, async (req, res) => {
 
     console.log("🎉 COMPLETE INSTALLATION WORKFLOW FINISHED SUCCESSFULLY");
     
+    // Track successful completion
+    if (req.sessionId) {
+      const { trackFrontendStep } = require('./activity-middleware');
+      trackFrontendStep(req.sessionId, 'finalConfirmation', {
+        success: true,
+        groupId,
+        vehicleId,
+        timestamp: new Date().toISOString()
+      });
+    }
+    
     return res.json({
       status: "success",
       message: "Complete installation workflow executed successfully",
@@ -335,6 +377,7 @@ app.post("/api/install", authenticateToken, async (req, res) => {
         vehicleId,
         simProcessed: !!sim_number,
         secondaryDeviceProcessed: !!secondary_imei,
+        secondarySimProcessed: !!secondary_sim_number,
         hosConfiguration: {
           primary: primaryHosResult,
           secondary: secondaryHosResult
@@ -603,7 +646,7 @@ async function createVehicle(vin, imei, groupId) {
       primary: parseInt(groupId),
       tank_volume: null,
       tank_unit: null,
-      groups: [3367,parseInt(groupId)] // 3367 is hardcoded as per dossier
+      groups: currentConfig.defaultGroupId ? [currentConfig.defaultGroupId, parseInt(groupId)] : [parseInt(groupId)] // Use hardcoded group ID only in production
     };
     
     console.log(`   Vehicle payload:`, JSON.stringify(vehiclePayload, null, 2));
@@ -815,7 +858,7 @@ async function createSecondaryVehicle(vin, imei, groupId2) {
       primary: parseInt(groupId2), // Use secondary group ID as primary key
       tank_volume: null,
       tank_unit: null,
-      groups: [3367, parseInt(groupId2)] // Use secondary group ID instead of hardcoded 4126
+      groups: currentConfig.defaultGroupId ? [currentConfig.defaultGroupId, parseInt(groupId2)] : [parseInt(groupId2)] // Use hardcoded group ID only in production
     };
     
     console.log(`   Secondary vehicle payload:`, JSON.stringify(vehiclePayload, null, 2));
@@ -1146,12 +1189,12 @@ async function processSecondaryDevice(secondaryImei, vin, clientName) {
 }
 
 // 4b) Secondary device installation endpoint (updated to use complete workflow)
-app.post("/api/secondary-install", authenticateToken, async (req, res) => {
+app.post("/api/secondary-install", authenticateToken, trackInstallationStart, async (req, res) => {
   try {
     console.log("\n🔧 STARTING SECONDARY DEVICE INSTALLATION WORKFLOW");
     console.log("Request body:", JSON.stringify(req.body, null, 2));
     
-    const { client_name, secondary_imei, vin, installationId } = req.body;
+    const { client_name, secondary_imei, secondary_sim_number, vin, installationId } = req.body;
     
     if (!client_name || !secondary_imei || !vin || !installationId) {
       return res.status(400).json({
@@ -1189,6 +1232,15 @@ app.post("/api/secondary-install", authenticateToken, async (req, res) => {
     const groupResult = await createOrUpdateGroup(client_name);
     const groupId = groupResult.groupId;
 
+    // Process secondary SIM if provided
+    if (secondary_sim_number) {
+      console.log("📱 Processing secondary SIM card...");
+      await processSimCard(secondary_sim_number);
+      console.log("✅ Secondary SIM card processed successfully");
+    } else {
+      console.log("⏭️  No secondary SIM provided, skipping");
+    }
+
     // Create secondary vehicle in Pegasus with secondary group
     console.log("🔧 Creating secondary vehicle in Pegasus...");
     const secondaryVehicleId = await processSecondaryDevice(secondary_imei, vin, client_name);
@@ -1200,12 +1252,24 @@ app.post("/api/secondary-install", authenticateToken, async (req, res) => {
 
     console.log("🎉 SECONDARY DEVICE INSTALLATION WORKFLOW FINISHED SUCCESSFULLY");
     
+    // Track successful completion
+    if (req.sessionId) {
+      const { trackFrontendStep } = require('./activity-middleware');
+      trackFrontendStep(req.sessionId, 'finalConfirmation', {
+        success: true,
+        groupId,
+        secondaryVehicleId,
+        timestamp: new Date().toISOString()
+      });
+    }
+    
     return res.json({
       status: "success",
       message: "Secondary device installation workflow executed successfully",
       details: {
         groupId,
         secondaryVehicleId,
+        secondarySimProcessed: !!secondary_sim_number,
         hosConfiguration: {
           secondary: secondaryHosResult
         },
@@ -1862,7 +1926,194 @@ async function makePegasusApiCall(url, options, retryCount = 3) {
   }, retryCount);
 }
 
-// 5) Start the server
+// Activity tracking API endpoints
+
+// Get user's activity summary
+app.get("/api/activity/summary", authenticateToken, (req, res) => {
+  try {
+    const { getUserActivitySummary } = require('./activity-tracker');
+    const summary = getUserActivitySummary(req.user.id);
+    
+    res.json({
+      success: true,
+      data: summary
+    });
+  } catch (error) {
+    console.error('Error getting activity summary:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error retrieving activity summary',
+      error: error.message
+    });
+  }
+});
+
+// Get user's incomplete sessions (where they left off)
+app.get("/api/activity/incomplete", authenticateToken, (req, res) => {
+  try {
+    const { getUserIncompleteSessions } = require('./activity-tracker');
+    const incompleteSessions = getUserIncompleteSessions(req.user.id);
+    
+    res.json({
+      success: true,
+      data: incompleteSessions
+    });
+  } catch (error) {
+    console.error('Error getting incomplete sessions:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error retrieving incomplete sessions',
+      error: error.message
+    });
+  }
+});
+
+// Get all activities with optional filtering (admin only)
+app.get("/api/activity/all", authenticateToken, requireRole('admin'), (req, res) => {
+  try {
+    const { getAllActivities } = require('./activity-tracker');
+    
+    // Extract query parameters for filtering
+    const filters = {
+      userId: req.query.userId,
+      status: req.query.status,
+      dateFrom: req.query.dateFrom,
+      dateTo: req.query.dateTo
+    };
+    
+    // Remove undefined values
+    Object.keys(filters).forEach(key => {
+      if (filters[key] === undefined) {
+        delete filters[key];
+      }
+    });
+    
+    const activities = getAllActivities(filters);
+    
+    res.json({
+      success: true,
+      data: activities,
+      filters: filters,
+      count: activities.length
+    });
+  } catch (error) {
+    console.error('Error getting all activities:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error retrieving activities',
+      error: error.message
+    });
+  }
+});
+
+// Get overall activity statistics (admin only)
+app.get("/api/activity/stats", authenticateToken, requireRole('admin'), (req, res) => {
+  try {
+    const { getOverallStats } = require('./activity-tracker');
+    const stats = getOverallStats();
+    
+    res.json({
+      success: true,
+      data: stats
+    });
+  } catch (error) {
+    console.error('Error getting activity stats:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error retrieving activity statistics',
+      error: error.message
+    });
+  }
+});
+
+// Get specific session details
+app.get("/api/activity/session/:sessionId", authenticateToken, (req, res) => {
+  try {
+    const { getSession } = require('./activity-tracker');
+    const session = getSession(req.params.sessionId);
+    
+    if (!session) {
+      return res.status(404).json({
+        success: false,
+        message: 'Session not found'
+      });
+    }
+    
+    // Check if user has access to this session
+    if (session.userId !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied'
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: session
+    });
+  } catch (error) {
+    console.error('Error getting session details:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error retrieving session details',
+      error: error.message
+    });
+  }
+});
+
+// Track frontend step completion
+app.post("/api/track-step", authenticateToken, (req, res) => {
+  try {
+    const { sessionId, step, data } = req.body;
+    
+    if (!sessionId || !step) {
+      return res.status(400).json({
+        success: false,
+        message: 'sessionId and step are required'
+      });
+    }
+    
+    const { trackFrontendStep } = require('./activity-middleware');
+    trackFrontendStep(sessionId, step, data);
+    
+    res.json({
+      success: true,
+      message: 'Step progress tracked successfully'
+    });
+  } catch (error) {
+    console.error('Error tracking step:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error tracking step progress',
+      error: error.message
+    });
+  }
+});
+
+// Get current session ID for user
+app.get("/api/activity/current-session", authenticateToken, (req, res) => {
+  try {
+    const { getCurrentSessionId } = require('./activity-middleware');
+    const sessionId = getCurrentSessionId(req.user.id);
+    
+    res.json({
+      success: true,
+      sessionId: sessionId
+    });
+  } catch (error) {
+    console.error('Error getting current session:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error retrieving current session',
+      error: error.message
+    });
+  }
+});
+
+// 5) Error handling middleware (must be last)
+app.use(trackInstallationErrors);
+
+// 6) Start the server
 app.listen(PORT, () => {
   console.log(`Express proxy running at http://localhost:${PORT}`);
 });

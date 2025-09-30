@@ -1,0 +1,23 @@
+{
+  "2": {
+    "userId": 2,
+    "totalSessions": 3,
+    "completedSessions": 0,
+    "incompleteSessions": 3,
+    "totalDuration": 267208,
+    "averageDuration": 89069,
+    "successRate": 0,
+    "lastActivity": "2025-09-25T15:24:38.204Z",
+    "stepCompletionRates": {
+      "clientSelection": 1,
+      "vinSelection": 1,
+      "deviceSetup": 1,
+      "locationCheck": 0,
+      "formCompletion": 1,
+      "finalConfirmation": 3
+    },
+    "commonErrors": {},
+    "averageProgress": 39,
+    "totalProgress": 117
+  }
+}

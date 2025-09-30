@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test Page</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .button { background: #007bff; color: white; padding: 10px 15px; border: none; border-radius: 3px; cursor: pointer; margin: 5px; }
+        .button:hover { background: #0056b3; }
+        .output { background: #f8f9fa; padding: 10px; border-radius: 3px; margin-top: 10px; white-space: pre-wrap; }
+        .error { background: #f8d7da; color: #721c24; }
+        .success { background: #d4edda; color: #155724; }
+        input, select { padding: 8px; margin: 5px; border: 1px solid #ddd; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>API Test Page</h1>
+        
+        <div class="section">
+            <h3>1. Login to Get Token</h3>
+            <select id="username">
+                <option value="admin">admin</option>
+                <option value="installer">installer</option>
+            </select>
+            <input type="password" id="password" placeholder="Password" value="admin123">
+            <button class="button" onclick="login()">Login</button>
+            <div id="loginOutput" class="output"></div>
+        </div>
+
+        <div class="section">
+            <h3>2. Test API Endpoints</h3>
+            <button class="button" onclick="testEndpoint('/api/activity/summary')">Activity Summary</button>
+            <button class="button" onclick="testEndpoint('/api/activity/incomplete')">Incomplete Sessions</button>
+            <button class="button" onclick="testEndpoint('/api/activity/all')">All Activities (Admin)</button>
+            <button class="button" onclick="testEndpoint('/api/activity/stats')">Activity Stats (Admin)</button>
+            <button class="button" onclick="testEndpoint('/api/activity/current-session')">Current Session</button>
+            <div id="apiOutput" class="output"></div>
+        </div>
+
+        <div class="section">
+            <h3>3. Manual Token Entry</h3>
+            <input type="text" id="manualToken" placeholder="Paste JWT token here" style="width: 500px;">
+            <button class="button" onclick="setManualToken()">Use This Token</button>
+            <div id="tokenOutput" class="output"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentToken = null;
+
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const output = document.getElementById('loginOutput');
+            
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    currentToken = data.token;
+                    output.className = 'output success';
+                    output.textContent = `✅ Login successful!\nToken: ${data.token}\nUser: ${data.user.name} (${data.user.role})`;
+                } else {
+                    output.className = 'output error';
+                    output.textContent = `❌ Login failed: ${data.message || 'Unknown error'}`;
+                }
+            } catch (error) {
+                output.className = 'output error';
+                output.textContent = `❌ Error: ${error.message}`;
+            }
+        }
+
+        async function testEndpoint(endpoint) {
+            if (!currentToken) {
+                document.getElementById('apiOutput').innerHTML = '<div class="output error">❌ Please login first to get a token</div>';
+                return;
+            }
+
+            const output = document.getElementById('apiOutput');
+            output.textContent = 'Loading...';
+            
+            try {
+                const response = await fetch(endpoint, {
+                    headers: { 'Authorization': `Bearer ${currentToken}` }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    output.className = 'output success';
+                    output.textContent = `✅ ${endpoint}\n\n${JSON.stringify(data, null, 2)}`;
+                } else {
+                    output.className = 'output error';
+                    output.textContent = `❌ ${endpoint}\nStatus: ${response.status}\n${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (error) {
+                output.className = 'output error';
+                output.textContent = `❌ Error: ${error.message}`;
+            }
+        }
+
+        function setManualToken() {
+            const token = document.getElementById('manualToken').value.trim();
+            if (token) {
+                currentToken = token;
+                document.getElementById('tokenOutput').innerHTML = '<div class="output success">✅ Token set successfully!</div>';
+            } else {
+                document.getElementById('tokenOutput').innerHTML = '<div class="output error">❌ Please enter a token</div>';
+            }
+        }
+    </script>
+</body>
+</html>

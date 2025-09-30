@@ -1,5 +1,5 @@
 /**
- * Configuration for QConnect PASS Wizard - QA Environment
+ * Configuration for QConnect PASS Wizard - Production Environment
  */
 
 module.exports = {
@@ -18,6 +18,9 @@ module.exports = {
     pegasusBaseUrl: "https://qservices.pegasusgateway.com",
     pegasusToken: "2f2df11d24bba3d071c22ca1c54f42dd64dda64e6bddfe9e6f3cc824",
     
+    // Default group ID for vehicle creation
+    defaultGroupId: 3367,
+    
     // Pegasus instance tokens for SIM management
     pegasus1Token: "8702ee591a35dab8726f76784de9968e1539ec8c660b880c9024d0c3",
     pegasus256Token: "2f2df11d24bba3d071c22ca1c54f42dd64dda64e6bddfe9e6f3cc824",
@@ -34,6 +37,9 @@ module.exports = {
     // Main Pegasus services (QA)
     pegasusBaseUrl: "https://qservices.pegasusgateway.com/qa",
     pegasusToken: "cfe06b66972326270ae9d3420336379b9d5176ab424acd417330cc02",
+    
+    // Default group ID for vehicle creation (QA)
+    defaultGroupId: null, // No hardcoded group ID in QA - use dynamically created groups only
     
     // Pegasus instance tokens for SIM management (QA)
     pegasus1Token: "8702ee591a35dab8726f76784de9968e1539ec8c660b880c9024d0c3",

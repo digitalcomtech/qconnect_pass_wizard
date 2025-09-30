@@ -831,6 +831,25 @@
       <div id="secondaryUnitFields" class="hidden" style="width:100%;">
         <label for="secondaryImeiInput">Secondary IMEI</label>
         <input type="text" id="secondaryImeiInput" placeholder="Enter secondary IMEI" />
+        
+        <label for="secondarySimInput">Secondary SIM Card # (Optional)</label>
+        <div style="display:flex; gap:8px; align-items:flex-end;">
+          <input
+            type="text"
+            id="secondarySimInput"
+            placeholder="Leave blank if no SIM card"
+            style="flex:1;"
+          />
+          <button id="verifySecondarySimBtn" type="button" style="white-space:nowrap;">Verify SIM</button>
+        </div>
+        <div id="secondarySimVerificationStatus" style="margin-bottom:14px;"></div>
+        
+        <label for="secondarySimConfirmInput">Retype Secondary SIM Card # (Optional)</label>
+        <input
+          type="text"
+          id="secondarySimConfirmInput"
+          placeholder="Retype Secondary SIM Card # (optional)"
+        />
       </div>
 
       <button id="backToVinBtn" type="button" data-i18n="buttons.back">◀ Back</button>
@@ -940,6 +959,7 @@
 
   <!-- i18next Scripts -->
   <script src="./js/i18n-simple.js"></script>
+  <script src="./js/activity-tracker.js"></script>
 
   <script>
     // Authentication check - redirect to login if not authenticated
@@ -1001,6 +1021,7 @@
     let selectedInstallationId = "";
     let imeiVerified          = false;
     let simVerified           = false;
+    let secondarySimVerified  = false;
     let appConfig             = null;
     let formAlreadyOpened     = false; // Prevent form from opening multiple times
 
@@ -1029,6 +1050,11 @@
       startInstallBtn.addEventListener("click", onStartInstallation);
       verifyImeiBtn.addEventListener("click", onVerifyImei);
       verifySimBtn.addEventListener("click", onVerifySim);
+      document.getElementById("verifySecondarySimBtn").addEventListener("click", onVerifySecondarySim);
+      
+      // Back button event listeners
+      document.getElementById("backToClientBtn").addEventListener("click", onBackToClient);
+      document.getElementById("backToVinBtn").addEventListener("click", onBackToVin);
       
       // Reset verification when IMEI changes
       imeiInput.addEventListener("input", () => {
@@ -1044,6 +1070,14 @@
         if (simVerified) {
           simVerified = false;
           simVerificationStatus.innerHTML = '<span style="color:#f39c12;">⚠️ SIM changed - please verify again</span>';
+        }
+      });
+      
+      // Reset verification when secondary SIM changes
+      document.getElementById("secondarySimInput").addEventListener("input", () => {
+        if (secondarySimVerified) {
+          secondarySimVerified = false;
+          document.getElementById("secondarySimVerificationStatus").innerHTML = '<span style="color:#f39c12;">⚠️ Secondary SIM changed - please verify again</span>';
         }
       });
       
@@ -1235,6 +1269,12 @@
     async function onNextClient(e) {
       e.preventDefault();
       clientStatus.innerText = "";
+      
+      // Track client selection step
+      const clientName = clientNameInput.value.trim();
+      if (window.activityTracker && clientName) {
+        window.activityTracker.trackClientSelection(clientName);
+      }
 
       // Clear previous workflow status and start fresh (only if status bar exists)
       if (document.getElementById('workflowStatusBar')) {
@@ -1323,6 +1363,11 @@
       }
       selectedVIN = vin;
       selectedInstallationId = vinSelect.selectedOptions[0].dataset.installationId;
+      
+      // Track VIN selection step
+      if (window.activityTracker) {
+        window.activityTracker.trackVinSelection(vin, selectedClientName);
+      }
 
       sessionStorage.setItem("step", "3");
       sessionStorage.setItem("selectedVIN", selectedVIN);
@@ -1362,6 +1407,13 @@
       if (!imei) {
         imeiVerificationStatus.innerHTML = '<span style="color:#e74c3c;">🚨 Please enter an IMEI to verify.</span>';
         return;
+      }
+      
+      // Track device setup step
+      if (window.activityTracker) {
+        const secondaryImei = document.getElementById("secondaryImeiInput").value.trim() || null;
+        const secondarySim = document.getElementById("secondarySimInput").value.trim() || null;
+        window.activityTracker.trackDeviceSetup(imei, null, secondaryImei, secondarySim);
       }
 
       imeiVerificationStatus.innerHTML = '<span style="color:#f39c12;">⏳ Verifying IMEI...</span>';
@@ -1437,9 +1489,58 @@
       }
     }
 
+    async function onVerifySecondarySim() {
+      const iccid = document.getElementById("secondarySimInput").value.trim();
+      if (!iccid) {
+        document.getElementById("secondarySimVerificationStatus").innerHTML = '<span style="color:#e74c3c;">🚨 Please enter an ICCID to verify.</span>';
+        return;
+      }
+
+      document.getElementById("secondarySimVerificationStatus").innerHTML = '<span style="color:#f39c12;">⏳ Verifying Secondary SIM...</span>';
+      document.getElementById("verifySecondarySimBtn").disabled = true;
+
+      try {
+        const resp = await fetch("/api/verify-sim", {
+          method: "POST",
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ iccid })
+        });
+
+        const data = await resp.json();
+
+        if (resp.ok && data.success) {
+          secondarySimVerified = true;
+          document.getElementById("secondarySimVerificationStatus").innerHTML = `<span style="color:#27ae60;">✅ ${data.simData.simType} Secondary SIM verified successfully! Found in ${data.simData.foundIn} | Status: ${data.simData.status}</span>`;
+        } else {
+          secondarySimVerified = false;
+          document.getElementById("secondarySimVerificationStatus").innerHTML = `<span style="color:#e74c3c;">❌ ${data.message}</span>`;
+        }
+      } catch (err) {
+        console.error("Error verifying secondary SIM:", err);
+        secondarySimVerified = false;
+        document.getElementById("secondarySimVerificationStatus").innerHTML = '<span style="color:#e74c3c;">❌ Error connecting to verification service</span>';
+      } finally {
+        document.getElementById("verifySecondarySimBtn").disabled = false;
+      }
+    }
+
     // STEP 3 → STEP 4
     async function onStartInstallation() {
       installStatus.innerText = "";
+      
+      // Track installation start
+      if (window.activityTracker) {
+        const installationData = {
+          imei: imeiInput.value.trim(),
+          sim_number: simInput.value.trim() || null,
+          secondary_imei: secondaryImeiInput.value.trim() || null,
+          secondary_sim_number: document.getElementById("secondarySimInput").value.trim() || null,
+          vin: selectedVIN,
+          client_name: selectedClientName,
+          installationId: selectedInstallationId
+        };
+        window.activityTracker.trackInstallationStart(installationData);
+      }
       
       // Reset form opened flag for new installation
       formAlreadyOpened = false;
@@ -1455,6 +1556,8 @@
       const sim = simInput.value.trim();
       const simConfirm = document.getElementById("simConfirmInput").value.trim();
       const secondaryImei = document.getElementById("secondaryImeiInput").value.trim();
+      const secondarySim = document.getElementById("secondarySimInput").value.trim();
+      const secondarySimConfirm = document.getElementById("secondarySimConfirmInput").value.trim();
       const addSecondary = document.getElementById("addSecondaryUnit").checked;
       
       if (!imei) {
@@ -1482,6 +1585,18 @@
         installStatus.innerText = "🚨 Please enter the secondary IMEI.";
         return;
       }
+      
+      // Validate secondary SIM if provided
+      if (addSecondary && secondarySim) {
+        if (secondarySim !== secondarySimConfirm) {
+          installStatus.innerText = "🚨 Secondary SIM values do not match.";
+          return;
+        }
+        if (!secondarySimVerified) {
+          installStatus.innerText = "🚨 Please verify the secondary SIM card before proceeding with installation.";
+          return;
+        }
+      }
       installStatus.innerText = "↻ Sending IMEI & SIM to server…";
 
       try {
@@ -1497,6 +1612,9 @@
         }
         if (addSecondary && secondaryImei) {
           payload.secondary_imei = secondaryImei;
+        }
+        if (addSecondary && secondarySim) {
+          payload.secondary_sim_number = secondarySim;
         }
         const resp = await fetch("/api/install", {
           method: "POST",
@@ -2650,6 +2768,55 @@
       window.open(formUrl, '_blank');
     }
 
+    // Show manual location override for primary device
+    function showManualLocationOverride(deviceLat, deviceLon) {
+      installStatus.innerHTML = `
+        <div style="color: #d97706; margin-bottom: 20px;">
+          <div style="font-size: 1.2rem; margin-bottom: 10px; font-weight: 700;">📍 Manual Location Entry Required</div>
+          <div style="font-size: 0.95rem; margin-bottom: 16px; line-height: 1.5;">
+            GPS location could not be determined automatically.<br>
+            <strong>Device Location:</strong> ${deviceLat}, ${deviceLon}<br>
+            Please enter your current coordinates manually.
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+          <div>
+            <label for="manualLatInput" style="font-size: 0.9rem; color: #92400e; font-weight: 600;">Your Latitude:</label>
+            <input type="number" id="manualLatInput" placeholder="e.g., 25.78395" step="0.00001" style="font-size: 0.9rem; padding: 10px 12px; border: 2px solid #f59e0b; border-radius: 8px; background: #fff;" />
+          </div>
+          <div>
+            <label for="manualLonInput" style="font-size: 0.9rem; color: #92400e; font-weight: 600;">Your Longitude:</label>
+            <input type="number" id="manualLonInput" placeholder="e.g., -100.26345" step="0.00001" style="font-size: 0.9rem; padding: 10px 12px; border: 2px solid #f59e0b; border-radius: 8px; background: #fff;" />
+          </div>
+        </div>
+        <button id="checkManualProximityBtn" type="button" style="background: linear-gradient(135deg, #862BAB 0%, #6B21A8 100%); color: white; border: none; border-radius: 6px; padding: 8px 16px; font-size: 0.9rem; cursor: pointer; font-weight: 600; box-shadow: 0 2px 6px rgba(134, 43, 171, 0.3);">
+          🔍 Check Proximity
+        </button>
+      `;
+      
+      // Add event listener for manual proximity check
+      document.getElementById("checkManualProximityBtn").addEventListener("click", function() {
+        const manualLat = parseFloat(document.getElementById("manualLatInput").value);
+        const manualLon = parseFloat(document.getElementById("manualLonInput").value);
+        
+        if (isNaN(manualLat) || isNaN(manualLon)) {
+          alert("Please enter valid latitude and longitude values.");
+          return;
+        }
+        
+        const distance = calculateDistance(manualLat, manualLon, deviceLat, deviceLon);
+        console.log(`🔍 Manual proximity check: ${distance.toFixed(2)}m`);
+        
+        if (distance <= 200) {
+          console.log("🔍 Manual proximity check SUCCESS");
+          handleProximitySuccess("Manual");
+        } else {
+          console.log("🔍 Manual proximity check FAILED - too far");
+          handleProximityFailure(distance, "Manual");
+        }
+      });
+    }
+
     // Show manual location override for secondary device
     function showSecondaryDeviceManualLocationOverride(deviceLat, deviceLon) {
       installStatus.innerHTML = `
@@ -2741,10 +2908,37 @@
     function onBackToClient() {
       vinSection.classList.add("hidden");
       clientSection.classList.remove("hidden");
+      
+      // Update sidebar navigation
+      updateStepStatus(2, 'pending');
+      navigateToStep(1);
+      
+      // Track step navigation
+      if (window.activityTracker) {
+        window.activityTracker.trackStep('navigation', {
+          action: 'back_to_client',
+          from: 'vinSelection',
+          to: 'clientSelection'
+        });
+      }
     }
+    
     function onBackToVin() {
       deviceSection.classList.add("hidden");
       vinSection.classList.remove("hidden");
+      
+      // Update sidebar navigation
+      updateStepStatus(3, 'pending');
+      navigateToStep(2);
+      
+      // Track step navigation
+      if (window.activityTracker) {
+        window.activityTracker.trackStep('navigation', {
+          action: 'back_to_vin',
+          from: 'deviceSetup',
+          to: 'vinSelection'
+        });
+      }
     }
 
 
@@ -2760,6 +2954,14 @@
     async function onFinalConfirmation() {
       confirmationStatus.innerText = "🔄 Sending final confirmation to system...";
       finalConfirmBtn.disabled = true;
+      
+      // Track final confirmation step
+      if (window.activityTracker) {
+        window.activityTracker.trackFormCompletion({
+          timestamp: new Date().toISOString(),
+          step: 'finalConfirmation'
+        });
+      }
       
       try {
         const resp = await fetch("/api/confirm-installation", {
@@ -2808,9 +3010,11 @@
       // Reset verification states
       imeiVerified = false;
       simVerified = false;
+      secondarySimVerified = false;
       startInstallBtn.disabled = true;
       imeiVerificationStatus.innerHTML = "";
       simVerificationStatus.innerHTML = "";
+      document.getElementById("secondarySimVerificationStatus").innerHTML = "";
       
       // Add location permission request button if geolocation is supported
       if (navigator.geolocation) {

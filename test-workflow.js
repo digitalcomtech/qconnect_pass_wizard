@@ -16,7 +16,8 @@ const testInstallation = {
   sim_number: "8901260862393323067", // Wireless SIM for testing
   vin: "1GKS27KL1RR148321",
   installationId: "test_installation_" + Date.now(),
-  secondary_imei: "987654321098765" // Optional secondary device
+  secondary_imei: "987654321098765", // Optional secondary device
+  secondary_sim_number: "8988247123456789012" // Optional secondary SIM
 };
 
 async function testWorkflow() {
