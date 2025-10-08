@@ -2244,40 +2244,18 @@
           </div>
           <div style="font-size: 0.95rem; color: #475569; margin-bottom: 12px; line-height: 1.5;">
             <strong>Secondary IMEI:</strong> ${secondaryImei}<br>
-            <strong>Status:</strong> Proceeding directly to form opening...
-          </div>
-          <div class="info-box" style="margin-bottom: 12px;">
-            💡 <strong>Secondary Device:</strong> No location validation required - proceeding directly to installation form.
-          </div>
+            <strong>Status:</strong> Completing secondary device setup...
+        </div>
+        <div class="info-box" style="margin-bottom: 12px;">
+          💡 <strong>Secondary Device:</strong> No location validation required - completing secondary device setup.
+        </div>
         </div>
       `;
       
-      // Skip location validation and proceed directly to form opening
+      // Skip location validation and proceed directly to completion
       setTimeout(() => {
-        openSecondaryDevicePrefilledForm();
-        
-        // Show secondary device form completion interface
-        installStatus.innerHTML = `
-          <div style="color: #059669; margin-bottom: 20px;">
-            <div style="font-size: 1.2rem; margin-bottom: 10px; font-weight: 700;">✅ Secondary Device Form Opened!</div>
-            <div style="font-size: 0.95rem; margin-bottom: 16px; line-height: 1.5;">
-              The secondary device installation form has been opened in a new tab.<br>
-              Please complete the form and then click the button below to continue.
-            </div>
-            <div class="info-box" style="margin-bottom: 16px;">
-              💡 <strong>Next Step:</strong> Complete the secondary device installation form, then click the button below.
-            </div>
-          </div>
-          <button id="secondaryFormCompletedBtn" type="button" style="background: linear-gradient(135deg, #059669 0%, #047857 100%); color: white; border: none; border-radius: 8px; padding: 12px 24px; font-size: 1rem; cursor: pointer; font-weight: 600; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);">
-            ✅ Secondary Device Form Completed
-          </button>
-        `;
-        
-        // Add event listener for the secondary form completion button
-        document.getElementById("secondaryFormCompletedBtn").addEventListener("click", function() {
-          // Complete secondary device workflow and proceed to final confirmation
-          completeSecondaryDeviceWorkflow(false); // false = not skipped
-        });
+        // Complete secondary device workflow directly without form
+        completeSecondaryDeviceWorkflow(false); // false = not skipped
       }, 1000);
     }
     
@@ -2571,42 +2549,20 @@
           <div style="color: #059669; margin-bottom: 20px;">
             <div style="font-size: 1.2rem; margin-bottom: 10px; font-weight: 700;">✅ Secondary Device Location Check Passed!</div>
             <div style="font-size: 0.95rem; margin-bottom: 16px; line-height: 1.5;">
-              You are within 200 meters of the secondary device. Opening secondary device installation form...
+              You are within 200 meters of the secondary device. Completing secondary device setup...
             </div>
             ${testModeIndicator}
           </div>
         `;
         
         setTimeout(() => {
-          console.log("Opening secondary device prefilled form...");
-          openSecondaryDevicePrefilledForm();
-          console.log("Secondary device form opened successfully");
+          console.log("Secondary device location verified, completing workflow...");
           
           // Update sidebar: Secondary device workflow completed
           updateStepStatus(4, 'completed'); // This represents the secondary device completion
           
-          // Show secondary device form completion interface
-          installStatus.innerHTML = `
-            <div style="color: #059669; margin-bottom: 20px;">
-              <div style="font-size: 1.2rem; margin-bottom: 10px; font-weight: 700;">✅ Secondary Device Form Opened!</div>
-              <div style="font-size: 0.95rem; margin-bottom: 16px; line-height: 1.5;">
-                The secondary device installation form has been opened in a new tab.<br>
-                Please complete the form and then click the button below to continue.
-              </div>
-              <div class="info-box" style="margin-bottom: 16px;">
-                💡 <strong>Next Step:</strong> Complete the secondary device installation form, then click the button below.
-              </div>
-            </div>
-            <button id="secondaryFormCompletedBtn" type="button" style="background: linear-gradient(135deg, #059669 0%, #047857 100%); color: white; border: none; border-radius: 8px; padding: 12px 24px; font-size: 1rem; cursor: pointer; font-weight: 600; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);">
-              ✅ Secondary Device Form Completed
-            </button>
-          `;
-          
-          // Add event listener for the secondary form completion button
-          document.getElementById("secondaryFormCompletedBtn").addEventListener("click", function() {
-            // Complete secondary device workflow and proceed to final confirmation
-            completeSecondaryDeviceWorkflow(false); // false = not skipped
-          });
+          // Complete secondary device workflow directly without form
+          completeSecondaryDeviceWorkflow(false); // false = not skipped
         }, 1000);
       }
 
@@ -2731,42 +2687,6 @@
       }, 2000);
     }
 
-    // Open secondary device prefilled form
-    function openSecondaryDevicePrefilledForm() {
-      const inst = JSON.parse(sessionStorage.getItem("selectedInstallation") || "{}");
-      if (!inst || !inst.vehiculo) {
-        alert("No installation data found for secondary device!");
-        return;
-      }
-      
-      // Get the primary VIN and create secondary VIN name with "(2)" suffix
-      const primaryVin = inst.vehiculo?.vin || inst.vehiculo?.serie || "";
-      const secondaryVinName = primaryVin ? `${primaryVin}(2)` : "Secondary Device";
-      
-      // Map your JSON fields to the form's query params for secondary device
-      const params = new URLSearchParams({
-        installationId: inst._id,
-        driverName: inst.persona?.nombreAsegurado || "",
-        "driverName[last]": inst.persona?.apellidoPaterno || "",
-        email: inst.persona?.contactos?.[0]?.email || "",
-        serviceType: inst.persona?.tipo || "",
-        vin: secondaryVinName, // Use VIN(2) naming convention
-        imei: document.getElementById("secondaryImeiInput").value.trim(), // Use secondary IMEI
-        deviceType: "secondary", // Mark as secondary device
-        primaryImei: imeiInput.value.trim() // Include primary IMEI for reference
-      });
-      
-      // Update workflow status for secondary device
-      updateWorkflowStatus({
-        currentStep: 'Secondary Device Form',
-        secondaryImei: document.getElementById("secondaryImeiInput").value.trim(),
-        status: `Secondary device form opened for ${secondaryVinName}`
-      });
-      
-      // Open the form in a new tab
-      const formUrl = `https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAAO__c8nLFtUMjE2NldORzYyTy4u&${params.toString()}`;
-      window.open(formUrl, '_blank');
-    }
 
     // Show manual location override for primary device
     function showManualLocationOverride(deviceLat, deviceLon) {
