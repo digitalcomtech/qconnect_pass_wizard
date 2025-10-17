@@ -53,8 +53,8 @@ This implementation adds support for creating secondary groups for installations
 - Secondary vehicle: `primary: parseInt(groupId2)` where `groupId2` is the secondary group ID
 
 ### Group Membership
-- Primary vehicle: `groups: [3367, parseInt(groupId)]`
-- Secondary vehicle: `groups: [3367, parseInt(groupId2)]`
+- Primary vehicle: `groups: [3367, parseInt(groupId)]` (hardcoded 3367 + client group)
+- Secondary vehicle: `groups: [4126, parseInt(groupId2)]` (hardcoded 4126 + secondary client group)
 
 ## API Endpoints Affected
 
