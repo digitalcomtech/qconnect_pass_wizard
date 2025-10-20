@@ -646,7 +646,7 @@ async function createVehicle(vin, imei, groupId) {
       primary: parseInt(groupId),
       tank_volume: null,
       tank_unit: null,
-      groups: [3367, parseInt(groupId)] // Hardcoded group 3367 + client group
+      groups: currentConfig.defaultGroupId ? [currentConfig.defaultGroupId, parseInt(groupId)] : [parseInt(groupId)] // Use hardcoded group ID only in production
     };
     
     console.log(`   Vehicle payload:`, JSON.stringify(vehiclePayload, null, 2));
@@ -858,7 +858,7 @@ async function createSecondaryVehicle(vin, imei, groupId2) {
       primary: parseInt(groupId2), // Use secondary group ID as primary key
       tank_volume: null,
       tank_unit: null,
-      groups: [4126, parseInt(groupId2)] // Hardcoded group 4126 + secondary client group
+      groups: currentConfig.defaultGroupId ? [currentConfig.defaultGroupId, parseInt(groupId2)] : [parseInt(groupId2)] // Use hardcoded group ID only in production
     };
     
     console.log(`   Secondary vehicle payload:`, JSON.stringify(vehiclePayload, null, 2));
