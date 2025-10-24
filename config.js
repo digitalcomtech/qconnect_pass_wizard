@@ -18,12 +18,18 @@ module.exports = {
     pegasusBaseUrl: "https://qservices.pegasusgateway.com",
     pegasusToken: "2f2df11d24bba3d071c22ca1c54f42dd64dda64e6bddfe9e6f3cc824",
     
-    // Default group ID for vehicle creation
-    defaultGroupId: 3367,
+    // Default group IDs for vehicle creation
+    defaultGroupId: 3367,    // Primary devices group
+    defaultGroupId2: 4126,  // Secondary devices group
     
     // Pegasus instance tokens for SIM management
     pegasus1Token: "8702ee591a35dab8726f76784de9968e1539ec8c660b880c9024d0c3",
     pegasus256Token: "2f2df11d24bba3d071c22ca1c54f42dd64dda64e6bddfe9e6f3cc824",
+    
+    // SIM Account SIDs for Production environment
+    simAccountSid: process.env.PROD_SIM_ACCOUNT_SID,
+    simRatePlanSid: "WPb9eea023c56926557654c04d25156d12",
+    simFleetSid: "HF2066f759aa2a2d4347fe21f1139b41b5",
     
     // Legacy Zapier hooks (kept for reference, no longer used)
     zapierHookInstall: "https://hooks.zapier.com/hooks/catch/21949880/uyym1m7/",
@@ -38,12 +44,18 @@ module.exports = {
     pegasusBaseUrl: "https://qservices.pegasusgateway.com/qa",
     pegasusToken: "cfe06b66972326270ae9d3420336379b9d5176ab424acd417330cc02",
     
-    // Default group ID for vehicle creation (QA)
-    defaultGroupId: null, // No hardcoded group ID in QA - use dynamically created groups only
+    // Default group IDs for vehicle creation (QA)
+    defaultGroupId: 3441,    // Primary devices group (QA)
+    defaultGroupId2: 3442,  // Secondary devices group (QA)
     
     // Pegasus instance tokens for SIM management (QA)
     pegasus1Token: "8702ee591a35dab8726f76784de9968e1539ec8c660b880c9024d0c3",
     pegasus256Token: "cfe06b66972326270ae9d3420336379b9d5176ab424acd417330cc02",
+    
+    // SIM Account SIDs for QA environment (Pegasus53)
+    simAccountSid: process.env.QA_SIM_ACCOUNT_SID,
+    simRatePlanSid: "WP8c317c6831cf8cbc311d776b2e1ace2f", // 5MB PAYG US/INTL-ROAMING + SMS
+    simFleetSid: "HF2066f759aa2a2d4347fe21f1139b41b5",
     
     // Legacy Zapier hooks (QA)
     zapierHookInstall: "https://hooks.zapier.com/hooks/catch/21949880/u6nixws/",
