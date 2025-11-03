@@ -450,35 +450,68 @@ async function recordInstallationInRepeats(installationId, clientName) {
   }
 }
 
+// Helper function to search for existing group by name using the correct API format
+async function searchGroupByName(groupName) {
+  try {
+    const searchUrl = `https://api.pegasusgateway.com/groups?select=name&search.name="${encodeURIComponent(groupName)}"`;
+    console.log(`   🔍 Searching for group with API: ${searchUrl}`);
+    
+    const searchResponse = await fetch(searchUrl, {
+      method: "GET",
+      headers: {
+        "Authenticate": currentConfig.pegasusToken
+      },
+      signal: AbortSignal.timeout(30000)
+    });
+    
+    if (searchResponse.ok) {
+      const searchData = await searchResponse.json();
+      console.log(`   🔍 Search response:`, JSON.stringify(searchData, null, 2));
+      
+      // Handle different response structures: array directly or data property
+      let groups = null;
+      if (Array.isArray(searchData)) {
+        groups = searchData;
+      } else if (searchData && searchData.data && Array.isArray(searchData.data)) {
+        groups = searchData.data;
+      }
+      
+      if (groups && groups.length > 0) {
+        const existingGroup = groups[0];
+        const existingGroupId = existingGroup.id || existingGroup._id;
+        console.log(`   ✅ Found existing group with ID: ${existingGroupId}`);
+        return existingGroupId;
+      } else {
+        console.log(`   ℹ️  No existing group found with name: ${groupName}`);
+        return null;
+      }
+    } else {
+      const errorText = await searchResponse.text();
+      console.log(`   ⚠️  Search failed with status ${searchResponse.status}: ${errorText}`);
+      return null;
+    }
+  } catch (searchError) {
+    console.log(`   ⚠️  Could not search for existing group: ${searchError.message}`);
+    return null;
+  }
+}
+
 // Get or create group in Pegasus - idempotent and non-blocking
 async function createOrUpdateGroup(clientName) {
   try {
     console.log(`   Getting or creating group for client: ${clientName}`);
     
-    // First, try to find an existing group with this name
-    console.log(`   🔍 Searching for existing group with name: ${clientName}`);
-    try {
-      const searchResponse = await fetch(`https://api.pegasusgateway.com/groups?name=${encodeURIComponent(clientName)}`, {
-        method: "GET",
-        headers: {
-          "Authenticate": currentConfig.pegasusToken
-        },
-        signal: AbortSignal.timeout(30000)
-      });
-      
-      if (searchResponse.ok) {
-        const searchData = await searchResponse.json();
-        if (searchData && searchData.length > 0) {
-          const existingGroup = searchData[0];
-          const existingGroupId = existingGroup.id || existingGroup._id;
-          console.log(`   ✅ Found existing group with ID: ${existingGroupId}`);
-          return { groupId: existingGroupId, created: false };
-        }
-      }
-    } catch (searchError) {
-      console.log(`   ⚠️  Could not search for existing group: ${searchError.message}`);
-      // Continue with group creation attempt
+    // First, check if a group with this name already exists
+    console.log(`   🔍 Step 1: Checking if group "${clientName}" already exists...`);
+    const existingGroupId = await searchGroupByName(clientName);
+    
+    if (existingGroupId) {
+      console.log(`   ✅ Group already exists with ID: ${existingGroupId} - will use existing group`);
+      return { groupId: existingGroupId, created: false };
     }
+    
+    // Group doesn't exist, so create it
+    console.log(`   📝 Step 2: Group does not exist, creating new group...`);
     
     // Build group payload based on dossier specifications
     const groupPayload = {
@@ -494,115 +527,33 @@ async function createOrUpdateGroup(clientName) {
     
     console.log(`   Group payload:`, JSON.stringify(groupPayload, null, 2));
     
-    // Attempt to create new group
-    try {
-      const response = await fetch("https://api.pegasusgateway.com/groups", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authenticate": currentConfig.pegasusToken
-        },
-        body: JSON.stringify(groupPayload),
-        signal: AbortSignal.timeout(30000)
-      });
-      
-      if (response.ok) {
-        const groupData = await response.json();
-        console.log(`   Group creation response:`, JSON.stringify(groupData, null, 2));
-        
-        // Extract group ID from response
-        const groupId = groupData.id || groupData._id;
-        if (!groupId) {
-          throw new Error("No group ID returned from Pegasus");
-        }
-        
-        console.log(`   ✅ Group created successfully with ID: ${groupId}`);
-        return { groupId, created: true };
-      } else {
-        // Handle 400 error - this is NOT fatal, just means group already exists
-        const errorText = await response.text();
-        if (response.status === 400 && errorText.includes("Name already in use by another group")) {
-          console.log(`   🔄 Group name already exists, fetching existing group...`);
-          
-          // Re-fetch the existing group by name
-          const searchUrl = `https://api.pegasusgateway.com/groups?name=${encodeURIComponent(clientName)}`;
-          console.log(`   🔍 Searching at: ${searchUrl}`);
-          
-          const refetchResponse = await fetch(searchUrl, {
-            method: "GET",
-            headers: {
-              "Authenticate": currentConfig.pegasusToken
-            },
-            signal: AbortSignal.timeout(30000)
-          });
-          
-          console.log(`   🔍 Search response status: ${refetchResponse.status}`);
-          
-          if (refetchResponse.ok) {
-            const refetchData = await refetchResponse.json();
-            console.log(`   🔍 Search response data:`, JSON.stringify(refetchData, null, 2));
-            
-            // Check if we have data and if it's an array with items
-            if (refetchData && Array.isArray(refetchData) && refetchData.length > 0) {
-              const existingGroup = refetchData[0];
-              const existingGroupId = existingGroup.id || existingGroup._id;
-              console.log(`   ✅ Retrieved existing group with ID: ${existingGroupId}`);
-              return { groupId: existingGroupId, created: false };
-            } else if (refetchData && refetchData.data && Array.isArray(refetchData.data) && refetchData.data.length > 0) {
-              // Handle case where response has a data property containing the array
-              const existingGroup = refetchData.data[0];
-              const existingGroupId = existingGroup.id || existingGroup._id;
-              console.log(`   ✅ Retrieved existing group with ID: ${existingGroupId} from data property`);
-              return { groupId: existingGroupId, created: false };
-            } else {
-              console.log(`   ⚠️  Search returned unexpected data structure:`, typeof refetchData, refetchData);
-            }
-          } else {
-            console.log(`   ❌ Search failed with status: ${refetchResponse.status}`);
-            const searchErrorText = await refetchResponse.text();
-            console.log(`   ❌ Search error: ${searchErrorText}`);
-          }
-          
-          // If we still can't find it, this is unexpected but not fatal
-          console.log(`   ⚠️  Unexpected: Could not retrieve existing group after 400 error`);
-          throw new Error(`Unexpected: Group creation failed with 400 but could not retrieve existing group`);
-        }
-        
-        // For other 4xx/5xx errors, throw as these are fatal
-        throw new Error(`Pegasus API call failed: ${response.status} - ${errorText}`);
-      }
-    } catch (error) {
-      // Only re-throw if it's not the 400 "Name already in use" error
-      if (error.message.includes("Name already in use by another group")) {
-        console.log(`   🔄 Handling 400 error gracefully, fetching existing group...`);
-        
-        // Final attempt to get existing group
-        try {
-          const finalSearchResponse = await fetch(`https://api.pegasusgateway.com/groups?name=${encodeURIComponent(clientName)}`, {
-            method: "GET",
-            headers: {
-              "Authenticate": currentConfig.pegasusToken
-            },
-            signal: AbortSignal.timeout(30000)
-          });
-          
-          if (finalSearchResponse.ok) {
-            const finalSearchData = await finalSearchResponse.json();
-            if (finalSearchData && finalSearchData.length > 0) {
-              const existingGroup = finalSearchData[0];
-              const existingGroupId = existingGroup.id || existingGroup._id;
-              console.log(`   ✅ Retrieved existing group with ID: ${existingGroupId} after 400 error`);
-              return { groupId: existingGroupId, created: false };
-            }
-          }
-        } catch (finalSearchError) {
-          console.log(`   ❌ Final attempt to retrieve existing group failed: ${finalSearchError.message}`);
-        }
-      }
-      
-      // If we get here, something went wrong that we can't recover from
-      throw error;
+    // Create new group
+    const response = await fetch("https://api.pegasusgateway.com/groups", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authenticate": currentConfig.pegasusToken
+      },
+      body: JSON.stringify(groupPayload),
+      signal: AbortSignal.timeout(30000)
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Pegasus API call failed: ${response.status} - ${errorText}`);
     }
+    
+    const groupData = await response.json();
+    console.log(`   Group creation response:`, JSON.stringify(groupData, null, 2));
+    
+    // Extract group ID from response
+    const groupId = groupData.id || groupData._id;
+    if (!groupId) {
+      throw new Error("No group ID returned from Pegasus");
+    }
+    
+    console.log(`   ✅ Group created successfully with ID: ${groupId}`);
+    return { groupId, created: true };
     
   } catch (error) {
     console.error(`   ❌ Fatal error in group operation: ${error.message}`);
@@ -685,30 +636,17 @@ async function createOrUpdateSecondaryGroup(clientName) {
     const secondaryGroupName = `${clientName} (2)`;
     console.log(`   Getting or creating secondary group for client: ${secondaryGroupName}`);
     
-    // First, try to find an existing secondary group with this name
-    console.log(`   🔍 Searching for existing secondary group with name: ${secondaryGroupName}`);
-    try {
-      const searchResponse = await fetch(`https://api.pegasusgateway.com/groups?name=${encodeURIComponent(secondaryGroupName)}`, {
-        method: "GET",
-        headers: {
-          "Authenticate": currentConfig.pegasusToken
-        },
-        signal: AbortSignal.timeout(30000)
-      });
-      
-      if (searchResponse.ok) {
-        const searchData = await searchResponse.json();
-        if (searchData && searchData.length > 0) {
-          const existingGroup = searchData[0];
-          const existingGroupId = existingGroup.id || existingGroup._id;
-          console.log(`   ✅ Found existing secondary group with ID: ${existingGroupId}`);
-          return { groupId: existingGroupId, created: false };
-        }
-      }
-    } catch (searchError) {
-      console.log(`   ⚠️  Could not search for existing secondary group: ${searchError.message}`);
-      // Continue with group creation attempt
+    // First, check if a secondary group with this name already exists
+    console.log(`   🔍 Step 1: Checking if secondary group "${secondaryGroupName}" already exists...`);
+    const existingGroupId = await searchGroupByName(secondaryGroupName);
+    
+    if (existingGroupId) {
+      console.log(`   ✅ Secondary group already exists with ID: ${existingGroupId} - will use existing group`);
+      return { groupId: existingGroupId, created: false };
     }
+    
+    // Secondary group doesn't exist, so create it
+    console.log(`   📝 Step 2: Secondary group does not exist, creating new group...`);
     
     // Build secondary group payload based on dossier specifications
     const groupPayload = {
@@ -724,115 +662,33 @@ async function createOrUpdateSecondaryGroup(clientName) {
     
     console.log(`   Secondary group payload:`, JSON.stringify(groupPayload, null, 2));
     
-    // Attempt to create new secondary group
-    try {
-      const response = await fetch("https://api.pegasusgateway.com/groups", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authenticate": currentConfig.pegasusToken
-        },
-        body: JSON.stringify(groupPayload),
-        signal: AbortSignal.timeout(30000)
-      });
-      
-      if (response.ok) {
-        const groupData = await response.json();
-        console.log(`   Secondary group creation response:`, JSON.stringify(groupData, null, 2));
-        
-        // Extract group ID from response
-        const groupId = groupData.id || groupData._id;
-        if (!groupId) {
-          throw new Error("No secondary group ID returned from Pegasus");
-        }
-        
-        console.log(`   ✅ Secondary group created successfully with ID: ${groupId}`);
-        return { groupId, created: true };
-      } else {
-        // Handle 400 error - this is NOT fatal, just means group already exists
-        const errorText = await response.text();
-        if (response.status === 400 && errorText.includes("Name already in use by another group")) {
-          console.log(`   🔄 Secondary group name already exists, fetching existing group...`);
-          
-          // Re-fetch the existing group by name
-          const searchUrl = `https://api.pegasusgateway.com/groups?name=${encodeURIComponent(secondaryGroupName)}`;
-          console.log(`   🔍 Searching at: ${searchUrl}`);
-          
-          const refetchResponse = await fetch(searchUrl, {
-            method: "GET",
-            headers: {
-              "Authenticate": currentConfig.pegasusToken
-            },
-            signal: AbortSignal.timeout(30000)
-          });
-          
-          console.log(`   🔍 Search response status: ${refetchResponse.status}`);
-          
-          if (refetchResponse.ok) {
-            const refetchData = await refetchResponse.json();
-            console.log(`   🔍 Search response data:`, JSON.stringify(refetchData, null, 2));
-            
-            // Check if we have data and if it's an array with items
-            if (refetchData && Array.isArray(refetchData) && refetchData.length > 0) {
-              const existingGroup = refetchData[0];
-              const existingGroupId = existingGroup.id || existingGroup._id;
-              console.log(`   ✅ Retrieved existing secondary group with ID: ${existingGroupId}`);
-              return { groupId: existingGroupId, created: false };
-            } else if (refetchData && refetchData.data && Array.isArray(refetchData.data) && refetchData.data.length > 0) {
-              // Handle case where response has a data property containing the array
-              const existingGroup = refetchData.data[0];
-              const existingGroupId = existingGroup.id || existingGroup._id;
-              console.log(`   ✅ Retrieved existing secondary group with ID: ${existingGroupId} from data property`);
-              return { groupId: existingGroupId, created: false };
-            } else {
-              console.log(`   ⚠️  Search returned unexpected data structure:`, typeof refetchData, refetchData);
-            }
-          } else {
-            console.log(`   ❌ Search failed with status: ${refetchResponse.status}`);
-            const searchErrorText = await refetchResponse.text();
-            console.log(`   ❌ Search error: ${searchErrorText}`);
-          }
-          
-          // If we still can't find it, this is unexpected but not fatal
-          console.log(`   ⚠️  Unexpected: Could not retrieve existing secondary group after 400 error`);
-          throw new Error(`Unexpected: Secondary group creation failed with 400 but could not retrieve existing group`);
-        }
-        
-        // For other 4xx/5xx errors, throw as these are fatal
-        throw new Error(`Pegasus API call failed: ${response.status} - ${errorText}`);
-      }
-    } catch (error) {
-      // Only re-throw if it's not the 400 "Name already in use" error
-      if (error.message.includes("Name already in use by another group")) {
-        console.log(`   🔄 Handling 400 error gracefully, fetching existing secondary group...`);
-        
-        // Final attempt to get existing group
-        try {
-          const finalSearchResponse = await fetch(`https://api.pegasusgateway.com/groups?name=${encodeURIComponent(secondaryGroupName)}`, {
-            method: "GET",
-            headers: {
-              "Authenticate": currentConfig.pegasusToken
-            },
-            signal: AbortSignal.timeout(30000)
-          });
-          
-          if (finalSearchResponse.ok) {
-            const finalSearchData = await finalSearchResponse.json();
-            if (finalSearchData && finalSearchData.length > 0) {
-              const existingGroup = finalSearchData[0];
-              const existingGroupId = existingGroup.id || existingGroup._id;
-              console.log(`   ✅ Retrieved existing secondary group with ID: ${existingGroupId} after 400 error`);
-              return { groupId: existingGroupId, created: false };
-            }
-          }
-        } catch (finalSearchError) {
-          console.log(`   ❌ Final attempt to retrieve existing secondary group failed: ${finalSearchError.message}`);
-        }
-      }
-      
-      // If we get here, something went wrong that we can't recover from
-      throw error;
+    // Create new secondary group
+    const response = await fetch("https://api.pegasusgateway.com/groups", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authenticate": currentConfig.pegasusToken
+      },
+      body: JSON.stringify(groupPayload),
+      signal: AbortSignal.timeout(30000)
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Pegasus API call failed: ${response.status} - ${errorText}`);
     }
+    
+    const groupData = await response.json();
+    console.log(`   Secondary group creation response:`, JSON.stringify(groupData, null, 2));
+    
+    // Extract group ID from response
+    const groupId = groupData.id || groupData._id;
+    if (!groupId) {
+      throw new Error("No secondary group ID returned from Pegasus");
+    }
+    
+    console.log(`   ✅ Secondary group created successfully with ID: ${groupId}`);
+    return { groupId, created: true };
     
   } catch (error) {
     console.error(`   ❌ Fatal error in secondary group operation: ${error.message}`);
