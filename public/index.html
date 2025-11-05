@@ -1392,6 +1392,10 @@
         const p = inst.persona;
         personName = [p.nombreAsegurado, p.nombreMedioAsegurado, p.apellidoPaterno, p.apellidoMaterno]
           .filter(Boolean).join(" ");
+        
+        // Clean up unwanted "NA" suffixes from installation data (handles " NA", " NA/", " NA /", etc.)
+        personName = personName.replace(/\s+NA\s*\/?\s*$/i, "").trim();
+        
         sessionStorage.setItem("selectedClientFullName", personName);
       }
 
@@ -1600,8 +1604,12 @@
       installStatus.innerText = "↻ Sending IMEI & SIM to server…";
 
       try {
+        // Clean client name to remove unwanted "NA" suffixes (handles " NA", " NA/", " NA /", etc.)
+        let clientName = sessionStorage.getItem("selectedClientFullName") || selectedClientName;
+        clientName = clientName.replace(/\s+NA\s*\/?\s*$/i, "").trim();
+        
         const payload = {
-          client_name: sessionStorage.getItem("selectedClientFullName") || selectedClientName,
+          client_name: clientName,
           imei,
           vin: selectedVIN,
           installationId: selectedInstallationId
@@ -2258,6 +2266,7 @@
         completeSecondaryDeviceWorkflow(false); // false = not skipped
       }, 1000);
     }
+    
     
     // REMOVED: pollForSecondaryDeviceReporting function - no longer needed since secondary device doesn't require location validation
     /*

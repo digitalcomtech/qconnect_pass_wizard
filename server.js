@@ -499,6 +499,9 @@ async function searchGroupByName(groupName) {
 // Get or create group in Pegasus - idempotent and non-blocking
 async function createOrUpdateGroup(clientName) {
   try {
+    // Clean up unwanted "NA" suffixes from client name (handles " NA", " NA/", " NA /", etc.)
+    clientName = clientName.replace(/\s+NA\s*\/?\s*$/i, "").trim();
+    
     console.log(`   Getting or creating group for client: ${clientName}`);
     
     // First, check if a group with this name already exists
@@ -633,6 +636,9 @@ async function createVehicle(vin, imei, groupId) {
 // Create or get secondary group with naming pattern "client (2)"
 async function createOrUpdateSecondaryGroup(clientName) {
   try {
+    // Clean up unwanted "NA" suffixes from client name (handles " NA", " NA/", " NA /", etc.)
+    clientName = clientName.replace(/\s+NA\s*\/?\s*$/i, "").trim();
+    
     const secondaryGroupName = `${clientName} (2)`;
     console.log(`   Getting or creating secondary group for client: ${secondaryGroupName}`);
     
