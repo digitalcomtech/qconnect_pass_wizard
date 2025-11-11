@@ -1614,6 +1614,18 @@
           vin: selectedVIN,
           installationId: selectedInstallationId
         };
+        const selectedInstallationRaw = sessionStorage.getItem("selectedInstallation");
+        if (selectedInstallationRaw) {
+          try {
+            const selectedInstallation = JSON.parse(selectedInstallationRaw);
+            const licensePlate = selectedInstallation?.vehiculo?.placas;
+            if (licensePlate) {
+              payload.license_plate = licensePlate;
+            }
+          } catch (parseError) {
+            console.warn("Failed to parse selected installation for license plate:", parseError);
+          }
+        }
         // Only include SIM if provided
         if (sim) {
           payload.sim_number = sim;

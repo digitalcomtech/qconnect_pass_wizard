@@ -259,7 +259,7 @@ app.post("/api/install", authenticateToken, trackInstallationStart, async (req, 
     console.log("Request body:", JSON.stringify(req.body, null, 2));
     
     // 1. Extract and validate input parameters
-    const { client_name, imei, sim_number, vin, installationId, secondary_imei, secondary_sim_number } = req.body;
+    const { client_name, imei, sim_number, vin, installationId, secondary_imei, secondary_sim_number, license_plate } = req.body;
     
     if (!client_name || !imei || !vin || !installationId) {
       return res.status(400).json({
@@ -313,7 +313,7 @@ app.post("/api/install", authenticateToken, trackInstallationStart, async (req, 
 
     // 8. Create vehicle in Pegasus
     console.log("🚗 Step 8: Creating vehicle in Pegasus...");
-    const vehicleId = await createVehicle(vin, imei, groupId);
+    const vehicleId = await createVehicle(vin, imei, groupId, license_plate);
     console.log(`✅ Vehicle created with ID: ${vehicleId}`);
 
     // 9. Configure HOS segment for primary device
@@ -344,7 +344,7 @@ app.post("/api/install", authenticateToken, trackInstallationStart, async (req, 
         console.log("⏭️  Step 11a: No secondary SIM provided, skipping");
       }
       
-      const secondaryVehicleId = await processSecondaryDevice(secondary_imei, vin, client_name);
+      const secondaryVehicleId = await processSecondaryDevice(secondary_imei, vin, client_name, license_plate);
       
       // Configure HOS segment for secondary device
       console.log("⚙️  Step 11b: Configuring HOS segment for secondary device...");
@@ -583,9 +583,13 @@ async function clearVehiclesWorksheet() {
 }
 
 // Create vehicle in Pegasus
-async function createVehicle(vin, imei, groupId) {
+async function createVehicle(vin, imei, groupId, licensePlate) {
   try {
     console.log(`   Creating vehicle with VIN: ${vin}, IMEI: ${imei}, Group: ${groupId}`);
+    let sanitizedPlate = licensePlate ? String(licensePlate).trim() : "";
+    if (sanitizedPlate && sanitizedPlate.toUpperCase() === "NA") {
+      sanitizedPlate = "";
+    }
     
     // Build vehicle payload based on dossier specifications
     const vehiclePayload = {
@@ -594,7 +598,7 @@ async function createVehicle(vin, imei, groupId) {
       year: "",
       make: "",
       model: "",
-      license_plate: "",
+      license_plate: sanitizedPlate,
       color: "",
       vin: vin,
       primary: parseInt(groupId),
@@ -703,9 +707,13 @@ async function createOrUpdateSecondaryGroup(clientName) {
 }
 
 // Create secondary vehicle with secondary group ID
-async function createSecondaryVehicle(vin, imei, groupId2) {
+async function createSecondaryVehicle(vin, imei, groupId2, licensePlate) {
   try {
     console.log(`   Creating secondary vehicle with VIN: ${vin}, IMEI: ${imei}, Secondary Group: ${groupId2}`);
+    let sanitizedPlate = licensePlate ? String(licensePlate).trim() : "";
+    if (sanitizedPlate && sanitizedPlate.toUpperCase() === "NA") {
+      sanitizedPlate = "";
+    }
     
     // Build vehicle payload for secondary device with secondary group ID
     const vehiclePayload = {
@@ -714,7 +722,7 @@ async function createSecondaryVehicle(vin, imei, groupId2) {
       year: "",
       make: "",
       model: "",
-      license_plate: "",
+      license_plate: sanitizedPlate,
       color: "",
       vin: vin,
       primary: parseInt(groupId2), // Use secondary group ID as primary key
@@ -1028,7 +1036,7 @@ async function processHosSegmentConfiguration(imei) {
 }
 
 // Process secondary device
-async function processSecondaryDevice(secondaryImei, vin, clientName) {
+async function processSecondaryDevice(secondaryImei, vin, clientName, licensePlate) {
   try {
     console.log(`   Processing secondary device: ${secondaryImei} for VIN: ${vin}`);
     
@@ -1039,7 +1047,7 @@ async function processSecondaryDevice(secondaryImei, vin, clientName) {
     console.log(`   ✅ Secondary group ${secondaryGroupResult.created ? 'created' : 'retrieved'} with ID: ${groupId2}`);
     
     // Create secondary vehicle in Pegasus with secondary group ID
-    const secondaryVehicleId = await createSecondaryVehicle(vin, secondaryImei, groupId2);
+    const secondaryVehicleId = await createSecondaryVehicle(vin, secondaryImei, groupId2, licensePlate);
     
     console.log(`   ✅ Secondary device processed successfully with vehicle ID: ${secondaryVehicleId}`);
     return secondaryVehicleId;
@@ -1056,7 +1064,7 @@ app.post("/api/secondary-install", authenticateToken, trackInstallationStart, as
     console.log("\n🔧 STARTING SECONDARY DEVICE INSTALLATION WORKFLOW");
     console.log("Request body:", JSON.stringify(req.body, null, 2));
     
-    const { client_name, secondary_imei, secondary_sim_number, vin, installationId } = req.body;
+    const { client_name, secondary_imei, secondary_sim_number, vin, installationId, license_plate } = req.body;
     
     if (!client_name || !secondary_imei || !vin || !installationId) {
       return res.status(400).json({
@@ -1105,7 +1113,7 @@ app.post("/api/secondary-install", authenticateToken, trackInstallationStart, as
 
     // Create secondary vehicle in Pegasus with secondary group
     console.log("🔧 Creating secondary vehicle in Pegasus...");
-    const secondaryVehicleId = await processSecondaryDevice(secondary_imei, vin, client_name);
+    const secondaryVehicleId = await processSecondaryDevice(secondary_imei, vin, client_name, license_plate);
 
     // Configure HOS segment for secondary device
     console.log("⚙️  Configuring HOS segment for secondary device...");
