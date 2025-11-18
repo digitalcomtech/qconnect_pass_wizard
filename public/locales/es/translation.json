@@ -1,6 +1,7 @@
 {
   "app": {
-    "title": "Asistente QConnect PASS",
+    "title": "Instalaciones Qualitrack",
+    "subtitle": "Tu copiloto digital en cada instalación telemática.",
     "language": "Idioma",
     "selectLanguage": "Seleccionar Idioma"
   },

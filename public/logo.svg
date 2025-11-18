@@ -1,0 +1,14 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Purple background -->
+  <rect width="200" height="200" fill="#6B21A8"/>
+  
+  <!-- White Q letter -->
+  <g fill="none" stroke="white" stroke-width="16" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Circular body of Q - almost complete circle, opening at bottom-right -->
+    <path d="M 100 50 A 50 50 0 0 1 150 100 A 50 50 0 0 1 100 150 A 50 50 0 0 1 50 100 A 50 50 0 0 1 100 50" />
+    
+    <!-- Elegant tail/swash extending from bottom-right, curving down-left then up-right -->
+    <path d="M 140 120 Q 150 145 155 140 Q 165 135 170 125" stroke-width="12" stroke-linecap="round"/>
+  </g>
+</svg>
+

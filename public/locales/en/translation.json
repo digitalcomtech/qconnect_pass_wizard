@@ -1,6 +1,7 @@
 {
   "app": {
-    "title": "QConnect PASS Wizard",
+    "title": "Instalaciones Qualitrack",
+    "subtitle": "Tu copiloto digital en cada instalación telemática.",
     "language": "Language",
     "selectLanguage": "Select Language"
   },
