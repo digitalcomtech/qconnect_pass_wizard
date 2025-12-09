@@ -591,8 +591,9 @@ async function createVehicle(vin, imei, groupId, licensePlate, vehiculoSubmarca)
       sanitizedPlate = "";
     }
     
-    // Use vehiculo.submarca for model if provided
+    // Use vehiculo.submarca for model if provided, otherwise use "NoModel"
     const model = vehiculoSubmarca ? String(vehiculoSubmarca).trim() : "";
+    const finalModel = model || "NoModel";
     
     // Build vehicle payload based on dossier specifications
     const vehiclePayload = {
@@ -600,7 +601,7 @@ async function createVehicle(vin, imei, groupId, licensePlate, vehiculoSubmarca)
       device: imei,
       year: "",
       make: "",
-      model: model,
+      model: finalModel,
       license_plate: sanitizedPlate,
       color: "",
       vin: vin,
@@ -718,8 +719,9 @@ async function createSecondaryVehicle(vin, imei, groupId2, licensePlate, vehicul
       sanitizedPlate = "";
     }
     
-    // Use vehiculo.submarca for model if provided
+    // Use vehiculo.submarca for model if provided, otherwise use "NoModel"
     const model = vehiculoSubmarca ? String(vehiculoSubmarca).trim() : "";
+    const finalModel = model || "NoModel";
     
     // Build vehicle payload for secondary device with secondary group ID
     const vehiclePayload = {
@@ -727,7 +729,7 @@ async function createSecondaryVehicle(vin, imei, groupId2, licensePlate, vehicul
       device: imei,
       year: "",
       make: "",
-      model: model,
+      model: finalModel,
       license_plate: sanitizedPlate,
       color: "",
       vin: vin,
