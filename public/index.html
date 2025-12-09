@@ -1622,6 +1622,10 @@
             if (licensePlate) {
               payload.license_plate = licensePlate;
             }
+            const vehiculoSubmarca = selectedInstallation?.vehiculo?.submarca;
+            if (vehiculoSubmarca) {
+              payload.vehiculo_submarca = vehiculoSubmarca;
+            }
           } catch (parseError) {
             console.warn("Failed to parse selected installation for license plate:", parseError);
           }
