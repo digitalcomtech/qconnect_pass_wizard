@@ -1,119 +1,93 @@
 /**
- * Configuration for QConnect PASS Wizard - Production Environment
+ * Local configuration — gitignored. Copy from config.example.js and set env vars,
+ * or keep this file identical to config.example.js and use a .env loader / shell exports.
+ * Do not commit real secrets here.
  */
 
-module.exports = {
-  // Environment selection: "production" or "qa"
-  ENVIRONMENT: "production",
-  
-  // Test mode (set to true for testing without making actual API calls)
-  TEST_MODE: false,
-  
-  // Enable fallback modes when Pegasus is unavailable
-  ENABLE_CONFIRMATION_FALLBACK: true,
-  
-  // Production environment configuration
-  production: {
-    // Main Pegasus services
-    pegasusBaseUrl: "https://qservices.pegasusgateway.com",
-    pegasusToken: "2f2df11d24bba3d071c22ca1c54f42dd64dda64e6bddfe9e6f3cc824",
-    
-    // Default group IDs for vehicle creation
-    defaultGroupId: 3367,    // Primary devices group
-    defaultGroupId2: 4126,  // Secondary devices group
-    
-    // Pegasus instance tokens for SIM management
-    pegasus1Token: "8702ee591a35dab8726f76784de9968e1539ec8c660b880c9024d0c3",
-    pegasus256Token: "2f2df11d24bba3d071c22ca1c54f42dd64dda64e6bddfe9e6f3cc824",
-    
-    // SIM Account SIDs for Production environment
-    simAccountSid: process.env.PROD_SIM_ACCOUNT_SID,
-    simRatePlanSid: "WPb9eea023c56926557654c04d25156d12",
-    simFleetSid: "HF2066f759aa2a2d4347fe21f1139b41b5",
-    
-    // Legacy Zapier hooks (kept for reference, no longer used)
-    zapierHookInstall: "https://hooks.zapier.com/hooks/catch/21949880/uyym1m7/",
-    zapierHookSecondary: "your-secondary-zapier-hook-here"
-  },
-  
+function parseIntEnv(name, fallback) {
+  const v = process.env[name];
+  if (v === undefined || v === "") return fallback;
+  const n = parseInt(v, 10);
+  return Number.isFinite(n) ? n : fallback;
+}
 
-  
-  // QA/Testing environment configuration
+module.exports = {
+  ENVIRONMENT: process.env.ENVIRONMENT === "production" ? "production" : "qa",
+
+  TEST_MODE: process.env.TEST_MODE === "true",
+
+  allowDangerousPegasusConfirmationFallback:
+    process.env.DANGEROUS_PEGASUS_CONFIRMATION_FALLBACK === "true",
+
+  production: {
+    pegasusBaseUrl:
+      process.env.PROD_PEGASUS_BASE_URL || "https://qservices.pegasusgateway.com",
+    pegasusToken: process.env.PROD_PEGASUS_TOKEN || "",
+    defaultGroupId: parseIntEnv("PROD_DEFAULT_GROUP_ID", 3367),
+    defaultGroupId2: parseIntEnv("PROD_DEFAULT_GROUP_ID2", 4126),
+    pegasus1Token: process.env.PROD_PEGASUS1_TOKEN || "",
+    pegasus256Token: process.env.PROD_PEGASUS256_TOKEN || "",
+    simAccountSid: process.env.PROD_SIM_ACCOUNT_SID,
+    simRatePlanSid:
+      process.env.PROD_SIM_RATE_PLAN_SID || "WPb9eea023c56926557654c04d25156d12",
+    simFleetSid:
+      process.env.PROD_SIM_FLEET_SID || "HF2066f759aa2a2d4347fe21f1139b41b5",
+  },
+
   qa: {
-    // Main Pegasus services (QA)
-    pegasusBaseUrl: "https://qservices.pegasusgateway.com/qa",
-    pegasusToken: "cfe06b66972326270ae9d3420336379b9d5176ab424acd417330cc02",
-    
-    // Default group IDs for vehicle creation (QA)
-    defaultGroupId: 3441,    // Primary devices group (QA)
-    defaultGroupId2: 3442,  // Secondary devices group (QA)
-    
-    // Pegasus instance tokens for SIM management (QA)
-    pegasus1Token: "8702ee591a35dab8726f76784de9968e1539ec8c660b880c9024d0c3",
-    pegasus256Token: "cfe06b66972326270ae9d3420336379b9d5176ab424acd417330cc02",
-    
-    // SIM Account SIDs for QA environment (Pegasus53)
+    pegasusBaseUrl:
+      process.env.QA_PEGASUS_BASE_URL || "https://qservices.pegasusgateway.com/qa",
+    pegasusToken: process.env.QA_PEGASUS_TOKEN || "",
+    defaultGroupId: parseIntEnv("QA_DEFAULT_GROUP_ID", 3441),
+    defaultGroupId2: parseIntEnv("QA_DEFAULT_GROUP_ID2", 3442),
+    pegasus1Token: process.env.QA_PEGASUS1_TOKEN || "",
+    pegasus256Token: process.env.QA_PEGASUS256_TOKEN || "",
     simAccountSid: process.env.QA_SIM_ACCOUNT_SID,
-    simRatePlanSid: "WP8c317c6831cf8cbc311d776b2e1ace2f", // 5MB PAYG US/INTL-ROAMING + SMS
-    simFleetSid: "HF2066f759aa2a2d4347fe21f1139b41b5",
-    
-    // Legacy Zapier hooks (QA)
-    zapierHookInstall: "https://hooks.zapier.com/hooks/catch/21949880/u6nixws/",
-    zapierHookSecondary: "your-qa-secondary-zapier-hook-here"
+    simRatePlanSid:
+      process.env.QA_SIM_RATE_PLAN_SID || "WP8c317c6831cf8cbc311d776b2e1ace2f",
+    simFleetSid:
+      process.env.QA_SIM_FLEET_SID || "HF2066f759aa2a2d4347fe21f1139b41b5",
   },
-  
-  // Server configuration
+
   server: {
-    port: process.env.PORT || 8080,
-    host: "0.0.0.0"
+    port: parseIntEnv("PORT", 8080),
+    host: process.env.HOST || "0.0.0.0",
   },
-  
-  // API timeouts and retry configuration
+
   api: {
-    timeout: 30000, // 30 seconds
-    maxRetries: 3,
-    retryDelay: 1000, // 1 second initial delay
-    retryMultiplier: 2 // Exponential backoff multiplier
+    timeout: parseIntEnv("API_TIMEOUT", 30000),
+    maxRetries: parseIntEnv("API_MAX_RETRIES", 3),
+    retryDelay: parseIntEnv("API_RETRY_DELAY", 1000),
+    retryMultiplier: parseFloat(process.env.API_RETRY_MULTIPLIER) || 2,
   },
-  
-  // Installation workflow configuration
+
   workflow: {
-    // Proximity check radius in meters
-    proximityRadius: 200,
-    
-    // Maximum time to wait for device reporting (milliseconds)
-    maxDeviceWaitTime: 30 * 60 * 1000, // 30 minutes
-    
-    // Initial polling interval (milliseconds)
-    initialPollInterval: 10000, // 10 seconds
-    
-    // Maximum polling interval (milliseconds)
-    maxPollInterval: 120000 // 2 minutes
+    proximityRadius: parseIntEnv("PROXIMITY_RADIUS", 200),
+    maxDeviceWaitTime: parseIntEnv("MAX_DEVICE_WAIT_TIME", 30 * 60 * 1000),
+    initialPollInterval: parseIntEnv("INITIAL_POLL_INTERVAL", 10000),
+    maxPollInterval: parseIntEnv("MAX_POLL_INTERVAL", 120000),
   },
-  
-  // SIM card configuration
+
   sim: {
-    // SuperSIM prefix
-    superSimPrefix: "8988",
-    
-    // Wireless SIM prefix
-    wirelessSimPrefix: "8901",
-    
-    // API endpoints for different SIM types
+    superSimPrefix: process.env.SIM_SUPER_PREFIX || "8988",
+    wirelessSimPrefix: process.env.SIM_WIRELESS_PREFIX || "8901",
     endpoints: {
-      superSim: "https://api.pegasusgateway.com/m2m/supersims/v1/Sims",
-      wireless: "https://api.pegasusgateway.com/m2m/wireless/v1/Sims"
-    }
+      superSim:
+        process.env.SIM_SUPER_ENDPOINT ||
+        "https://api.pegasusgateway.com/m2m/supersims/v1/Sims",
+      wireless:
+        process.env.SIM_WIRELESS_ENDPOINT ||
+        "https://api.pegasusgateway.com/m2m/wireless/v1/Sims",
+    },
   },
-  
-  // Pegasus API endpoints
+
   pegasus: {
-    baseUrl: "https://api.pegasusgateway.com",
+    baseUrl: process.env.PEGASUS_BASE_URL || "https://api.pegasusgateway.com",
     endpoints: {
       groups: "/groups",
       vehicles: "/vehicles",
       devices: "/devices",
-      installations: "/installations/api/v1/installation"
-    }
-  }
+      installations: "/installations/api/v1/installation",
+    },
+  },
 };

@@ -2,8 +2,22 @@
 const jwt = require('jsonwebtoken');
 const { getUserById } = require('./users');
 
-// Secret key for JWT - in production, use environment variables!
-const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production';
+const isProductionRuntime = process.env.NODE_ENV === 'production';
+
+function resolveJwtSecret() {
+  if (process.env.JWT_SECRET) return process.env.JWT_SECRET;
+  if (isProductionRuntime) {
+    throw new Error(
+      '[auth] JWT_SECRET is required when NODE_ENV=production. See docs/ENVIRONMENT.md'
+    );
+  }
+  console.warn(
+    '[auth] JWT_SECRET not set; using insecure local dev fallback. Set JWT_SECRET for shared or deployed environments.'
+  );
+  return 'installer-app-local-dev-jwt-fallback-not-for-production';
+}
+
+const JWT_SECRET = resolveJwtSecret();
 
 // Middleware to verify JWT token
 function authenticateToken(req, res, next) {

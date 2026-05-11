@@ -12,6 +12,8 @@ A comprehensive installation wizard for QConnect PASS devices that handles the c
 - **Enhanced Error Handling**: Retry mechanisms and comprehensive error reporting
 - **Environment Switching**: Support for both QA and Production environments
 
+**Smoke tests & audits:** see [`docs/TOOLING.md`](docs/TOOLING.md) (`npm run smoke`, `validate:config`, `audit:routes`, `audit:activity`).
+
 ## 🔧 Installation Workflow
 
 The wizard now implements the complete Zapier workflow described in the dossier:
@@ -197,19 +199,16 @@ PEGASUS1_TOKEN=your-pegasus1-token
 PEGASUS256_TOKEN=your-qa-pegasus256-token
 ```
 
-### Optional Configuration
+### Optional configuration
 
-```javascript
-const TEST_MODE = false; // Enable/disable test mode
-const ENABLE_CONFIRMATION_FALLBACK = true; // Enable fallback modes
-```
+See **`docs/ENVIRONMENT.md`** and **`env.example`**. Notable flags: `TEST_MODE`, and **`DANGEROUS_PEGASUS_CONFIRMATION_FALLBACK`** (unsafe; default off — see `docs/KNOWN_ISSUES.md`).
 
 ## 🚀 Getting Started
 
 ### Local Development
 
 1. **Install Dependencies**: `npm install`
-2. **Configure Environment**: Update tokens and URLs in `server.js`
+2. **Configure Environment**: Set env vars per `docs/ENVIRONMENT.md` (and copy `config.example.js` → `config.js` if needed)
 3. **Start Server**: `node server.js`
 4. **Access Wizard**: Open `http://localhost:8080` in your browser
 
