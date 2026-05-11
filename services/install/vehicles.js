@@ -2,7 +2,28 @@
  * Worksheet clear (stub), primary vehicle create, secondary vehicle create.
  */
 
+function normalizePegasusModel(value) {
+  if (value == null) return "";
+  return String(value)
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 30);
+}
+
 function createVehicleHelpers({ pegasus, currentConfig }) {
+  function pegasusVehicleModelFromSubmarca(vehiculoSubmarca) {
+    const collapsed =
+      vehiculoSubmarca == null ? "" : String(vehiculoSubmarca).replace(/\s+/g, " ").trim();
+    const normalized = normalizePegasusModel(vehiculoSubmarca);
+    if (collapsed.length > 30) {
+      console.warn("[install] Pegasus vehicle model truncated (30 char limit)", {
+        originalLength: collapsed.length,
+        finalLength: normalized.length,
+        finalValue: normalized,
+      });
+    }
+    return normalized || "NoModel";
+  }
   // Clear vehicles worksheet (simulated)
   async function clearVehiclesWorksheet() {
     try {
@@ -29,9 +50,7 @@ function createVehicleHelpers({ pegasus, currentConfig }) {
         sanitizedPlate = "";
       }
 
-      // Use vehiculo.submarca for model if provided, otherwise use "NoModel"
-      const model = vehiculoSubmarca ? String(vehiculoSubmarca).trim() : "";
-      const finalModel = model || "NoModel";
+      const finalModel = pegasusVehicleModelFromSubmarca(vehiculoSubmarca);
 
       // Build vehicle payload based on dossier specifications
       const vehiclePayload = {
@@ -89,9 +108,7 @@ function createVehicleHelpers({ pegasus, currentConfig }) {
         sanitizedPlate = "";
       }
 
-      // Use vehiculo.submarca for model if provided, otherwise use "NoModel"
-      const model = vehiculoSubmarca ? String(vehiculoSubmarca).trim() : "";
-      const finalModel = model || "NoModel";
+      const finalModel = pegasusVehicleModelFromSubmarca(vehiculoSubmarca);
 
       // Build vehicle payload for secondary device with secondary group ID
       const vehiclePayload = {
