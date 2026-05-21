@@ -1,62 +1,20 @@
-// Wizard: section navigation (3-step provisioning console)
+// Single-page console: all sections stay visible (no step wizard navigation).
 
 function navigateToStep(stepNumber) {
-  if (stepNumber > provisioningMaxStep()) {
-    return;
-  }
-
   document.querySelectorAll(".section").forEach(function (section) {
-    section.classList.add("hidden");
+    section.classList.remove("hidden");
   });
-
-  var targetSection;
-  switch (stepNumber) {
-    case 1:
-      targetSection = document.getElementById("clientSection");
-      break;
-    case 2:
-      targetSection = document.getElementById("vinSection");
-      break;
-    case 3:
-      targetSection = document.getElementById("deviceSection");
-      break;
-    default:
-      targetSection = document.getElementById("clientSection");
-  }
-
-  if (targetSection) {
-    targetSection.classList.remove("hidden");
-    sessionStorage.setItem("currentStep", stepNumber.toString());
+  if (stepNumber != null) {
+    sessionStorage.setItem("currentStep", String(stepNumber));
   }
 }
 
-function updateStepStatus(stepNumber, status) {
-  var stepNav = document.getElementById("stepNav" + stepNumber);
-  var stepStatus = document.getElementById("stepStatus" + stepNumber);
-  if (!stepNav || !stepStatus) return;
-
-  stepNav.classList.remove("locked", "completed");
-  stepStatus.classList.remove("completed");
-
-  switch (status) {
-    case "completed":
-      stepNav.classList.add("completed");
-      stepStatus.classList.add("completed");
-      break;
-    case "active":
-      stepNav.classList.add("active");
-      break;
-    case "locked":
-      stepNav.classList.add("locked");
-      break;
-  }
+function updateStepStatus() {
+  /* no-op: sidebar step UI removed */
 }
 
-function unlockNextStep(currentStep) {
-  if (currentStep < provisioningMaxStep()) {
-    var nextStepNav = document.getElementById("stepNav" + (currentStep + 1));
-    if (nextStepNav) {
-      nextStepNav.classList.remove("locked");
-    }
-  }
+function unlockNextStep() {
+  /* no-op */
 }
+
+window.navigateToStep = navigateToStep;

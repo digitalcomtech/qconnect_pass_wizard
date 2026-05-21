@@ -45,7 +45,7 @@ For **`api.pegasusgateway.com`**, the client prefers **`pegasus1Token`** over **
 
 ### Refreshing expired tokens
 
-**QA qservices (installation search):** set **`QA_PEGASUS_BASE_URL=https://dev2.pegasusgateway.com`** and obtain **`QA_PEGASUS_TOKEN`** via auth gateway **`dev2.pegasusgateway.com`** (`npm run pegasus:fetch-tokens` sets both when `PEGASUS_AUTH_USERNAME` / `PEGASUS_AUTH_PASSWORD` are exported).
+**QA qservices (installation search):** set **`QA_PEGASUS_BASE_URL=https://qservices.pegasusgateway.com/qa`** and obtain **`QA_PEGASUS_TOKEN`** via auth gateway **`dev2.pegasusgateway.com`** (`npm run pegasus:fetch-tokens` sets both when `PEGASUS_AUTH_USERNAME` / `PEGASUS_AUTH_PASSWORD` are exported). The dev2 host is for auth only, not the installations API.
 
 See **`docs/PEGASUS_AUTH.md`**. Quick path:
 

@@ -5,7 +5,8 @@
  */
 
 const QA_QSERVICES_AUTH_GATEWAY = 'dev2.pegasusgateway.com';
-const QA_QSERVICES_BASE_URL = 'https://dev2.pegasusgateway.com';
+const { QA_QSERVICES_API_BASE_URL } = require('./qservices-url');
+const QA_QSERVICES_BASE_URL = QA_QSERVICES_API_BASE_URL;
 
 function envPrefix(environment) {
   return environment === 'production' ? 'PROD' : 'QA';
@@ -27,6 +28,7 @@ function buildQservicesAuthHint(environment) {
     notInterchangeable: [
       'QA_PEGASUS1_TOKEN / QA_PEGASUS256_TOKEN are Authenticate tokens for api.pegasusgateway.com only.',
       'They are not valid as Bearer tokens on the qservices installation API.',
+      'dev2.pegasusgateway.com is the auth gateway only — API host is qservices.pegasusgateway.com/qa (not dev2 root).',
     ],
   };
 }

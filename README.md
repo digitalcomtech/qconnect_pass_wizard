@@ -51,7 +51,7 @@ const ENV_CONFIG = {
     pegasus256Token: "your-pegasus256-token"
   },
   qa: {
-    pegasusBaseUrl: "https://dev2.pegasusgateway.com",
+    pegasusBaseUrl: "https://qservices.pegasusgateway.com/qa",
     pegasusToken: "your-qa-token",
     pegasus1Token: "your-pegasus1-token",
     pegasus256Token: "your-qa-pegasus256-token"

@@ -67,9 +67,6 @@ async function onNextClient(e) {
       status: `Found ${filtered.length} installation(s) for "${selectedClientName}"`
     });
 
-    // Update sidebar and navigate to step 2
-    updateStepStatus(1, 'completed');
-    unlockNextStep(1);
     navigateToStep(2);
 
     debugPrint(filtered, "Filtered Installations");
@@ -79,20 +76,22 @@ async function onNextClient(e) {
   }
 }
 
-// STEP 2 → STEP 3
-function onNextVin() {
+function applyVinSelection() {
   vinStatus.innerText = "";
   const vin = vinSelect.value;
   if (!vin) {
-    vinStatus.innerText = "🚨 Please select a VIN.";
+    selectedVIN = "";
+    selectedInstallationId = "";
+    var personEl = document.getElementById("selectedPersonName");
+    if (personEl) personEl.textContent = "";
+    if (typeof refreshProvisioningPreview === "function") refreshProvisioningPreview();
     return;
   }
   selectedVIN = vin;
   selectedInstallationId = vinSelect.selectedOptions[0].dataset.installationId;
 
   resetDevicesIfVinOrInstallationChanged(selectedInstallationId, selectedVIN);
-  
-  // Track VIN selection step
+
   if (window.activityTracker) {
     window.activityTracker.trackVinSelection(vin, selectedClientName);
   }
@@ -103,15 +102,21 @@ function onNextVin() {
       ? jobSnap.searchResults
       : JSON.parse(sessionStorage.getItem("filteredInst") || "[]");
 
-  const inst = filtered.find(inst => inst.vehiculo?.serie === vin);
-  let personName = "";
+  const inst = filtered.find(function (row) {
+    return row.vehiculo && row.vehiculo.serie === vin;
+  });
+  var personName = "";
   if (inst && inst.persona) {
     const p = inst.persona;
     personName = [p.nombreAsegurado, p.nombreMedioAsegurado, p.apellidoPaterno, p.apellidoMaterno]
-      .filter(Boolean).join(" ");
-    
-    // Clean up unwanted "NA" suffixes from installation data (handles " NA", " NA/", " NA /", etc.)
+      .filter(Boolean)
+      .join(" ");
     personName = personName.replace(/\s+NA\s*\/?\s*$/i, "").trim();
+  }
+
+  var personEl = document.getElementById("selectedPersonName");
+  if (personEl) {
+    personEl.textContent = personName ? "Insured: " + personName : "";
   }
 
   applyJobDiscoveryPatch({
@@ -127,18 +132,20 @@ function onNextVin() {
 
   bindDevicesSliceToJob(selectedInstallationId, selectedVIN);
 
-  // Update workflow status
   updateWorkflowStatus({
-    currentStep: '3',
+    currentStep: "3",
     vin: selectedVIN,
-    status: `Selected VIN: ${selectedVIN}`
+    status: "Selected VIN: " + selectedVIN,
   });
 
-  // Update sidebar and navigate to step 3
-  updateStepStatus(2, 'completed');
-  unlockNextStep(2);
   navigateToStep(3);
 
   hydrateDevicesFromStoreAndSync();
   if (typeof refreshProvisioningPreview === "function") refreshProvisioningPreview();
 }
+
+function onNextVin() {
+  applyVinSelection();
+}
+
+window.applyVinSelection = applyVinSelection;

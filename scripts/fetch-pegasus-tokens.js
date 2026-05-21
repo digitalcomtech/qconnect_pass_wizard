@@ -64,7 +64,7 @@ async function main() {
     `ENVIRONMENT=qa`,
   ];
   if (PREFIX === 'QA') {
-    lines.push('QA_PEGASUS_BASE_URL=https://dev2.pegasusgateway.com');
+    lines.push('QA_PEGASUS_BASE_URL=https://qservices.pegasusgateway.com/qa');
   }
   lines.push(
     `${PREFIX}_PEGASUS1_TOKEN=${p1.token}`,

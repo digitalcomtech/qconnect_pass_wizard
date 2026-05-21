@@ -6,21 +6,39 @@ The installer app uses **three** Pegasus credentials for QA or production (see `
 |---------|----------|----------------|
 | `QA_PEGASUS1_TOKEN` | `Authenticate` on `api.pegasusgateway.com` — devices, groups, vehicles, SIM (Pegasus1) | Auth gateway `cloud.pegasusgateway.com` |
 | `QA_PEGASUS256_TOKEN` | `Authenticate` on SIM APIs (Pegasus256 / migrated) | Auth gateway `qconnect.qualitas.com.mx` |
-| `QA_PEGASUS_TOKEN` | **Bearer** on `QA_PEGASUS_BASE_URL` (default `https://dev2.pegasusgateway.com`) — installation search, confirm, health | Auth gateway **`dev2.pegasusgateway.com`** |
+| `QA_PEGASUS_TOKEN` | **Bearer** on `QA_PEGASUS_BASE_URL` — installation search, confirm | Auth gateway **`dev2.pegasusgateway.com`** |
 
-## Why `/api/search-installations` returns 401 or 503
+## QA qservices: two hosts
+
+| Role | Host |
+|------|------|
+| **Auth gateway** (get `QA_PEGASUS_TOKEN`) | `dev2.pegasusgateway.com` via `POST https://auth.pegasusgateway.com/` |
+| **Installations JSON API** (search, duplicate check, confirm) | **`https://qservices.pegasusgateway.com/qa`** |
+
+`dev2.pegasusgateway.com` alone redirects `/installations/...` to `/v2/` (HTML SPA). Do **not** set `QA_PEGASUS_BASE_URL` to the dev2 root.
+
+Default:
+
+```bash
+QA_PEGASUS_BASE_URL=https://qservices.pegasusgateway.com/qa
+```
+
+Installation path (unchanged): `GET /installations/api/v1/installation`
+
+## Why search fails (401, 503, 500, or HTML)
 
 | Symptom | Cause |
 |---------|--------|
-| **503** `qservices_token_missing` | `QA_PEGASUS_TOKEN` is empty. The app does not call Pegasus until the token is set. |
-| **401** from Pegasus | Bearer token is missing, **expired**, or **wrong type** (e.g. Pegasus1 `Authenticate` token used as Bearer). |
-| **401** after host change | Token was issued for gateway `dev2.pegasusgateway.com` but requests go to `qservices.pegasusgateway.com/qa` (or the reverse). **Base URL and auth gateway must match the same tenant.** |
+| **503** `qservices_token_missing` | `QA_PEGASUS_TOKEN` is empty. |
+| **401** from Pegasus | Bearer missing, expired, or Pegasus1/256 token used by mistake. |
+| **502** `upstream_non_json_response` or `upstream_redirect` | Wrong `QA_PEGASUS_BASE_URL` (e.g. `https://dev2.pegasusgateway.com`) — HTML from `/v2/` instead of JSON. |
+| **500** invalid JSON parse (older builds) | Same as above; follow redirects to HTML. Fixed by correct base URL + defensive parsing. |
 
-`QA_PEGASUS1_TOKEN` and `QA_PEGASUS256_TOKEN` **cannot** replace `QA_PEGASUS_TOKEN`. They only work on `api.pegasusgateway.com` with the `Authenticate` header.
+`QA_PEGASUS1_TOKEN` / `QA_PEGASUS256_TOKEN` are **not** valid qservices Bearer tokens.
 
 ### Legacy Zapier note
 
-The Zapier dossier used **`https://qservices.pegasusgateway.com`** with **`Authorization: Basic …`**. This app uses **Bearer** on the **QA dev2 host** (`dev2.pegasusgateway.com`), obtained via `POST https://auth.pegasusgateway.com/` with gateway **`dev2.pegasusgateway.com`**. Do not paste Pegasus1 tokens into `QA_PEGASUS_TOKEN`.
+Zapier used **`https://qservices.pegasusgateway.com`** with **Basic** auth. This app uses **Bearer** on **`qservices.pegasusgateway.com/qa`** with a token from gateway **`dev2.pegasusgateway.com`**.
 
 ## Refresh all QA tokens (recommended)
 
@@ -30,36 +48,30 @@ export PEGASUS_AUTH_PASSWORD='your-password'
 npm run pegasus:fetch-tokens
 ```
 
-This calls `POST https://auth.pegasusgateway.com/` and writes **`.env.local`** (gitignored) with:
-
-- `QA_PEGASUS1_TOKEN` (gateway `cloud.pegasusgateway.com`)
-- `QA_PEGASUS256_TOKEN` (gateway `qconnect.qualitas.com.mx`)
-- `QA_PEGASUS_BASE_URL=https://dev2.pegasusgateway.com`
-- `QA_PEGASUS_TOKEN` (gateway `dev2.pegasusgateway.com` unless overridden)
-
-Override the qservices auth gateway only if your tenant uses a different name:
+Writes **`.env.local`** with Pegasus1/256 tokens, `QA_PEGASUS_TOKEN`, and:
 
 ```bash
-export PEGASUS_AUTH_GATEWAY_QSERVICES='dev2.pegasusgateway.com'
-npm run pegasus:fetch-tokens
+QA_PEGASUS_BASE_URL=https://qservices.pegasusgateway.com/qa
 ```
 
-Load tokens before starting the server:
+Load before start:
 
 ```bash
 set -a && source .env.local && set +a && npm start
 ```
 
-### Verify qservices auth (optional)
+### Verify (optional)
 
 ```bash
 set -a && source .env.local && set +a
-node scripts/probe-qservices-auth.js
+npm run pegasus:probe-qservices
 ```
 
-Prints **HTTP status codes only** (no token values). Expect **200** on `dev2` when `QA_PEGASUS_TOKEN` is valid.
+Expect **200** `application/json` on `qservices.pegasusgateway.com/qa/installations/api/v1/installation`.
 
 ## Manual curl (qservices / QA)
+
+Token:
 
 ```bash
 curl -s -X POST 'https://auth.pegasusgateway.com/' \
@@ -72,18 +84,12 @@ curl -s -X POST 'https://auth.pegasusgateway.com/' \
   }'
 ```
 
-Use the JSON field **`auth`** as `QA_PEGASUS_TOKEN`. Set:
-
-```bash
-QA_PEGASUS_BASE_URL=https://dev2.pegasusgateway.com
-```
-
-Test upstream (replace `YOUR_AUTH` with the `auth` value):
+Use JSON **`auth`** as `QA_PEGASUS_TOKEN`. Test installations API:
 
 ```bash
 curl -s -o /dev/null -w '%{http_code}\n' \
   -H "Authorization: Bearer YOUR_AUTH" \
-  'https://dev2.pegasusgateway.com/installations/api/v1/installation'
+  'https://qservices.pegasusgateway.com/qa/installations/api/v1/installation'
 ```
 
 ## Manual curl (Pegasus1)
@@ -103,25 +109,16 @@ Use **`auth`** as `QA_PEGASUS1_TOKEN`.
 
 ## Manual curl (Pegasus256)
 
-Same request, but set:
-
-```json
-"gateway": "qconnect.qualitas.com.mx"
-```
-
-Use **`auth`** as `QA_PEGASUS256_TOKEN`.
+Same request with `"gateway": "qconnect.qualitas.com.mx"`. Use **`auth`** as `QA_PEGASUS256_TOKEN`.
 
 ## API routing note
 
-`pegasus-client.js` uses **`pegasus1Token` first** for `api.pegasusgateway.com` routes (device verify, groups, vehicles). IMEI/SIM lookup works when only `QA_PEGASUS1_TOKEN` / `QA_PEGASUS256_TOKEN` are set.
+- **`api.pegasusgateway.com`**: `Authenticate` + `pegasus1Token` / `pegasus256Token`
+- **qservices**: `Bearer` + `pegasusBaseUrl` + `/installations/api/v1/...`
 
-**Installation search** (`GET /api/search-installations`) calls `pegasus.qservicesGet` with **Bearer** + `pegasusBaseUrl` + path `/installations/api/v1/installation`.
-
-Diagnostics (no secrets): **`GET /api/health/credentials`** and **`GET /api/health/pegasus`** (live probe when token is set).
+Logs include sanitized upstream URLs: `[Pegasus] qservices request {"context":"search-installations","upstream":"https://qservices.pegasusgateway.com/qa/installations/api/v1/installation"}`
 
 ## Security
 
 - Never commit passwords or tokens.
-- Rotate credentials if they were shared in chat or logs.
-- Do not pass passwords as CLI arguments (shell history).
-- `npm run pegasus:fetch-tokens` and probe scripts never log token values.
+- Do not pass passwords on the CLI (shell history).

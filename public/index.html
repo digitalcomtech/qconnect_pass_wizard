@@ -14,175 +14,156 @@
   <title>PASS Provisioning Console</title>
   <style>
     body {
-      font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', sans-serif;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       margin: 0;
-      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      background: #f1f5f9;
+      color: #0f172a;
       min-height: 100vh;
-      display: flex;
-      align-items: stretch;
-      justify-content: stretch;
-    }
-    
-    /* Main layout container */
-    .app-container {
-      display: flex;
-      width: 100%;
-      height: 100vh;
-      overflow: hidden;
-    }
-    
-    .sidebar-console-compact {
-      width: 260px;
     }
 
-    /* Sidebar */
-    .sidebar {
-      width: 280px;
-      background: linear-gradient(180deg, #1e293b 0%, #334155 100%);
-      color: white;
-      padding: 24px 0;
-      box-shadow: 4px 0 20px rgba(0,0,0,0.1);
+    .console-page {
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
-      position: relative;
-      z-index: 10;
     }
-    
-    .sidebar-header {
-      padding: 0 24px 24px 24px;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
-      margin-bottom: 24px;
+
+    .console-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 12px 20px;
+      background: #fff;
+      border-bottom: 1px solid #cbd5e1;
+      flex-wrap: wrap;
     }
-    
-    .sidebar-title {
-      font-size: 1.4rem;
-      font-weight: 700;
-      margin: 0 0 8px 0;
-      background: linear-gradient(135deg, #862BAB 0%, #6B21A8 100%);
-      -webkit-background-clip: text;
-      -webkit-background-fill-color: transparent;
-      background-clip: text;
+
+    .console-header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
     }
-    
-    .sidebar-subtitle {
-      font-size: 0.9rem;
-      color: rgba(255,255,255,0.7);
+
+    .console-header-left h1 {
       margin: 0;
-    }
-    
-    /* User Info Styles */
-    .user-info {
-      margin-top: 16px;
-      padding: 16px;
-      background: rgba(255,255,255,0.1);
-      border-radius: 8px;
-      border: 1px solid rgba(255,255,255,0.2);
-    }
-    
-    .user-details {
-      margin-bottom: 12px;
-    }
-    
-    .user-name {
-      display: block;
+      font-size: 1.15rem;
       font-weight: 600;
-      font-size: 0.9rem;
-      color: white;
-      margin-bottom: 4px;
+      color: #0f172a;
     }
-    
-    .user-role {
-      display: block;
+
+    .console-header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .env-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: #fff;
+      background: #64748b;
+    }
+
+    .header-user {
+      font-size: 0.85rem;
+      color: #475569;
+    }
+
+    .lang-select {
+      padding: 4px 8px;
       font-size: 0.8rem;
-      color: rgba(255,255,255,0.7);
-      text-transform: capitalize;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      background: #fff;
+      color: #334155;
     }
-    
-    .logout-btn {
-      width: 100%;
-      padding: 8px 16px;
-      background: rgba(239, 68, 68, 0.8);
-      color: white;
-      border: none;
-      border-radius: 6px;
+
+    .btn-ghost {
+      padding: 4px 10px;
       font-size: 0.8rem;
       font-weight: 500;
+      color: #475569;
+      background: transparent;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
       cursor: pointer;
-      transition: all 0.2s ease;
+      margin: 0;
+      box-shadow: none;
     }
-    
-    .logout-btn:hover {
-      background: rgba(239, 68, 68, 1);
-      transform: translateY(-1px);
+
+    .btn-ghost::before {
+      display: none;
     }
-    
-    /* Main content area */
-    .main-content {
+
+    .btn-ghost:hover {
+      background: #f8fafc;
+      color: #0f172a;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .btn-logout:hover {
+      border-color: #f87171;
+      color: #b91c1c;
+    }
+
+    .console-main {
       flex: 1;
-      background: #fff;
       overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 40px 20px;
+      padding: 20px;
     }
-    
-    .content-container {
-      max-width: 600px;
-      width: 100%;
+
+    .console-main-inner {
+      max-width: 920px;
+      margin: 0 auto;
+    }
+
+    .console-lede {
+      margin: 0 0 20px 0;
+      font-size: 0.9rem;
+      color: #64748b;
+    }
+
+    .section,
+    .console-section {
+      margin-bottom: 20px;
+      padding: 16px 18px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
       background: #fff;
-      border-radius: 16px;
-      box-shadow: 0 8px 32px rgba(134, 43, 171, 0.12), 0 4px 16px rgba(0,0,0,0.08);
-      padding: 40px 36px 32px 36px;
-      border: 1px solid rgba(134, 43, 171, 0.1);
-      position: relative;
-    }
-    
-    /* Environment indicator in sidebar */
-    .sidebar-environment {
-      display: inline-block;
-      background: linear-gradient(135deg, #862BAB 0%, #6B21A8 100%);
-      color: white;
-      padding: 4px 10px;
-      border-radius: 16px;
-      font-size: 0.7rem;
-      font-weight: 600;
-      letter-spacing: 0.5px;
-      box-shadow: 0 2px 6px rgba(134, 43, 171, 0.3);
-      border: 1px solid rgba(255,255,255,0.2);
-      margin-top: 8px;
-      align-self: flex-start;
-    }
-    h1 {
-      font-size: 2rem;
-      margin-bottom: 24px;
-      font-weight: 700;
-      letter-spacing: -0.5px;
-      text-align: center;
-      background: linear-gradient(135deg, #862BAB 0%, #6B21A8 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    .section {
-      margin-bottom: 32px;
-      padding: 24px 20px 16px 20px;
-      border: 1px solid #e2e8f0;
-      border-radius: 12px;
-      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-      box-shadow: 0 2px 8px rgba(134, 43, 171, 0.06);
       width: 100%;
-      position: relative;
+      box-sizing: border-box;
     }
-    .section::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 3px;
-      background: linear-gradient(90deg, #862BAB 0%, #6B21A8 100%);
-      border-radius: 12px 12px 0 0;
+
+    .console-section h2 {
+      margin: 0 0 14px 0;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #334155;
+      text-align: left;
+    }
+
+    .console-section h2::after {
+      display: none;
+    }
+
+    .console-subsection {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid #e2e8f0;
+    }
+
+    .console-subsection h3 {
+      margin: 0 0 12px 0;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #475569;
     }
     label {
       display: block;
@@ -218,41 +199,23 @@
       transform: translateY(-1px);
     }
     button {
-      padding: 12px 28px;
-      font-size: 1rem;
-      font-weight: 600;
+      padding: 8px 16px;
+      font-size: 0.9rem;
+      font-weight: 500;
       color: #fff;
-      background: linear-gradient(135deg, #862BAB 0%, #6B21A8 100%);
+      background: #334155;
       border: none;
-      border-radius: 8px;
+      border-radius: 4px;
       cursor: pointer;
-      margin: 0 8px 8px 0;
-      box-shadow: 0 4px 12px rgba(134, 43, 171, 0.2);
-      transition: all 0.2s ease;
+      margin: 8px 8px 0 0;
       font-family: inherit;
-      position: relative;
-      overflow: hidden;
-    }
-    button::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-      transition: left 0.5s;
-    }
-    button:hover::before {
-      left: 100%;
     }
     button:hover {
-      background: linear-gradient(135deg, #6B21A8 0%, #862BAB 100%);
-      box-shadow: 0 6px 20px rgba(134, 43, 171, 0.3);
-      transform: translateY(-2px);
+      background: #1e293b;
     }
-    button:active {
-      transform: translateY(0);
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
     .hidden {
       display: none;
@@ -296,149 +259,6 @@
       display: block;
     }
     
-    /* Qualitrack-style environment indicator */
-    #environmentIndicator {
-      position: absolute;
-      top: 16px;
-      right: 16px;
-      background: linear-gradient(135deg, #862BAB 0%, #6B21A8 100%);
-      color: white;
-      padding: 6px 12px;
-      border-radius: 20px;
-      font-size: 0.75rem;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      box-shadow: 0 2px 8px rgba(134, 43, 171, 0.3);
-      border: 2px solid rgba(255,255,255,0.2);
-    }
-    
-    /* Enhanced section headers */
-    .section h2 {
-      text-align: center;
-      font-size: 1.3rem;
-      margin-bottom: 16px;
-      font-weight: 700;
-      color: #1e293b;
-      position: relative;
-    }
-    .section h2::after {
-      content: '';
-      position: absolute;
-      bottom: -8px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 40px;
-      height: 3px;
-      background: linear-gradient(90deg, #862BAB 0%, #6B21A8 100%);
-      border-radius: 2px;
-    }
-    
-    /* Qualitrack-style info boxes */
-    .info-box {
-      background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
-      border: 1px solid #c084fc;
-      border-radius: 10px;
-      padding: 16px;
-      margin: 16px 0;
-      position: relative;
-    }
-    .info-box::before {
-      content: '💡';
-      position: absolute;
-      top: -8px;
-      left: 16px;
-      background: #fff;
-      padding: 4px 8px;
-      border-radius: 12px;
-      font-size: 0.8rem;
-      border: 1px solid #c084fc;
-    }
-    
-    @media (max-width: 768px) {
-      .app-container {
-        flex-direction: column;
-      }
-      
-      .sidebar {
-        width: 100%;
-        height: auto;
-        padding: 16px 0;
-      }
-      
-      .main-content {
-        padding: 20px 10px;
-      }
-      
-      .content-container {
-        padding: 24px 20px;
-      }
-      
-      .sidebar-title {
-        font-size: 1.2rem;
-      }
-      
-    }
-    
-    @media (max-width: 600px) {
-      .content-container {
-        padding: 20px 16px;
-      }
-      
-      h1 {
-        font-size: 1.6rem;
-      }
-    }
-
-    /* Workflow Status Bar Styles */
-    .workflow-status-bar {
-      background: linear-gradient(135deg, #6B21A8 0%, #862BAB 100%);
-      color: white;
-      padding: 12px 20px;
-      margin: 0 0 20px 0;
-      display: flex;
-      align-items: center;
-      justify-content: space-around;
-      gap: 0;
-      box-shadow: 0 2px 8px rgba(107, 33, 168, 0.2);
-      border-radius: 0;
-      font-weight: 500;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      width: 100%;
-    }
-
-    .status-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-shrink: 0;
-    }
-
-    .status-label {
-      font-size: 0.75rem;
-      color: rgba(255, 255, 255, 0.8);
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      white-space: nowrap;
-    }
-
-    .status-value {
-      font-size: 0.9rem;
-      color: white;
-      font-weight: 600;
-      background: rgba(255, 255, 255, 0.15);
-      padding: 4px 8px;
-      border-radius: 4px;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      min-width: 80px;
-      text-align: center;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
     .provisioning-preview {
       margin: 20px 0 12px 0;
       padding: 16px 18px;
@@ -663,175 +483,69 @@
       align-self: flex-start;
     }
 
-    .status-value:empty::after {
-      content: "-";
-      color: rgba(255, 255, 255, 0.6);
-      font-style: italic;
-    }
-
-    .status-status {
-      flex: 0 1 auto;
-      min-width: 0;
-    }
-
-    .status-status .status-value {
-      min-width: 120px;
-      text-align: left;
-      background: rgba(255, 255, 255, 0.1);
-    }
-
-    /* Responsive adjustments for status bar */
-    @media (max-width: 1200px) {
-      .workflow-status-bar {
-        padding: 10px 16px;
-        gap: 24px;
+    @media (max-width: 600px) {
+      .console-header {
+        padding: 10px 12px;
       }
-      
-      .status-value {
-        min-width: 70px;
-        font-size: 0.85rem;
-      }
-    }
-
-    @media (max-width: 1024px) {
-      .workflow-status-bar {
-        padding: 10px 16px;
-        gap: 20px;
-      }
-      
-      .status-value {
-        min-width: 65px;
-        font-size: 0.8rem;
-        padding: 3px 6px;
-      }
-    }
-
-    @media (max-width: 768px) {
-      .workflow-status-bar {
-        padding: 8px 12px;
-        gap: 16px;
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        justify-content: flex-start;
-      }
-      
-      .status-item {
-        flex-shrink: 0;
-        min-width: 0;
-      }
-      
-      .status-status {
-        margin-left: 0;
-        flex-shrink: 0;
-      }
-      
-      .status-value {
-        font-size: 0.8rem;
-        padding: 3px 6px;
-        min-width: 60px;
+      .console-main {
+        padding: 12px;
       }
     }
   </style>
 </head>
 <body>
-  <div class="app-container">
-    <!-- Sidebar Navigation -->
-    <div class="sidebar sidebar-console-compact">
-      <div class="sidebar-header">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
-          <h1 class="sidebar-title" style="margin: 0;" data-i18n="app.title">PASS Provisioning Console</h1>
-          <div class="sidebar-environment" id="sidebarEnvironment">PROD</div>
-        </div>
-        <p class="sidebar-subtitle" data-i18n="installation.title">Office provisioning for Pegasus</p>
-        
-        <!-- Language Selector -->
-        <div class="language-selector" style="margin-bottom: 16px;">
-          <label for="languageSelector" style="display: block; font-size: 0.85rem; color: #cbd5e1; margin-bottom: 6px; font-weight: 500;">
-            <span data-i18n="app.language">Language</span>:
-          </label>
-          <select id="languageSelector" style="width: 100%; padding: 8px 12px; border: 1px solid #475569; border-radius: 6px; background: #1e293b; color: white; font-size: 0.9rem; cursor: pointer;">
-            <option value="en">English</option>
-            <option value="es">Español</option>
-          </select>
-        </div>
-        
-        <!-- User Info and Logout -->
-        <div class="user-info" id="userInfo" style="display: none;">
-          <div class="user-details">
-            <span class="user-name" id="userName"></span>
-            <span class="user-role" id="userRole"></span>
-          </div>
-          <button class="logout-btn" id="logoutBtn" data-i18n="buttons.logout">Logout</button>
-          <button class="logout-btn" id="startOverHeaderBtn" type="button" style="margin-left: 8px; background: rgba(255,255,255,0.10); border-color: rgba(255,255,255,0.20);">
-            Start Over
-          </button>
-        </div>
+  <div class="console-page">
+    <header class="console-header">
+      <div class="console-header-left">
+        <h1 data-i18n="app.title">PASS Provisioning Console</h1>
+        <span class="env-badge" id="consoleEnvironment">PROD</span>
       </div>
-    </div>
-    
-    <!-- Main Content Area -->
-    <div class="main-content">
-      <!-- Status Bar - Shows accumulated information throughout the workflow -->
-      <div id="workflowStatusBar" class="workflow-status-bar" style="display: none;">
-        <div class="status-item">
-          <span class="status-label" data-i18n="header.step">Step:</span>
-          <span id="currentStepDisplay" class="status-value">1</span>
-        </div>
-        <div class="status-item">
-          <span class="status-label" data-i18n="header.vin">VIN:</span>
-          <span id="currentVinDisplay" class="status-value">-</span>
-        </div>
-        <div class="status-item">
-          <span class="status-label" data-i18n="header.primary">Primary:</span>
-          <span id="currentPrimaryImeiDisplay" class="status-value">-</span>
-        </div>
-        <div class="status-item">
-          <span class="status-label" data-i18n="header.secondary">Secondary:</span>
-          <span id="currentSecondaryImeiDisplay" class="status-value">-</span>
-        </div>
-        <div class="status-item status-status">
-          <span class="status-label" data-i18n="header.status">Status:</span>
-          <span id="currentStatusDisplay" class="status-value">Ready</span>
-        </div>
+      <div class="console-header-right">
+        <select id="languageSelector" class="lang-select" aria-label="Language">
+          <option value="en">EN</option>
+          <option value="es">ES</option>
+        </select>
+        <span class="header-user" id="headerUserLabel"></span>
+        <button type="button" class="btn-ghost" id="consoleStartOverBtn">Start over</button>
+        <button type="button" class="btn-ghost btn-logout" id="logoutBtn" data-i18n="buttons.logout">Logout</button>
       </div>
+    </header>
 
-      <div class="content-container">
-        <h1 style="text-align:center; font-size:1.8rem; margin-bottom:8px; color:#1e293b;" data-i18n="app.title">PASS Provisioning Console</h1>
-        <p style="text-align:center; font-size:0.95rem; color:#64748b; margin:0 0 28px 0;">Search an installation, confirm VIN and devices, then provision in Pegasus.</p>
+    <main class="console-main">
+      <div class="console-main-inner">
+        <p class="console-lede">Search an installation, confirm VIN and devices, then provision in Pegasus.</p>
 
-    <!-- STEP 1: Client Name -->
-    <div id="clientSection" class="section">
-      <h2 style="text-align:center; font-size:1.2rem; margin-bottom:12px;" data-i18n="installation.clientSelection">Step 1: Find installation</h2>
+    <section id="clientSection" class="section console-section">
+      <h2 data-i18n="installation.clientSelection">Installation search</h2>
       <form id="clientForm">
-        <label for="clientNameInput" data-i18n="installation.clientName">Client Name or VIN Start:</label>
+        <label for="clientNameInput" data-i18n="installation.clientName">Client name or VIN prefix</label>
         <input
           type="text"
           id="clientNameInput"
           placeholder=""
           autocomplete="off"
         />
-        <button type="submit" data-i18n="buttons.next">Submit ▶ Load VINs</button>
+        <button type="submit">Search installations</button>
       </form>
       <p id="clientStatus"></p>
-    </div>
+    </section>
 
-    <!-- STEP 2: VIN Selection -->
-    <div id="vinSection" class="section hidden">
-      <h2 style="text-align:center; font-size:1.2rem; margin-bottom:12px;" data-i18n="installation.vinSelection">Step 2: Select VIN</h2>
-      <div id="selectedPersonName" style="margin-bottom:10px; font-weight:bold;"></div>
-      <label for="vinSelect">VIN #:</label>
+    <section id="vinSection" class="section console-section">
+      <h2 data-i18n="installation.vinSelection">Selected installation / VIN</h2>
+      <div id="selectedPersonName" style="margin-bottom:10px; font-weight:600; color:#334155;"></div>
+      <label for="vinSelect">VIN</label>
       <select id="vinSelect">
-        <option value="">-- Select VIN --</option>
+        <option value="">— Select VIN —</option>
       </select>
-      <button id="backToClientBtn" type="button" data-i18n="buttons.back">◀ Back</button>
-      <button id="nextVinBtn" data-i18n="buttons.next">Next ▶ Devices &amp; SIM</button>
       <p id="vinStatus"></p>
-    </div>
+    </section>
 
-    <!-- STEP 3: IMEI & SIM (POST to `/api/install`) -->
-    <div id="deviceSection" class="section hidden">
-      <h2 style="text-align:center; font-size:1.2rem; margin-bottom:12px;" data-i18n="installation.enterImeiSim">Step 3: Devices, SIM &amp; provision</h2>
-      <label for="imeiInput" data-i18n="installation.imei">IMEI (Primary Device)</label>
+    <section id="deviceSection" class="section console-section">
+      <h2 data-i18n="installation.enterImeiSim">Devices &amp; provision</h2>
+
+      <div class="console-subsection">
+        <h3>Primary IMEI &amp; SIM</h3>
+      <label for="imeiInput" data-i18n="installation.imei">IMEI (primary device)</label>
       <input
         type="text"
         id="imeiInput"
@@ -863,9 +577,13 @@
         placeholder="Retype SIM Card # (optional)"
       />
 
+      </div>
+
+      <div class="console-subsection">
+        <h3>Secondary IMEI &amp; SIM (optional)</h3>
       <label style="display:flex;align-items:center;margin-bottom:8px;">
         <input type="checkbox" id="addSecondaryUnit" style="margin-right:8px;" />
-        Add Secondary Unit (IMEI)
+        Add secondary unit
       </label>
       <div id="secondaryUnitFields" class="hidden" style="width:100%;">
         <label for="secondaryImeiInput">Secondary IMEI</label>
@@ -893,19 +611,25 @@
           placeholder="Retype Secondary SIM Card # (optional)"
         />
       </div>
+      </div>
 
-      <button id="backToVinBtn" type="button" data-i18n="buttons.back">◀ Back</button>
-
+      <div class="console-subsection">
+        <h3>Provisioning preview</h3>
       <div class="provisioning-action-row">
         <div id="provisioningPreviewPanel" class="provisioning-preview" aria-live="polite"></div>
-        <button id="startInstallBtn" type="button" disabled data-i18n="buttons.startInstallation">Provision in Pegasus ▶</button>
+        <button id="startInstallBtn" type="button" disabled data-i18n="buttons.startInstallation">Provision in Pegasus</button>
+      </div>
       </div>
 
       <p id="installStatus"></p>
+
+      <div class="console-subsection">
+        <h3>Provisioning result</h3>
       <div id="provisioningReceiptPanel" class="provisioning-receipt hidden" aria-live="polite"></div>
-    </div>
       </div>
-    </div>
+    </section>
+      </div>
+    </main>
   </div>
 
   <!-- i18next Scripts -->

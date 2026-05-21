@@ -1,4 +1,4 @@
-// PASS Provisioning Console — three-step office flow (client → VIN → provision).
+// PASS Provisioning Console — single-page office layout.
 
 function provisioningMaxStep() {
   return 3;

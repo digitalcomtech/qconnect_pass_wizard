@@ -34,12 +34,6 @@ function resetWizardGlobalsForNewRun() {
 }
 
 function resetWizardUiToColdStart() {
-  if (typeof updateStepStatus === "function") {
-    for (var step = 1; step <= provisioningMaxStep(); step++) {
-      updateStepStatus(step, "pending");
-      if (step >= 2) updateStepStatus(step, "locked");
-    }
-  }
   if (typeof navigateToStep === "function") {
     navigateToStep(1);
   }

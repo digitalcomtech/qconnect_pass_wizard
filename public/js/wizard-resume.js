@@ -1,33 +1,5 @@
 // Wizard: back navigation + sessionStorage restore on reload (installationRun-first resume)
 
-function onBackToClient() {
-  vinSection.classList.add("hidden");
-  clientSection.classList.remove("hidden");
-  navigateToStep(1);
-
-  if (window.activityTracker) {
-    window.activityTracker.trackStep("navigation", {
-      action: "back_to_client",
-      from: "vinSelection",
-      to: "clientSelection",
-    });
-  }
-}
-
-function onBackToVin() {
-  deviceSection.classList.add("hidden");
-  vinSection.classList.remove("hidden");
-  navigateToStep(2);
-
-  if (window.activityTracker) {
-    window.activityTracker.trackStep("navigation", {
-      action: "back_to_vin",
-      from: "deviceSetup",
-      to: "vinSelection",
-    });
-  }
-}
-
 function resumeProvisionReceipt(step) {
   navigateToStep(3);
   var inst =

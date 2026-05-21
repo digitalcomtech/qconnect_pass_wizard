@@ -8,6 +8,7 @@
 
 const fetch = require('node-fetch');
 const { resolveApiAuthenticateToken } = require('./services/pegasus/auth-token');
+const { joinQservicesUrl } = require('./services/pegasus/qservices-url');
 
 function stripUrlForLog(urlStr) {
   try {
@@ -99,12 +100,13 @@ function createPegasusClient({ currentConfig, apiBaseUrl, defaultTimeoutMs = 300
     return { init, authMode, authConfigured };
   }
 
-  async function exec(context, fullUrl, method, authOpts, timeoutMs) {
+  async function exec(context, fullUrl, method, authOpts, timeoutMs, { redirect } = {}) {
     const { init, authMode, authConfigured } = buildInit(method, authOpts, timeoutMs);
+    if (redirect) init.redirect = redirect;
     const upstream = stripUrlForLog(fullUrl);
     try {
       const response = await fetch(fullUrl, init);
-      return { response, authMode, authConfigured, upstream };
+      return { response, authMode, authConfigured, upstream, requestUrl: fullUrl };
     } catch (err) {
       logPegasusFailure(context, {
         upstream,
@@ -130,9 +132,27 @@ function createPegasusClient({ currentConfig, apiBaseUrl, defaultTimeoutMs = 300
     });
   }
 
+  function qservicesRequestUrl(path) {
+    return joinQservicesUrl(qBase, path);
+  }
+
+  function logQservicesRequest(context, method, upstream) {
+    console.log(
+      '[Pegasus] qservices request',
+      JSON.stringify({ context, method, upstream })
+    );
+  }
+
+  async function execQservices(context, path, method, authOpts, timeoutMs) {
+    const url = qservicesRequestUrl(path);
+    logQservicesRequest(context, method, stripUrlForLog(url));
+    return exec(context, url, method, authOpts, timeoutMs, { redirect: 'manual' });
+  }
+
   return {
     apiBase,
     qBase,
+    qservicesRequestUrl,
     stripUrlForLog,
     truncate,
     retryApiCall,
@@ -141,11 +161,10 @@ function createPegasusClient({ currentConfig, apiBaseUrl, defaultTimeoutMs = 300
      * qservices GET with Bearer. Does not log 404 as failure (expected for duplicate probe).
      */
     async qservicesGetAllow404(context, path, timeoutMs) {
-      const url = `${qBase}${path.startsWith('/') ? path : `/${path}`}`;
       const bearer = currentConfig.pegasusToken || '';
-      const { response, authMode, authConfigured, upstream } = await exec(
+      const { response, authMode, authConfigured, upstream } = await execQservices(
         context,
-        url,
+        path,
         'GET',
         { bearer },
         timeoutMs
@@ -157,11 +176,10 @@ function createPegasusClient({ currentConfig, apiBaseUrl, defaultTimeoutMs = 300
     },
 
     async qservicesGet(context, path, timeoutMs) {
-      const url = `${qBase}${path.startsWith('/') ? path : `/${path}`}`;
       const bearer = currentConfig.pegasusToken || '';
-      const { response, authMode, authConfigured, upstream } = await exec(
+      const { response, authMode, authConfigured, upstream } = await execQservices(
         context,
-        url,
+        path,
         'GET',
         { bearer },
         timeoutMs
@@ -173,11 +191,10 @@ function createPegasusClient({ currentConfig, apiBaseUrl, defaultTimeoutMs = 300
     },
 
     async qservicesPost(context, path, body, timeoutMs) {
-      const url = `${qBase}${path.startsWith('/') ? path : `/${path}`}`;
       const bearer = currentConfig.pegasusToken || '';
-      const { response, authMode, authConfigured, upstream } = await exec(
+      const { response, authMode, authConfigured, upstream } = await execQservices(
         context,
-        url,
+        path,
         'POST',
         { bearer, bodyObj: body },
         timeoutMs

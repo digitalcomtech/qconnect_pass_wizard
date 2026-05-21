@@ -8,6 +8,7 @@ const {
   buildPegasusCredentialDiagnostics,
 } = require("../services/pegasus/credential-diagnostics");
 const { missingQservicesTokenMessage } = require("../services/pegasus/qservices-auth-hint");
+const { readQservicesJson } = require("../services/pegasus/qservices-response");
 
 function registerHealthz(app, ENVIRONMENT) {
   app.get("/healthz", (req, res) => {
@@ -81,18 +82,33 @@ function createApiMetaRouter({
 
     try {
       const startTime = Date.now();
+      const installPath = "/installations/api/v1/installation";
+      const upstream = pegasus.stripUrlForLog(pegasus.qservicesRequestUrl(installPath));
       const healthResp = await pegasus.qservicesGet(
         "health-pegasus",
-        "/health",
+        installPath,
         10000
       );
 
+      const parsed = await readQservicesJson(healthResp, {
+        upstream,
+        context: "health-pegasus",
+      });
+
       const responseTime = Date.now() - startTime;
+      const pegasusHealthy =
+        parsed.ok && healthResp.ok && Array.isArray(parsed.data);
 
       res.json({
-        success: healthResp.ok,
+        success: pegasusHealthy,
         check: "qservices",
-        message: "Live probe against qservices /health (Bearer token only).",
+        message: pegasusHealthy
+          ? "Live probe against qservices installations API (Bearer, JSON array)."
+          : parsed.ok
+            ? `Pegasus returned HTTP ${healthResp.status} (expected JSON array).`
+            : parsed.error.message,
+        code: parsed.ok ? undefined : parsed.error.code,
+        upstream,
         status: healthResp.status,
         responseTime: `${responseTime}ms`,
         timestamp: new Date().toISOString(),

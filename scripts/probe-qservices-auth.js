@@ -18,9 +18,9 @@ const { fetchPegasusAuthToken } = require('../services/pegasus/auth-token');
 const INSTALL_PATH = '/installations/api/v1/installation';
 
 const BASES = [
-  { label: 'dev2 (QA default)', base: 'https://dev2.pegasusgateway.com' },
+  { label: 'qservices /qa (QA API — expected)', base: 'https://qservices.pegasusgateway.com/qa' },
+  { label: 'dev2 root (redirects to /v2 HTML)', base: 'https://dev2.pegasusgateway.com' },
   { label: 'qservices prod host', base: 'https://qservices.pegasusgateway.com' },
-  { label: 'qservices /qa path', base: 'https://qservices.pegasusgateway.com/qa' },
 ];
 
 async function probeGet(label, baseUrl, bearer) {
@@ -81,7 +81,7 @@ async function main() {
     await probeGet('pegasus1-as-bearer', 'https://dev2.pegasusgateway.com', p1);
   }
 
-  console.log('\nDone. HTTP 200 on dev2 + configured base means QA_PEGASUS_TOKEN is valid.');
+  console.log('\nDone. HTTP 200 application/json on qservices/qa/installations/... means token + base URL are correct.');
 }
 
 if (require.main === module) {

@@ -7,12 +7,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   await loadAppConfig();
 
   clientForm.addEventListener("submit", onNextClient);
-  nextVinBtn.addEventListener("click", onNextVin);
+  vinSelect.addEventListener("change", applyVinSelection);
   startInstallBtn.addEventListener("click", onStartInstallation);
   initDeviceLookupListeners();
-
-  document.getElementById("backToClientBtn").addEventListener("click", onBackToClient);
-  document.getElementById("backToVinBtn").addEventListener("click", onBackToVin);
 
   document.getElementById("imeiConfirmInput").addEventListener("input", () => {
     applyDevicesDiscoveryPatch({
@@ -43,9 +40,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (typeof refreshProvisioningPreview === "function") refreshProvisioningPreview();
   });
 
-  var startOverHeaderBtn = document.getElementById("startOverHeaderBtn");
-  if (startOverHeaderBtn) {
-    startOverHeaderBtn.addEventListener("click", function () {
+  var startOverBtn = document.getElementById("consoleStartOverBtn");
+  if (startOverBtn) {
+    startOverBtn.addEventListener("click", function () {
       if (window.activityTracker) {
         window.activityTracker.trackStep("navigation", {
           action: "start_over",
@@ -57,6 +54,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
+  navigateToStep(1);
   restoreState();
+  if (vinSelect.value && typeof applyVinSelection === "function") {
+    applyVinSelection();
+  }
   if (typeof refreshProvisioningPreview === "function") refreshProvisioningPreview();
 });

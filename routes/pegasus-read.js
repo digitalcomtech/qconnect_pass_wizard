@@ -9,6 +9,10 @@ const {
   missingQservicesTokenMessage,
   rejectedQservicesTokenMessage,
 } = require("../services/pegasus/qservices-auth-hint");
+const {
+  readQservicesJson,
+  qservicesErrorToHttpStatus,
+} = require("../services/pegasus/qservices-response");
 
 function tokenConfigured(value) {
   return typeof value === "string" && value.trim().length > 0;
@@ -38,20 +42,49 @@ function createPegasusReadRouter({ pegasus, currentConfig, authenticateToken, en
         });
       }
 
+      const installPath = "/installations/api/v1/installation";
+      const upstream = pegasus.stripUrlForLog(pegasus.qservicesRequestUrl(installPath));
+
       const response = await pegasus.qservicesGet(
         "search-installations",
-        "/installations/api/v1/installation",
+        installPath,
         30000
       );
 
+      const parsed = await readQservicesJson(response, {
+        upstream,
+        context: "search-installations",
+      });
+
+      if (!parsed.ok) {
+        console.error(
+          "[search-installations] Pegasus non-JSON or redirect",
+          JSON.stringify({
+            upstream,
+            status: parsed.error.status,
+            code: parsed.error.code,
+            authConfigured: Boolean(currentConfig.pegasusToken),
+          })
+        );
+        return res.status(qservicesErrorToHttpStatus(parsed.error)).json({
+          success: false,
+          code: parsed.error.code,
+          message: parsed.error.message,
+          upstream,
+          status: parsed.error.status,
+          contentType: parsed.error.contentType,
+        });
+      }
+
       if (!response.ok) {
-        const errBody = await response.text();
+        const errBody =
+          typeof parsed.data === "object"
+            ? JSON.stringify(parsed.data)
+            : String(parsed.data);
         console.error(
           "[search-installations] Pegasus error",
           JSON.stringify({
-            upstream: pegasus.stripUrlForLog(
-              `${pegasus.qBase}/installations/api/v1/installation`
-            ),
+            upstream,
             status: response.status,
             authConfigured: Boolean(currentConfig.pegasusToken),
           })
@@ -63,11 +96,12 @@ function createPegasusReadRouter({ pegasus, currentConfig, authenticateToken, en
         return res.status(response.status).json({
           success: false,
           message,
+          upstream,
           details: errBody,
         });
       }
 
-      const installationsArray = await response.json();
+      const installationsArray = Array.isArray(parsed.data) ? parsed.data : [];
       console.log(`✅ Found ${installationsArray.length} total installations`);
 
       const normalize = (str) =>

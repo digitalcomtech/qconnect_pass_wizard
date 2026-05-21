@@ -1,4 +1,4 @@
-// Auth gate + API header helper + sidebar user/logout
+// Auth gate + API header helper + header logout
 (function () {
   var token = localStorage.getItem("authToken");
   if (!token) {
@@ -38,15 +38,12 @@ function setupUserInfo() {
     userInfo = {};
   }
 
-  var userInfoElement = document.getElementById("userInfo");
-  var userNameElement = document.getElementById("userName");
-  var userRoleElement = document.getElementById("userRole");
+  var headerUserLabel = document.getElementById("headerUserLabel");
   var logoutBtn = document.getElementById("logoutBtn");
 
-  if (userInfo.name) {
-    userNameElement.textContent = userInfo.name;
-    userRoleElement.textContent = userInfo.role || "";
-    userInfoElement.style.display = "block";
+  if (headerUserLabel && userInfo.name) {
+    var role = userInfo.role ? " (" + userInfo.role + ")" : "";
+    headerUserLabel.textContent = userInfo.name + role;
   }
 
   if (logoutBtn) {

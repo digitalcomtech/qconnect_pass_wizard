@@ -7,7 +7,7 @@ const {
 } = require('../services/pegasus/credential-diagnostics');
 
 const base = {
-  pegasusBaseUrl: 'https://dev2.pegasusgateway.com',
+  pegasusBaseUrl: 'https://qservices.pegasusgateway.com/qa',
   pegasusToken: '',
   pegasus1Token: 'a',
   pegasus256Token: '',
