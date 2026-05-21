@@ -1,30 +1,25 @@
-// Wizard: POST /api/install + start primary device polling
+// Wizard: POST /api/install (office provisioning console)
 async function onStartInstallation() {
   installStatus.innerText = "";
-  
-  // Track installation start
+
   if (window.activityTracker) {
     const installationData = {
       imei: imeiInput.value.trim(),
       sim_number: simInput.value.trim() || null,
-      secondary_imei: secondaryImeiInput.value.trim() || null,
+      secondary_imei: document.getElementById("secondaryImeiInput").value.trim() || null,
       secondary_sim_number: document.getElementById("secondarySimInput").value.trim() || null,
       vin: selectedVIN,
       client_name: selectedClientName,
-      installationId: selectedInstallationId
+      installationId: selectedInstallationId,
     };
     window.activityTracker.trackInstallationStart(installationData);
   }
-  
-  // Reset form opened flag for new installation
-  formAlreadyOpened = false;
-  
-  // Check if IMEI has been verified
+
   if (!imeiVerified) {
-    installStatus.innerText = "🚨 Please verify the IMEI before proceeding with installation.";
+    installStatus.innerText = "🚨 IMEI must be found in Pegasus before provisioning.";
     return;
   }
-  
+
   const imei = imeiInput.value.trim();
   const imeiConfirm = document.getElementById("imeiConfirmInput").value.trim();
   const sim = simInput.value.trim();
@@ -33,7 +28,7 @@ async function onStartInstallation() {
   const secondarySim = document.getElementById("secondarySimInput").value.trim();
   const secondarySimConfirm = document.getElementById("secondarySimConfirmInput").value.trim();
   const addSecondary = document.getElementById("addSecondaryUnit").checked;
-  
+
   if (!imei) {
     installStatus.innerText = "🚨 Please enter IMEI.";
     return;
@@ -42,49 +37,60 @@ async function onStartInstallation() {
     installStatus.innerText = "🚨 IMEI values do not match.";
     return;
   }
-  
-  // Validate SIM if provided
+
   if (sim) {
     if (sim !== simConfirm) {
       installStatus.innerText = "🚨 SIM values do not match.";
       return;
     }
     if (!simVerified) {
-      installStatus.innerText = "🚨 Please verify the SIM card before proceeding with installation.";
+      installStatus.innerText = "🚨 SIM must be found in Pegasus before provisioning.";
       return;
     }
   }
-  
+
   if (addSecondary && !secondaryImei) {
     installStatus.innerText = "🚨 Please enter the secondary IMEI.";
     return;
   }
-  
-  // Validate secondary SIM if provided
+
+  if (addSecondary && secondaryImei && !window.secondaryImeiVerified) {
+    installStatus.innerText =
+      "🚨 Secondary IMEI must be found in Pegasus before provisioning.";
+    return;
+  }
+
   if (addSecondary && secondarySim) {
     if (secondarySim !== secondarySimConfirm) {
       installStatus.innerText = "🚨 Secondary SIM values do not match.";
       return;
     }
     if (!secondarySimVerified) {
-      installStatus.innerText = "🚨 Please verify the secondary SIM card before proceeding with installation.";
+      installStatus.innerText = "🚨 Secondary SIM must be found in Pegasus before provisioning.";
       return;
     }
   }
-  installStatus.innerText = "↻ Sending IMEI & SIM to server…";
+
+  installStatus.innerText = "↻ Running provisioning in Pegasus…";
+
+  var receiptPanel = document.getElementById("provisioningReceiptPanel");
+  if (receiptPanel) {
+    receiptPanel.classList.add("hidden");
+    receiptPanel.innerHTML = "";
+  }
 
   let resp = null;
   let data = null;
+  let installPayload = null;
   try {
-    // Clean client name to remove unwanted "NA" suffixes (handles " NA", " NA/", " NA /", etc.)
     let clientName = sessionStorage.getItem("selectedClientFullName") || selectedClientName;
     clientName = clientName.replace(/\s+NA\s*\/?\s*$/i, "").trim();
-    
+
     const payload = {
       client_name: clientName,
       imei,
       vin: selectedVIN,
-      installationId: selectedInstallationId
+      installationId: selectedInstallationId,
     };
     const selectedInstallationRaw = sessionStorage.getItem("selectedInstallation");
     if (selectedInstallationRaw) {
@@ -102,7 +108,6 @@ async function onStartInstallation() {
         console.warn("Failed to parse selected installation for license plate:", parseError);
       }
     }
-    // Only include SIM if provided
     if (sim) {
       payload.sim_number = sim;
     }
@@ -113,12 +118,13 @@ async function onStartInstallation() {
       payload.secondary_sim_number = secondarySim;
     }
 
+    installPayload = payload;
     recordInstallSubmitStarted(summarizeInstallRequestForStore(payload));
 
     resp = await fetch("/api/install", {
       method: "POST",
       headers: getAuthHeaders(),
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
     });
     try {
       data = await resp.json();
@@ -126,7 +132,9 @@ async function onStartInstallation() {
       console.warn("Install response JSON parse failed:", parseJsonErr);
       data = null;
     }
-    if (!resp.ok || !data || data.status !== "success") {
+    var installOk =
+      resp.ok && data && (data.status === "success" || data.success === true);
+    if (!installOk) {
       throw new Error((data && data.message) || `Status: ${data && data.status}` || `HTTP ${resp.status}`);
     }
 
@@ -134,55 +142,13 @@ async function onStartInstallation() {
   } catch (err) {
     console.error(err);
     recordInstallSubmitFailure(resp, err, data);
-    installStatus.innerText = "❌ " + err.message;
+    if (typeof showProvisioningFailureAfterInstall === "function") {
+      showProvisioningFailureAfterInstall(err, resp, data, installPayload);
+    } else {
+      installStatus.innerText = "❌ " + err.message;
+    }
     return;
   }
 
-  try {
-    sessionStorage.setItem("step", "waitingForDevice");
-    
-    // Update workflow status for device monitoring
-    updateWorkflowStatus({
-      currentStep: '4',
-      status: 'Monitoring device location...'
-    });
-    
-    const testModeNote = document.getElementById("enableTestMode").checked ? 
-      '<div class="info-box" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 2px solid #f59e0b; margin-top: 12px; color: #92400e;">🧪 <strong>Test Mode Active:</strong> Will use custom coordinates instead of GPS</div>' : '';
-    
-    installStatus.innerHTML = `
-      <div style="margin-bottom: 20px;">
-        <div style="font-size: 1.2rem; color: #6B21A8; margin-bottom: 12px; font-weight: 700;">
-          ⏳ Starting device location monitoring...
-        </div>
-        <div style="font-size: 0.95rem; color: #475569; margin-bottom: 12px; line-height: 1.5;">
-          <strong>Initial interval:</strong> 10 seconds | <strong>Maximum duration:</strong> 30 minutes
-        </div>
-        <div class="info-box" style="margin-bottom: 12px;">
-          💡 <strong>Smart polling:</strong> We'll check less frequently over time to avoid overwhelming the system.
-        </div>
-        ${testModeNote}
-      </div>
-      <button id="stopPollingBtn" type="button" style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); margin-top: 12px; font-size: 0.95rem; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);">🛑 Stop Waiting</button>
-    `;
-
-    // Initialize polling control
-    window.stopPolling = false;
-
-    // Add stop polling functionality
-    document.getElementById("stopPollingBtn").addEventListener("click", () => {
-      window.stopPolling = true;
-      installStatus.innerHTML = "🛑 Stopped waiting for device. You can restart the installation process.";
-    });
-
-    // Update sidebar: Step 3 completed, unlock Step 4
-    updateStepStatus(3, 'completed');
-    unlockNextStep(3);
-    
-    // Start polling for device status
-    pollForDeviceReporting();
-  } catch (err2) {
-    console.error(err2);
-    installStatus.innerText = "❌ " + (err2 && err2.message ? err2.message : "Installation started but follow-up failed.");
-  }
+  showProvisioningSuccessAfterInstall(data, installPayload, resp);
 }

@@ -2,6 +2,8 @@
  * Worksheet clear (stub), primary vehicle create, secondary vehicle create.
  */
 
+const { resolveApiAuthenticateToken } = require('../pegasus/auth-token');
+
 function normalizePegasusModel(value) {
   if (value == null) return "";
   return String(value)
@@ -11,6 +13,7 @@ function normalizePegasusModel(value) {
 }
 
 function createVehicleHelpers({ pegasus, currentConfig }) {
+  const apiToken = () => resolveApiAuthenticateToken(currentConfig);
   function pegasusVehicleModelFromSubmarca(vehiculoSubmarca) {
     const collapsed =
       vehiculoSubmarca == null ? "" : String(vehiculoSubmarca).replace(/\s+/g, " ").trim();
@@ -76,7 +79,7 @@ function createVehicleHelpers({ pegasus, currentConfig }) {
         "create-vehicle",
         "/vehicles",
         vehiclePayload,
-        currentConfig.pegasusToken,
+        apiToken(),
         3
       );
 
@@ -134,7 +137,7 @@ function createVehicleHelpers({ pegasus, currentConfig }) {
         "create-secondary-vehicle",
         "/vehicles",
         vehiclePayload,
-        currentConfig.pegasusToken,
+        apiToken(),
         3
       );
 

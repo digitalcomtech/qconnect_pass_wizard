@@ -54,7 +54,7 @@ PROD_ZAPIER_HOOK_SECRET     # Your production secondary hook
 
 #### **QA Environment Secrets** (Required)
 ```
-QA_PEGASUS_BASE_URL         # https://qservices.pegasusgateway.com/qa
+QA_PEGASUS_BASE_URL         # https://dev2.pegasusgateway.com
 QA_PEGASUS_TOKEN            # Your QA Pegasus token
 QA_PEGASUS1_TOKEN           # Your QA Pegasus1 token
 QA_PEGASUS256_TOKEN         # Your QA Pegasus256 token

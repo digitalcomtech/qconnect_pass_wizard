@@ -1,6 +1,6 @@
 /**
  * installationRun.reporting — primary device-status polling + proximity + bypass (structured only).
- * DOM and installStatus HTML remain owned by wizard-polling-primary.js.
+ * Structured reporting slice for installationRun (office console skips yard polling UI).
  */
 (function () {
   var TOP_PHASES = { idle: true, polling: true, proximity: true, bypassed: true, failed: true };

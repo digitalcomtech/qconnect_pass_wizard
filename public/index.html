@@ -11,7 +11,7 @@
     gtag('config', 'G-KZRWXT8XP2');
   </script>
   <meta charset="UTF-8" />
-  <title>QConnect PASS Wizard</title>
+  <title>PASS Provisioning Console</title>
   <style>
     body {
       font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', sans-serif;
@@ -31,6 +31,10 @@
       overflow: hidden;
     }
     
+    .sidebar-console-compact {
+      width: 260px;
+    }
+
     /* Sidebar */
     .sidebar {
       width: 280px;
@@ -110,96 +114,6 @@
     .logout-btn:hover {
       background: rgba(239, 68, 68, 1);
       transform: translateY(-1px);
-    }
-    
-    /* Step navigation */
-    .step-nav {
-      flex: 1;
-      padding: 0 16px;
-    }
-    
-    .step-item {
-      display: flex;
-      align-items: center;
-      padding: 16px 20px;
-      margin: 8px 0;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      position: relative;
-      border: 2px solid transparent;
-    }
-    
-    .step-item:hover {
-      background: rgba(255,255,255,0.1);
-      transform: translateX(4px);
-    }
-    
-    .step-item.active {
-      background: linear-gradient(135deg, #862BAB 0%, #6B21A8 100%);
-      border-color: rgba(255,255,255,0.3);
-      box-shadow: 0 4px 16px rgba(134, 43, 171, 0.3);
-    }
-    
-    .step-item.completed {
-      background: rgba(16, 185, 129, 0.2);
-      border-color: #10b981;
-    }
-    
-    .step-item.locked {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-    
-    .step-number {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.2);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      font-size: 0.9rem;
-      margin-right: 16px;
-      transition: all 0.2s ease;
-    }
-    
-    .step-item.active .step-number {
-      background: rgba(255,255,255,0.9);
-      color: #1e293b;
-    }
-    
-    .step-item.completed .step-number {
-      background: #10b981;
-      color: white;
-    }
-    
-    .step-info {
-      flex: 1;
-    }
-    
-    .step-title {
-      font-weight: 600;
-      font-size: 0.95rem;
-      margin: 0 0 4px 0;
-    }
-    
-    .step-description {
-      font-size: 0.8rem;
-      color: rgba(255,255,255,0.7);
-      margin: 0;
-    }
-    
-    .step-status {
-      margin-left: 12px;
-    }
-    
-    .step-status.completed::after {
-      content: '✓';
-      color: #10b981;
-      font-weight: 700;
-      font-size: 1.2rem;
     }
     
     /* Main content area */
@@ -363,13 +277,6 @@
       min-height: 20px;
       background: rgba(220, 38, 38, 0.1);
     }
-    #successMsg {
-      color: #059669;
-      font-size: 1.2rem;
-      margin-top: 28px;
-      text-align: center;
-      font-weight: 600;
-    }
     #imeiVerificationStatus {
       padding: 0;
       border-radius: 8px;
@@ -458,18 +365,6 @@
         padding: 16px 0;
       }
       
-      .step-nav {
-        display: flex;
-        overflow-x: auto;
-        padding: 0 16px;
-        gap: 12px;
-      }
-      
-      .step-item {
-        min-width: 140px;
-        flex-shrink: 0;
-      }
-      
       .main-content {
         padding: 20px 10px;
       }
@@ -482,31 +377,9 @@
         font-size: 1.2rem;
       }
       
-      .step-title {
-        font-size: 0.85rem;
-      }
-      
-      .step-description {
-        font-size: 0.75rem;
-      }
     }
     
     @media (max-width: 600px) {
-      .step-nav {
-        gap: 8px;
-      }
-      
-      .step-item {
-        min-width: 120px;
-        padding: 12px 16px;
-      }
-      
-      .step-number {
-        width: 28px;
-        height: 28px;
-        font-size: 0.8rem;
-      }
-      
       .content-container {
         padding: 20px 16px;
       }
@@ -564,6 +437,230 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+
+    .provisioning-preview {
+      margin: 20px 0 12px 0;
+      padding: 16px 18px;
+      border: 2px solid #cbd5e1;
+      border-radius: 10px;
+      background: #f8fafc;
+      font-size: 0.92rem;
+      color: #334155;
+    }
+
+    .provisioning-preview-title {
+      margin: 0 0 8px 0;
+      font-size: 1.05rem;
+      color: #1e293b;
+    }
+
+    .provisioning-preview-note {
+      margin: 0 0 14px 0;
+      color: #64748b;
+      font-size: 0.88rem;
+      line-height: 1.45;
+    }
+
+    .provisioning-preview-dl {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 6px 12px;
+      margin: 0 0 14px 0;
+    }
+
+    .provisioning-preview-dl dt {
+      font-weight: 600;
+      color: #475569;
+    }
+
+    .provisioning-preview-dl dd {
+      margin: 0;
+      word-break: break-word;
+    }
+
+    .provisioning-preview-section {
+      margin-bottom: 12px;
+    }
+
+    .provisioning-preview-section ul,
+    .provisioning-preview-section ol {
+      margin: 6px 0 0 0;
+      padding-left: 20px;
+      line-height: 1.5;
+    }
+
+    .provisioning-preview-warn {
+      margin-top: 12px;
+      padding: 10px 12px;
+      background: #fffbeb;
+      border: 1px solid #f59e0b;
+      border-radius: 8px;
+      color: #92400e;
+      font-size: 0.88rem;
+    }
+
+    .provisioning-preview-blockers {
+      margin-top: 12px;
+      padding: 10px 12px;
+      background: #fef2f2;
+      border: 1px solid #f87171;
+      border-radius: 8px;
+      color: #991b1b;
+      font-size: 0.88rem;
+    }
+
+    .provisioning-preview-ready {
+      margin: 12px 0 0 0;
+      color: #047857;
+      font-weight: 600;
+    }
+
+    .provisioning-preview-done {
+      opacity: 0.85;
+    }
+
+    .provisioning-receipt {
+      margin: 16px 0 0 0;
+      font-size: 0.92rem;
+      color: #1e293b;
+    }
+
+    .provisioning-receipt-inner {
+      border: 2px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 16px 18px;
+      background: #fff;
+    }
+
+    .provisioning-receipt-inner.receipt-success {
+      border-color: #10b981;
+      background: #f0fdf4;
+    }
+
+    .provisioning-receipt-inner.receipt-partial {
+      border-color: #f59e0b;
+      background: #fffbeb;
+    }
+
+    .provisioning-receipt-inner.receipt-failed {
+      border-color: #ef4444;
+      background: #fef2f2;
+    }
+
+    .provisioning-receipt-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .provisioning-receipt-header h3 {
+      margin: 0;
+      font-size: 1.05rem;
+    }
+
+    .provisioning-receipt-badge {
+      font-weight: 700;
+      font-size: 0.85rem;
+      letter-spacing: 0.04em;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: rgba(15, 23, 42, 0.08);
+    }
+
+    .receipt-success .provisioning-receipt-badge {
+      background: #059669;
+      color: #fff;
+    }
+
+    .receipt-failed .provisioning-receipt-badge {
+      background: #dc2626;
+      color: #fff;
+    }
+
+    .receipt-partial .provisioning-receipt-badge {
+      background: #d97706;
+      color: #fff;
+    }
+
+    .provisioning-receipt-dl {
+      display: grid;
+      grid-template-columns: 160px 1fr;
+      gap: 6px 12px;
+      margin: 0 0 14px 0;
+    }
+
+    .provisioning-receipt-dl dt {
+      font-weight: 600;
+      color: #475569;
+    }
+
+    .provisioning-receipt-dl dd {
+      margin: 0;
+      word-break: break-word;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.88rem;
+    }
+
+    .provisioning-receipt-section ul {
+      margin: 8px 0 0 0;
+      padding-left: 20px;
+      line-height: 1.55;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.86rem;
+    }
+
+    .provisioning-receipt-error {
+      margin: 10px 0 0 0;
+      padding: 10px 12px;
+      background: #fee2e2;
+      border: 1px solid #f87171;
+      border-radius: 8px;
+      color: #991b1b;
+      word-break: break-word;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.88rem;
+    }
+
+    .provisioning-receipt-warn {
+      margin-top: 12px;
+      padding: 10px 12px;
+      background: #fffbeb;
+      border: 1px solid #f59e0b;
+      border-radius: 8px;
+      color: #92400e;
+      font-size: 0.88rem;
+    }
+
+    .provisioning-receipt-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .receipt-copy-btn {
+      background: linear-gradient(135deg, #475569 0%, #334155 100%);
+      box-shadow: 0 4px 12px rgba(51, 65, 85, 0.25);
+    }
+
+    .receipt-start-over-btn {
+      background: linear-gradient(135deg, #862BAB 0%, #6B21A8 100%);
+    }
+
+    .provisioning-action-row {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0;
+      margin-top: 8px;
+    }
+
+    #startInstallBtn {
+      align-self: flex-start;
     }
 
     .status-value:empty::after {
@@ -639,13 +736,13 @@
 <body>
   <div class="app-container">
     <!-- Sidebar Navigation -->
-    <div class="sidebar">
+    <div class="sidebar sidebar-console-compact">
       <div class="sidebar-header">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
-          <h1 class="sidebar-title" style="margin: 0;" data-i18n="app.title">QConnect PASS Wizard</h1>
+          <h1 class="sidebar-title" style="margin: 0;" data-i18n="app.title">PASS Provisioning Console</h1>
           <div class="sidebar-environment" id="sidebarEnvironment">PROD</div>
         </div>
-        <p class="sidebar-subtitle" data-i18n="installation.title">Device Installation</p>
+        <p class="sidebar-subtitle" data-i18n="installation.title">Office provisioning for Pegasus</p>
         
         <!-- Language Selector -->
         <div class="language-selector" style="margin-bottom: 16px;">
@@ -668,62 +765,6 @@
           <button class="logout-btn" id="startOverHeaderBtn" type="button" style="margin-left: 8px; background: rgba(255,255,255,0.10); border-color: rgba(255,255,255,0.20);">
             Start Over
           </button>
-        </div>
-      </div>
-      
-      <div class="step-nav">
-        <div class="step-item active" data-step="1" id="stepNav1">
-          <div class="step-number">1</div>
-          <div class="step-info">
-            <div class="step-title" data-i18n="installation.clientSelection">Client Selection</div>
-            <div class="step-description" data-i18n="installation.enterClientName">Enter client name or VIN</div>
-          </div>
-          <div class="step-status" id="stepStatus1"></div>
-        </div>
-        
-        <div class="step-item locked" data-step="2" id="stepNav2">
-          <div class="step-number">2</div>
-          <div class="step-info">
-            <div class="step-title" data-i18n="installation.vinSelection">VIN Selection</div>
-            <div class="step-description" data-i18n="installation.chooseVin">Choose installation VIN</div>
-          </div>
-          <div class="step-status" id="stepStatus2"></div>
-        </div>
-        
-        <div class="step-item locked" data-step="3" id="stepNav3">
-          <div class="step-number">3</div>
-          <div class="step-info">
-            <div class="step-title" data-i18n="installation.deviceSetup">Device Setup</div>
-            <div class="step-description" data-i18n="installation.enterImeiSim">Enter IMEI & SIM details</div>
-          </div>
-          <div class="step-status" id="stepStatus3"></div>
-        </div>
-        
-        <div class="step-item locked" data-step="4" id="stepNav4">
-          <div class="step-number">4</div>
-          <div class="step-info">
-            <div class="step-title" data-i18n="installation.locationCheck">Location Check</div>
-            <div class="step-description" data-i18n="installation.verifyProximity">Verify proximity to device</div>
-          </div>
-          <div class="step-status" id="stepStatus4"></div>
-        </div>
-        
-        <div class="step-item locked" data-step="5" id="stepNav5">
-          <div class="step-number">5</div>
-          <div class="step-info">
-            <div class="step-title" data-i18n="installation.formCompletion">Form Completion</div>
-            <div class="step-description" data-i18n="installation.completeForm">Complete installation form</div>
-          </div>
-          <div class="step-status" id="stepStatus5"></div>
-        </div>
-        
-        <div class="step-item locked" data-step="6" id="stepNav6">
-          <div class="step-number">6</div>
-          <div class="step-info">
-            <div class="step-title" data-i18n="installation.finalConfirmation">Final Confirmation</div>
-            <div class="step-description" data-i18n="installation.confirmComplete">Confirm installation complete</div>
-          </div>
-          <div class="step-status" id="stepStatus6"></div>
         </div>
       </div>
     </div>
@@ -750,16 +791,17 @@
         </div>
         <div class="status-item status-status">
           <span class="status-label" data-i18n="header.status">Status:</span>
-          <span id="currentStatusDisplay" class="status-value">Ready to start</span>
+          <span id="currentStatusDisplay" class="status-value">Ready</span>
         </div>
       </div>
 
       <div class="content-container">
-        <h1 style="text-align:center; font-size:1.8rem; margin-bottom:32px; color:#1e293b;" data-i18n="app.title">QConnect PASS Wizard</h1>
+        <h1 style="text-align:center; font-size:1.8rem; margin-bottom:8px; color:#1e293b;" data-i18n="app.title">PASS Provisioning Console</h1>
+        <p style="text-align:center; font-size:0.95rem; color:#64748b; margin:0 0 28px 0;">Search an installation, confirm VIN and devices, then provision in Pegasus.</p>
 
     <!-- STEP 1: Client Name -->
     <div id="clientSection" class="section">
-      <h2 style="text-align:center; font-size:1.2rem; margin-bottom:12px;" data-i18n="installation.clientSelection">Step 1: Enter / Select Client Name</h2>
+      <h2 style="text-align:center; font-size:1.2rem; margin-bottom:12px;" data-i18n="installation.clientSelection">Step 1: Find installation</h2>
       <form id="clientForm">
         <label for="clientNameInput" data-i18n="installation.clientName">Client Name or VIN Start:</label>
         <input
@@ -775,31 +817,28 @@
 
     <!-- STEP 2: VIN Selection -->
     <div id="vinSection" class="section hidden">
-      <h2 style="text-align:center; font-size:1.2rem; margin-bottom:12px;" data-i18n="installation.vinSelection">Step 2: Choose a VIN (Booked)</h2>
+      <h2 style="text-align:center; font-size:1.2rem; margin-bottom:12px;" data-i18n="installation.vinSelection">Step 2: Select VIN</h2>
       <div id="selectedPersonName" style="margin-bottom:10px; font-weight:bold;"></div>
       <label for="vinSelect">VIN #:</label>
       <select id="vinSelect">
         <option value="">-- Select VIN --</option>
       </select>
       <button id="backToClientBtn" type="button" data-i18n="buttons.back">◀ Back</button>
-      <button id="nextVinBtn" data-i18n="buttons.next">Next ▶ Enter IMEI & SIM</button>
+      <button id="nextVinBtn" data-i18n="buttons.next">Next ▶ Devices &amp; SIM</button>
       <p id="vinStatus"></p>
     </div>
 
     <!-- STEP 3: IMEI & SIM (POST to `/api/install`) -->
     <div id="deviceSection" class="section hidden">
-      <h2 style="text-align:center; font-size:1.2rem; margin-bottom:12px;" data-i18n="installation.enterImeiSim">Step 3: Enter IMEI & SIM</h2>
+      <h2 style="text-align:center; font-size:1.2rem; margin-bottom:12px;" data-i18n="installation.enterImeiSim">Step 3: Devices, SIM &amp; provision</h2>
       <label for="imeiInput" data-i18n="installation.imei">IMEI (Primary Device)</label>
-      <div style="display:flex; gap:8px; align-items:flex-end;">
-        <input
-          type="text"
-          id="imeiInput"
-          placeholder="Enter IMEI"
-          style="flex:1;"
-        />
-        <button id="verifyImeiBtn" type="button" style="white-space:nowrap;" data-i18n="buttons.verify">Verify IMEI</button>
-      </div>
-      <div id="imeiVerificationStatus" style="margin-bottom:14px;"></div>
+      <input
+        type="text"
+        id="imeiInput"
+        placeholder="Enter IMEI — searches Pegasus as you type"
+        autocomplete="off"
+      />
+      <div id="imeiVerificationStatus" style="margin-bottom:14px; min-height:1.25rem;" aria-live="polite"></div>
       
       <label for="imeiConfirmInput">Retype IMEI</label>
       <input
@@ -809,16 +848,13 @@
       />
 
       <label for="simInput">SIM Card # (Optional)</label>
-      <div style="display:flex; gap:8px; align-items:flex-end;">
-        <input
-          type="text"
-          id="simInput"
-          placeholder="Leave blank if no SIM card"
-          style="flex:1;"
-        />
-        <button id="verifySimBtn" type="button" style="white-space:nowrap;">Verify SIM</button>
-      </div>
-      <div id="simVerificationStatus" style="margin-bottom:14px;"></div>
+      <input
+        type="text"
+        id="simInput"
+        placeholder="ICCID (8988 SuperSIM / 8901 Wireless) — optional, live lookup"
+        autocomplete="off"
+      />
+      <div id="simVerificationStatus" style="margin-bottom:14px; min-height:1.25rem;" aria-live="polite"></div>
       
       <label for="simConfirmInput">Retype SIM Card # (Optional)</label>
       <input
@@ -833,19 +869,22 @@
       </label>
       <div id="secondaryUnitFields" class="hidden" style="width:100%;">
         <label for="secondaryImeiInput">Secondary IMEI</label>
-        <input type="text" id="secondaryImeiInput" placeholder="Enter secondary IMEI" />
+        <input
+          type="text"
+          id="secondaryImeiInput"
+          placeholder="Secondary IMEI — searches Pegasus as you type"
+          autocomplete="off"
+        />
+        <div id="secondaryImeiVerificationStatus" style="margin-bottom:14px; min-height:1.25rem;" aria-live="polite"></div>
         
         <label for="secondarySimInput">Secondary SIM Card # (Optional)</label>
-        <div style="display:flex; gap:8px; align-items:flex-end;">
-          <input
-            type="text"
-            id="secondarySimInput"
-            placeholder="Leave blank if no SIM card"
-            style="flex:1;"
-          />
-          <button id="verifySecondarySimBtn" type="button" style="white-space:nowrap;">Verify SIM</button>
-        </div>
-        <div id="secondarySimVerificationStatus" style="margin-bottom:14px;"></div>
+        <input
+          type="text"
+          id="secondarySimInput"
+          placeholder="Secondary ICCID — optional, live lookup"
+          autocomplete="off"
+        />
+        <div id="secondarySimVerificationStatus" style="margin-bottom:14px; min-height:1.25rem;" aria-live="polite"></div>
         
         <label for="secondarySimConfirmInput">Retype Secondary SIM Card # (Optional)</label>
         <input
@@ -856,111 +895,15 @@
       </div>
 
       <button id="backToVinBtn" type="button" data-i18n="buttons.back">◀ Back</button>
-      <button id="startInstallBtn" type="button" disabled data-i18n="buttons.startInstallation">Start Installation ▶</button>
-      
-      <div class="info-box" style="margin-top: 16px; margin-bottom: 16px;">
-        <div style="font-weight: 600; color: #6B21A8; margin-bottom: 8px; font-size: 1rem;" data-i18n="location.title">📍 Location Verification</div>
-        <div style="font-size: 0.9rem; color: #374151; margin-bottom: 12px;" data-i18n="location.description">
-          The app will verify your location is within 200 meters of the device before proceeding with installation.
-        </div>
-        
-        <!-- Test Mode Location Spoofing (Admin Only) -->
-        <div id="adminTestModeSection" class="hidden" style="margin-top: 16px; padding-top: 16px; border-top: 2px solid #e2e8f0;">
-          <label style="display:flex;align-items:center;margin-bottom:12px;cursor:pointer;">
-            <input type="checkbox" id="enableTestMode" style="margin-right:10px; transform: scale(1.2);" />
-            <span style="font-weight: 600; color: #ea580c; font-size: 1rem;">🧪 Enable Test Mode (Location Spoofing) - Admin Only</span>
-          </label>
-          <div id="testModeFields" class="hidden" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 2px solid #f59e0b; border-radius: 10px; padding: 16px; margin-top: 12px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15);">
-            <div style="font-size: 0.95rem; color: #92400e; margin-bottom: 12px; font-weight: 600;">
-              💡 <strong>Test Mode:</strong> Enter custom coordinates to simulate being at the installation location
-            </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-              <div>
-                <label for="testLatInput" style="font-size: 0.9rem; color: #92400e; font-weight: 600;">Test Latitude:</label>
-                <input type="number" id="testLatInput" placeholder="e.g., 25.78395" step="0.00001" style="font-size: 0.9rem; padding: 10px 12px; border: 2px solid #f59e0b; border-radius: 8px; background: #fff;" />
-              </div>
-              <div>
-                <label for="testLonInput" style="font-size: 0.9rem; color: #92400e; font-weight: 600;">Test Longitude:</label>
-                <input type="number" id="testLonInput" placeholder="e.g., -100.26345" step="0.00001" style="font-size: 0.9rem; padding: 10px 12px; border: 2px solid #f59e0b; border-radius: 8px; background: #fff;" />
-              </div>
-            </div>
-            <div style="font-size: 0.9rem; color: #92400e; margin-bottom: 12px; padding: 12px; background: rgba(255,255,255,0.6); border-radius: 8px; border: 1px solid #f59e0b;">
-              <strong>Current Device Location:</strong> 
-              <span id="deviceLocationDisplay" style="font-weight: 600; color: #6B21A8;">Loading...</span>
-              <button id="copyDeviceLocationBtn" type="button" style="background: linear-gradient(135deg, #862BAB 0%, #6B21A8 100%); color: white; border: none; border-radius: 6px; padding: 6px 10px; margin-left: 12px; font-size: 0.8rem; cursor: pointer; font-weight: 600; box-shadow: 0 2px 6px rgba(134, 43, 171, 0.3);">
-                📋 Copy to Test Fields
-              </button>
-            </div>
-            <div style="font-size: 0.85rem; color: #92400e; margin-top: 12px; padding-top: 12px; border-top: 2px solid #f59e0b;">
-              🎯 <strong>How to use:</strong> 
-              <ol style="margin: 6px 0 6px 20px; padding: 0; line-height: 1.5;">
-                <li>Check "Enable Test Mode" above</li>
-                <li>Wait for device to report location (or use "Copy to Test Fields")</li>
-                <li>Modify coordinates slightly to test proximity logic</li>
-                <li>Start installation - app will use your test coordinates</li>
-              </ol>
-            </div>
-          </div>
-        </div>
+
+      <div class="provisioning-action-row">
+        <div id="provisioningPreviewPanel" class="provisioning-preview" aria-live="polite"></div>
+        <button id="startInstallBtn" type="button" disabled data-i18n="buttons.startInstallation">Provision in Pegasus ▶</button>
       </div>
+
       <p id="installStatus"></p>
+      <div id="provisioningReceiptPanel" class="provisioning-receipt hidden" aria-live="polite"></div>
     </div>
-
-        <!-- STEP 4: Location Check & Form -->
-        <div id="locationSection" class="section hidden">
-          <h2 style="text-align:center; font-size:1.2rem; margin-bottom:12px;">Step 4: Location Verification & Form</h2>
-          <div id="locationStatus"></div>
-        </div>
-
-        <!-- STEP 5: Form Completion -->
-        <div id="formSection" class="section hidden">
-          <h2 style="text-align:center; font-size:1.2rem; margin-bottom:12px;">Step 5: Complete Installation Form</h2>
-          <div id="formStatus"></div>
-        </div>
-
-        <!-- STEP 6: Final Confirmation -->
-        <div id="confirmationSection" class="section hidden">
-          <h2 style="text-align:center; font-size:1.2rem; margin-bottom:12px;">Step 6: Finalize Installation</h2>
-          <div style="text-align:center; margin-bottom:20px;">
-            <div style="font-size:1.1rem; margin-bottom:10px;">✅ Form has been submitted successfully!</div>
-            <div style="font-size:0.95rem; color:#666; margin-bottom:20px;">
-              Please confirm that the installation is complete and all checks have been performed.
-            </div>
-            <div class="info-box" style="margin: 0 20px; background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); border: 2px solid #10b981;">
-              💡 <strong>Note:</strong> Make sure you have completed the installation form that was opened earlier before proceeding with this final confirmation.
-            </div>
-          </div>
-          
-          <div class="info-box" style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border: 2px solid #64748b; margin-bottom: 20px;">
-            <h3 style="margin:0 0 12px 0; font-size:1.1rem; color:#1e293b; font-weight: 700;">Installation Checklist:</h3>
-            <div style="font-size:0.95rem; color:#475569; line-height: 1.6;">
-              ☑️ Device properly mounted and connected<br>
-              ☑️ Power connections verified<br>
-              ☑️ Ignition wire connected<br>
-              ☑️ Input/Output connections tested<br>
-              ☑️ Device reporting location successfully
-            </div>
-          </div>
-
-          <div style="text-align:center;">
-            <button id="finalConfirmBtn" type="button" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); font-size:1.1rem; padding:14px 32px; box-shadow: 0 6px 20px rgba(5, 150, 105, 0.3);">
-              🔒 Confirm & Finalize Installation
-            </button>
-            <div id="confirmationStatus" style="margin-top:15px; font-weight:600;"></div>
-          </div>
-        </div>
-
-        <!-- FINAL Success Message -->
-        <div id="successMsg" style="display:none; text-align:center; margin-top:32px;">
-          <div style="font-size:5rem; color:#059669; margin-bottom:20px; text-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);">&#10004;</div>
-          <div style="font-size:1.5rem; font-weight:700; color:#059669; margin-bottom:12px; text-shadow: 0 2px 8px rgba(5, 150, 105, 0.2);">Installation Complete!</div>
-          <div style="font-size:1.1rem; color:#374151; line-height: 1.6;">Thank you for using the QConnect PASS Wizard.<br>You may now close this window.</div>
-          <div style="margin-top: 20px;">
-            <button id="startOverBtn" type="button" style="background: linear-gradient(135deg, #862BAB 0%, #6B21A8 100%); color: white; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; box-shadow: 0 4px 12px rgba(134, 43, 171, 0.25);">
-              Start Over
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   </div>
@@ -968,8 +911,11 @@
   <!-- i18next Scripts -->
   <script src="./js/i18n-simple.js"></script>
   <script src="./js/activity-tracker.js"></script>
+  <script src="./js/wizard-console-mode.js"></script>
   <script src="./js/wizard-auth.js"></script>
   <script src="./js/wizard-api.js"></script>
+  <script src="./js/wizard-provisioning-preview.js"></script>
+  <script src="./js/wizard-provisioning-receipt.js"></script>
   <script src="./js/wizard-utils.js"></script>
   <script src="./js/installation-run-store.js"></script>
   <script src="./js/installation-run-job.js"></script>
@@ -985,12 +931,7 @@
   <script src="./js/wizard-search.js"></script>
   <script src="./js/wizard-device-verify.js"></script>
   <script src="./js/wizard-install-submit.js"></script>
-  <script src="./js/wizard-polling-primary.js"></script>
-  <script src="./js/wizard-secondary-flow.js"></script>
-  <script src="./js/wizard-geolocation-ui.js"></script>
-  <script src="./js/wizard-form-open.js"></script>
   <script src="./js/wizard-resume.js"></script>
   <script src="./js/wizard-app.js"></script>
-  <script src="./js/wizard-confirm.js"></script>
 </body>
 </html>

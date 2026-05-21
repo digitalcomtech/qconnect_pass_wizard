@@ -181,6 +181,7 @@ const notInFrontend = backendForAudit.filter(
 const oftenBackendOnlyPaths = new Set([
   "/healthz",
   "/api/health/pegasus",
+  "/api/health/credentials",
   "/api/secondary-install",
   "/api/installation-status/:installationId",
   "/api/activity/session/:sessionId",

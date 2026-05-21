@@ -2,7 +2,10 @@
  * Pegasus group search + primary/secondary group create-or-get helpers.
  */
 
+const { resolveApiAuthenticateToken } = require('../pegasus/auth-token');
+
 function createGroupHelpers({ pegasus, currentConfig }) {
+  const apiToken = () => resolveApiAuthenticateToken(currentConfig);
   // Helper function to search for existing group by name using the correct API format
   async function searchGroupByName(groupName) {
     try {
@@ -14,7 +17,7 @@ function createGroupHelpers({ pegasus, currentConfig }) {
       const searchResponse = await pegasus.apiGet(
         "search-group-by-name",
         searchPath,
-        currentConfig.pegasusToken,
+        apiToken(),
         30000
       );
 
@@ -88,7 +91,7 @@ function createGroupHelpers({ pegasus, currentConfig }) {
         "create-group",
         "/groups",
         groupPayload,
-        currentConfig.pegasusToken,
+        apiToken(),
         30000
       );
 
@@ -157,7 +160,7 @@ function createGroupHelpers({ pegasus, currentConfig }) {
         "create-secondary-group",
         "/groups",
         groupPayload,
-        currentConfig.pegasusToken,
+        apiToken(),
         30000
       );
 

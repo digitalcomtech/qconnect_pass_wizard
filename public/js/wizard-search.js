@@ -140,4 +140,5 @@ function onNextVin() {
   navigateToStep(3);
 
   hydrateDevicesFromStoreAndSync();
+  if (typeof refreshProvisioningPreview === "function") refreshProvisioningPreview();
 }

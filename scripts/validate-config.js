@@ -34,12 +34,22 @@ if (isProd) {
   if (!process.env.JWT_SECRET) addError("NODE_ENV=production requires JWT_SECRET");
   if (!process.env.SESSION_SECRET) addError("NODE_ENV=production requires SESSION_SECRET");
   const prefix = env === "production" ? "PROD" : "QA";
-  if (!cc.pegasusToken) addError(`${prefix}_PEGASUS_TOKEN must be set (non-empty) for ENVIRONMENT=${env}`);
-  if (!cc.pegasus1Token) addError(`${prefix}_PEGASUS1_TOKEN must be set (non-empty)`);
+  if (!cc.pegasus1Token) addError(`${prefix}_PEGASUS1_TOKEN must be set (non-empty) for ENVIRONMENT=${env}`);
   if (!cc.pegasus256Token) addError(`${prefix}_PEGASUS256_TOKEN must be set (non-empty)`);
-} else {
   if (!cc.pegasusToken) {
-    addWarn(`Pegasus token empty for ${env} — API calls will fail until ${env === "production" ? "PROD" : "QA"}_PEGASUS_TOKEN is set`);
+    addWarn(
+      `${prefix}_PEGASUS_TOKEN unset — installation search/confirm (qservices Bearer) unavailable; IMEI/SIM may still work`
+    );
+  }
+} else {
+  const prefix = env === "production" ? "PROD" : "QA";
+  if (!cc.pegasusToken) {
+    addWarn(
+      `qservices Bearer empty for ${env} — installation search will 401 until ${prefix}_PEGASUS_TOKEN is set`
+    );
+  }
+  if (!cc.pegasus1Token) {
+    addWarn(`${prefix}_PEGASUS1_TOKEN unset — device/IMEI lookup unavailable`);
   }
   if (!process.env.JWT_SECRET) {
     addWarn("JWT_SECRET unset — dev-only JWT fallback will be used (see auth.js)");

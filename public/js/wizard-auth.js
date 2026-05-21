@@ -1,75 +1,73 @@
 // Auth gate + API header helper + sidebar user/logout
-// Authentication check - redirect to login if not authenticated
-(function() {
-  const token = localStorage.getItem('authToken');
+(function () {
+  var token = localStorage.getItem("authToken");
   if (!token) {
-    window.location.href = '/login.html';
+    window.location.replace("/login.html");
     return;
   }
-  
-  // Verify token is valid
-  fetch('/api/auth/me', {
-    headers: {
-      'Authorization': `Bearer ${token}`
-    }
+
+  fetch("/api/auth/me", {
+    headers: { Authorization: "Bearer " + token },
   })
-  .then(response => {
-    if (!response.ok) {
-      localStorage.removeItem('authToken');
-      window.location.href = '/login.html';
-    }
-  })
-  .catch(() => {
-    localStorage.removeItem('authToken');
-    window.location.href = '/login.html';
-  });
+    .then(function (res) {
+      if (!res.ok) {
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("userInfo");
+        window.location.replace("/login.html");
+      }
+    })
+    .catch(function () {
+      localStorage.removeItem("authToken");
+      localStorage.removeItem("userInfo");
+      window.location.replace("/login.html");
+    });
 })();
 
 function getAuthHeaders() {
-  const token = localStorage.getItem('authToken');
   return {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${token}`
+    "Content-Type": "application/json",
+    Authorization: "Bearer " + localStorage.getItem("authToken"),
   };
-
 }
 
-// User authentication functions
 function setupUserInfo() {
-  const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
-  const userInfoElement = document.getElementById('userInfo');
-  const userNameElement = document.getElementById('userName');
-  const userRoleElement = document.getElementById('userRole');
-  const logoutBtn = document.getElementById('logoutBtn');
-  const adminTestModeSection = document.getElementById('adminTestModeSection');
-  
-  if (userInfo.name && userInfo.role) {
-    userNameElement.textContent = userInfo.name;
-    userRoleElement.textContent = userInfo.role;
-    userInfoElement.style.display = 'block';
-    
-    // Show test mode section only for admin users
-    if (userInfo.role === 'admin' && adminTestModeSection) {
-      adminTestModeSection.classList.remove('hidden');
-    }
+  var userInfo = {};
+  try {
+    userInfo = JSON.parse(localStorage.getItem("userInfo") || "{}");
+  } catch (e) {
+    userInfo = {};
   }
-  
-  // Setup logout functionality
-  logoutBtn.addEventListener('click', async () => {
-    try {
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        }
-      });
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
-      // Clear local storage and redirect to login
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('userInfo');
-      window.location.href = '/login.html';
-    }
-  });
+
+  var userInfoElement = document.getElementById("userInfo");
+  var userNameElement = document.getElementById("userName");
+  var userRoleElement = document.getElementById("userRole");
+  var logoutBtn = document.getElementById("logoutBtn");
+
+  if (userInfo.name) {
+    userNameElement.textContent = userInfo.name;
+    userRoleElement.textContent = userInfo.role || "";
+    userInfoElement.style.display = "block";
+  }
+
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", function () {
+      var authToken = localStorage.getItem("authToken");
+      var logoutRequest = authToken
+        ? fetch("/api/auth/logout", {
+            method: "POST",
+            headers: { Authorization: "Bearer " + authToken },
+          })
+        : Promise.resolve();
+
+      logoutRequest
+        .catch(function (err) {
+          console.warn("Logout request failed:", err);
+        })
+        .finally(function () {
+          localStorage.removeItem("authToken");
+          localStorage.removeItem("userInfo");
+          window.location.replace("/login.html");
+        });
+    });
+  }
 }

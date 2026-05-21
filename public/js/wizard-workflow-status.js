@@ -56,5 +56,5 @@ function clearWorkflowStatus() {
   if (vinElement) vinElement.textContent = '-';
   if (primaryElement) primaryElement.textContent = '-';
   if (secondaryElement) secondaryElement.textContent = '-';
-  if (statusElement) statusElement.textContent = 'Ready to start';
+  if (statusElement) statusElement.textContent = 'Ready';
 }

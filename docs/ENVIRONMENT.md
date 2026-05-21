@@ -41,6 +41,21 @@ The deprecated name **`ENABLE_CONFIRMATION_FALLBACK`** does **nothing** (fallbac
 
 Outbound Pegasus calls are centralized in **`pegasus-client.js`** (`createPegasusClient`): qservices routes use **Bearer** + `pegasusBaseUrl`; `api.pegasusgateway.com` routes use the **`Authenticate`** header. Failures are logged as **`[Pegasus]`** JSON lines (upstream URL redacted, no secrets). `server.js` wires a single client instance after config load.
 
+For **`api.pegasusgateway.com`**, the client prefers **`pegasus1Token`** over **`pegasusToken`** when both are set (devices, groups, vehicles, IMEI verify).
+
+### Refreshing expired tokens
+
+**QA qservices (installation search):** set **`QA_PEGASUS_BASE_URL=https://dev2.pegasusgateway.com`** and obtain **`QA_PEGASUS_TOKEN`** via auth gateway **`dev2.pegasusgateway.com`** (`npm run pegasus:fetch-tokens` sets both when `PEGASUS_AUTH_USERNAME` / `PEGASUS_AUTH_PASSWORD` are exported).
+
+See **`docs/PEGASUS_AUTH.md`**. Quick path:
+
+```bash
+export PEGASUS_AUTH_USERNAME='…'
+export PEGASUS_AUTH_PASSWORD='…'
+npm run pegasus:fetch-tokens
+set -a && source .env.local && set +a && npm start
+```
+
 ## Tooling
 
 Config validation, smoke flow, route drift audit, and activity JSON audit: **`docs/TOOLING.md`**.
@@ -48,7 +63,9 @@ Config validation, smoke flow, route drift audit, and activity JSON audit: **`do
 ## Health
 
 - **`GET /healthz`** — unauthenticated liveness (process up, JSON). Safe for probes.
-- **`GET /api/health/pegasus`** — authenticated check against Pegasus `health` URL.
+- **`GET /api/health/credentials`** — authenticated, **no upstream call**; which of the three Pegasus token families are configured (boolean flags only, never token values).
+- **`GET /api/health/pegasus`** — authenticated live probe of **qservices** `/health` only (Bearer). Returns 503 with explanation if qservices token is missing.
+- **`GET /api/config`** — includes a `credentials` summary for the frontend (same booleans, no secrets).
 
 ## Files
 

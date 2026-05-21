@@ -10,7 +10,13 @@
     "smoke": "node test-workflow.js",
     "validate:config": "node scripts/validate-config.js",
     "audit:routes": "node scripts/audit-routes.js",
-    "audit:activity": "node scripts/audit-activity-json.js"
+    "audit:activity": "node scripts/audit-activity-json.js",
+    "test:sim-lookup": "node scripts/test-sim-lookup.js",
+    "test:credentials": "node scripts/test-credential-diagnostics.js",
+    "test:install-response": "node scripts/test-install-response-normalize.js",
+    "pegasus:fetch-tokens": "node scripts/fetch-pegasus-tokens.js",
+    "pegasus:probe-qservices": "node scripts/probe-qservices-auth.js",
+    "test:qservices-hint": "node scripts/test-qservices-auth-hint.js"
   },
   "keywords": [],
   "author": "",

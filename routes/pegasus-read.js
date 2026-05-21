@@ -3,8 +3,18 @@
  * Mounted at /api — paths: search-installations, device-status, verify-imei, verify-sim, installation-status/:id
  */
 const express = require("express");
+const { lookupSimByIccid } = require("../services/pegasus/sim-lookup");
+const { resolveApiAuthenticateToken } = require("../services/pegasus/auth-token");
+const {
+  missingQservicesTokenMessage,
+  rejectedQservicesTokenMessage,
+} = require("../services/pegasus/qservices-auth-hint");
 
-function createPegasusReadRouter({ pegasus, currentConfig, authenticateToken }) {
+function tokenConfigured(value) {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function createPegasusReadRouter({ pegasus, currentConfig, authenticateToken, environment }) {
   const router = express.Router();
 
   router.get("/search-installations", authenticateToken, async (req, res) => {
@@ -19,6 +29,14 @@ function createPegasusReadRouter({ pegasus, currentConfig, authenticateToken }) 
       }
 
       console.log(`🔍 Searching for installations with query: ${query}`);
+
+      if (!tokenConfigured(currentConfig.pegasusToken)) {
+        return res.status(503).json({
+          success: false,
+          code: "qservices_token_missing",
+          message: missingQservicesTokenMessage(environment || "qa"),
+        });
+      }
 
       const response = await pegasus.qservicesGet(
         "search-installations",
@@ -38,9 +56,13 @@ function createPegasusReadRouter({ pegasus, currentConfig, authenticateToken }) 
             authConfigured: Boolean(currentConfig.pegasusToken),
           })
         );
+        const message =
+          response.status === 401
+            ? rejectedQservicesTokenMessage(environment || "qa")
+            : `Pegasus API error: HTTP ${response.status}`;
         return res.status(response.status).json({
           success: false,
-          message: `Pegasus API error: HTTP ${response.status}`,
+          message,
           details: errBody,
         });
       }
@@ -100,7 +122,7 @@ function createPegasusReadRouter({ pegasus, currentConfig, authenticateToken }) 
       const deviceResp = await pegasus.apiGet(
         "device-status",
         devicePath,
-        currentConfig.pegasusToken,
+        resolveApiAuthenticateToken(currentConfig),
         30000
       );
       const responseTime = Date.now() - startTime;
@@ -196,7 +218,7 @@ function createPegasusReadRouter({ pegasus, currentConfig, authenticateToken }) 
       const deviceResp = await pegasus.apiGet(
         "verify-imei",
         `/devices/${encodeURIComponent(imei)}`,
-        currentConfig.pegasusToken,
+        resolveApiAuthenticateToken(currentConfig),
         30000
       );
 
@@ -280,114 +302,34 @@ function createPegasusReadRouter({ pegasus, currentConfig, authenticateToken }) 
 
       console.log("Verifying SIM ICCID:", iccid);
 
-      let simType = "";
-      let pegasus1Url = "";
-      let pegasus256Url = "";
-
-      if (iccid.startsWith("8988")) {
-        simType = "SuperSIM";
-        pegasus1Url = `https://api.pegasusgateway.com/m2m/supersims/v1/Sims?Iccid=${iccid}`;
-        pegasus256Url = `https://api.pegasusgateway.com/m2m/supersims/v1/Sims?Iccid=${iccid}`;
-      } else if (iccid.startsWith("8901")) {
-        simType = "Wireless";
-        pegasus1Url = `https://api.pegasusgateway.com/m2m/wireless/v1/Sims?Iccid=${iccid}`;
-        pegasus256Url = `https://api.pegasusgateway.com/m2m/wireless/v1/Sims?Iccid=${iccid}`;
-      } else {
-        return res.status(400).json({
-          success: false,
-          message:
-            "Invalid ICCID format. Must start with 8988 (SuperSIM) or 8901 (Wireless)",
-          iccid: iccid,
-        });
-      }
-
+      const result = await lookupSimByIccid(pegasus, currentConfig, iccid);
       console.log(
         "[verify-sim]",
         JSON.stringify({
-          simType,
-          upstream1: pegasus.stripUrlForLog(pegasus1Url),
-          upstream256: pegasus.stripUrlForLog(pegasus256Url),
+          iccid,
+          success: result.success,
+          foundIn: result.simData && result.simData.foundIn,
+          checkedInstances: result.checkedInstances,
           auth1Configured: Boolean(currentConfig.pegasus1Token),
           auth256Configured: Boolean(currentConfig.pegasus256Token),
         })
       );
 
-      let simFound = false;
-      let simData = null;
-      let foundIn = null;
-
-      try {
-        const pegasus1Resp = await pegasus.apiGetFullUrl(
-          "verify-sim-pegasus1",
-          pegasus1Url,
-          currentConfig.pegasus1Token,
-          10000
-        );
-
-        if (pegasus1Resp.ok) {
-          const pegasus1Data = await pegasus1Resp.json();
-
-          const sims = pegasus1Data.sims || pegasus1Data.data || [];
-          if (sims.length > 0) {
-            simFound = true;
-            simData = sims[0];
-            foundIn = "Pegasus1";
-            console.log(`${simType} SIM found in Pegasus1`);
-          }
-        }
-      } catch (error) {
-        console.error("[verify-sim] Pegasus1 check failed:", error.message);
-      }
-
-      if (!simFound) {
-        try {
-          const pegasus256Resp = await pegasus.apiGetFullUrl(
-            "verify-sim-pegasus256",
-            pegasus256Url,
-            currentConfig.pegasus256Token,
-            10000
-          );
-
-          if (pegasus256Resp.ok) {
-            const pegasus256Data = await pegasus256Resp.json();
-
-            const sims = pegasus256Data.sims || pegasus256Data.data || [];
-            if (sims.length > 0) {
-              simFound = true;
-              simData = sims[0];
-              foundIn = "Pegasus256";
-              console.log(`${simType} SIM found in Pegasus256`);
-            }
-          }
-        } catch (error) {
-          console.error("[verify-sim] Pegasus256 check failed:", error.message);
-        }
-      }
-
-      if (simFound && simData) {
-        res.json({
+      if (result.success) {
+        return res.json({
           success: true,
-          message: `${simType} SIM verified successfully in ${foundIn}`,
-          simData: {
-            iccid: simData.iccid,
-            status: simData.status,
-            simType: simType,
-            fleet_sid: simData.fleet_sid || simData.fleet_id,
-            account_sid: simData.account_sid || simData.account_id,
-            date_created: simData.date_created,
-            date_updated: simData.date_updated,
-            foundIn: foundIn,
-          },
-        });
-      } else {
-        res.status(404).json({
-          success: false,
-          message: `${simType} SIM not found in either Pegasus instance`,
-          checkedInstances: ["Pegasus1", "Pegasus256"],
-          simType: simType,
-          iccid: iccid,
+          message: result.message,
+          simData: result.simData,
         });
       }
+
+      return res.status(result.status).json({
+        success: false,
+        message: result.message,
+        simType: result.simType,
+        iccid: result.iccid,
+        checkedInstances: result.checkedInstances,
+      });
     } catch (err) {
       console.error("Error in /api/verify-sim:", err);
       return res.status(500).json({
@@ -445,7 +387,7 @@ function createPegasusReadRouter({ pegasus, currentConfig, authenticateToken }) 
             const vehicleResponse = await pegasus.apiGet(
               "installation-status-vehicle",
               `/vehicles?vin=${encodeURIComponent(installationData.vehiculo.serie)}`,
-              currentConfig.pegasusToken,
+              resolveApiAuthenticateToken(currentConfig),
               30000
             );
 
@@ -470,7 +412,7 @@ function createPegasusReadRouter({ pegasus, currentConfig, authenticateToken }) 
             const groupResponse = await pegasus.apiGet(
               "installation-status-group",
               `/groups?name=${encodeURIComponent(installationData.persona.nombreAsegurado)}`,
-              currentConfig.pegasusToken,
+              resolveApiAuthenticateToken(currentConfig),
               30000
             );
 

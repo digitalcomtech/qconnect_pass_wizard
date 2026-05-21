@@ -43,7 +43,7 @@ module.exports = {
 
   qa: {
     pegasusBaseUrl:
-      process.env.QA_PEGASUS_BASE_URL || "https://qservices.pegasusgateway.com/qa",
+      process.env.QA_PEGASUS_BASE_URL || "https://dev2.pegasusgateway.com",
     pegasusToken: process.env.QA_PEGASUS_TOKEN || "",
     defaultGroupId: parseIntEnv("QA_DEFAULT_GROUP_ID", 3441),
     defaultGroupId2: parseIntEnv("QA_DEFAULT_GROUP_ID2", 3442),

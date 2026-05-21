@@ -131,7 +131,13 @@
 
   function pickCorrelationId(data) {
     if (!data || typeof data !== "object") return null;
-    var id = data.correlationId || data.correlation_id || data.requestId || data.request_id || data.runId || data.run_id;
+    var id =
+      data.requestId ||
+      data.correlationId ||
+      data.correlation_id ||
+      data.request_id ||
+      data.runId ||
+      data.run_id;
     return id != null && id !== "" ? String(id) : null;
   }
 
@@ -146,6 +152,9 @@
         httpStatus: resp && typeof resp.status === "number" ? resp.status : null,
         pegasusStatus: body.status != null ? body.status : null,
         message: msg,
+        requestId: pickCorrelationId(body),
+        context: body.context && typeof body.context === "object" ? body.context : null,
+        details: body.details && typeof body.details === "object" ? body.details : null,
       },
       serverRunCorrelationId: pickCorrelationId(body),
     });
@@ -167,6 +176,12 @@
         httpStatus: resp && typeof resp.status === "number" ? resp.status : null,
         pegasusStatus: body.status != null ? body.status : null,
         message: msg,
+        requestId: pickCorrelationId(body),
+        code: body.code != null ? body.code : null,
+        context: body.context && typeof body.context === "object" ? body.context : null,
+        details: body.details && typeof body.details === "object" ? body.details : null,
+        duplicateCheck:
+          body.duplicateCheck && typeof body.duplicateCheck === "object" ? body.duplicateCheck : null,
       },
       serverRunCorrelationId: pickCorrelationId(body),
     });

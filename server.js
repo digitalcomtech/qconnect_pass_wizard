@@ -51,9 +51,6 @@ function assertProductionRuntimeReady() {
   if (!process.env.JWT_SECRET) missing.push("JWT_SECRET");
   if (!process.env.SESSION_SECRET) missing.push("SESSION_SECRET");
   const prefix = ENVIRONMENT === "production" ? "PROD" : "QA";
-  if (!currentConfig.pegasusToken) {
-    missing.push(prefix === "PROD" ? "PROD_PEGASUS_TOKEN" : "QA_PEGASUS_TOKEN");
-  }
   if (!currentConfig.pegasus1Token) {
     missing.push(prefix === "PROD" ? "PROD_PEGASUS1_TOKEN" : "QA_PEGASUS1_TOKEN");
   }
@@ -69,9 +66,14 @@ function assertProductionRuntimeReady() {
 
 assertProductionRuntimeReady();
 
-if (process.env.NODE_ENV !== "production" && !currentConfig.pegasusToken) {
+if (!currentConfig.pegasusToken) {
   console.warn(
-    `[startup] Pegasus token for "${ENVIRONMENT}" is empty; set ${ENVIRONMENT === "production" ? "PROD_PEGASUS_TOKEN" : "QA_PEGASUS_TOKEN"} or API calls will fail.`
+    `[startup] qservices Bearer token for "${ENVIRONMENT}" is empty (${ENVIRONMENT === "production" ? "PROD_PEGASUS_TOKEN" : "QA_PEGASUS_TOKEN"}). Installation search returns 503 until set; run npm run pegasus:fetch-tokens. See GET /api/health/credentials.`
+  );
+}
+if (!currentConfig.pegasus1Token) {
+  console.warn(
+    `[startup] Pegasus1 Authenticate token is empty (${ENVIRONMENT === "production" ? "PROD_PEGASUS1_TOKEN" : "QA_PEGASUS1_TOKEN"}). Device/group/vehicle APIs will fail.`
   );
 }
 
@@ -84,6 +86,7 @@ const { createSecondaryDeviceProcessor } = require("./services/install/secondary
 const { createSimHelpers } = require("./services/install/sim");
 const { createHosHelpers } = require("./services/install/hos");
 const { createCompleteInstallOrchestrator } = require("./services/install/complete-install-orchestrator");
+const { normalizeInstallResponse } = require("./services/install/normalize-install-response");
 const { createSecondaryInstallOrchestrator } = require("./services/install/secondary-install-orchestrator");
 const { createConfirmInstallationOrchestrator } = require("./services/install/confirm-installation-orchestrator");
 const { registerHealthz, createApiMetaRouter } = require("./routes/system");
@@ -158,7 +161,7 @@ function resolveSessionSecret() {
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-registerHealthz(app);
+registerHealthz(app, ENVIRONMENT);
 
 // Session configuration
 app.use(session({
@@ -205,24 +208,44 @@ app.use(
 );
 app.use(
   "/api",
-  createPegasusReadRouter({ pegasus, currentConfig, authenticateToken })
+  createPegasusReadRouter({
+    pegasus,
+    currentConfig,
+    authenticateToken,
+    environment: ENVIRONMENT,
+  })
 );
 
 // Installation workflow (protected)
+function sendInstallApiResponse(req, res, result) {
+  const payload = normalizeInstallResponse({
+    httpStatus: result.status,
+    json: result.json,
+    body: req.body,
+    environment: ENVIRONMENT,
+    requestId: req.sessionId || req.headers["x-request-id"] || null,
+  });
+  if (result.beforeSend) result.beforeSend();
+  return res.status(result.status).json(payload);
+}
+
 app.post("/api/install", authenticateToken, trackInstallationStart, async (req, res) => {
   try {
     const result = await runCompleteInstallOrchestration({
       body: req.body,
       sessionId: req.sessionId,
     });
-    if (result.beforeSend) result.beforeSend();
-    return res.status(result.status).json(result.json);
+    return sendInstallApiResponse(req, res, result);
   } catch (err) {
     console.error("❌ Error in complete installation workflow:", err);
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error during installation workflow",
-      error: err.message,
+    return sendInstallApiResponse(req, res, {
+      status: 500,
+      json: {
+        success: false,
+        status: "failed",
+        message: "Internal server error during installation workflow",
+        error: err.message,
+      },
     });
   }
 });

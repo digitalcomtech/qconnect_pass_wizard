@@ -1,7 +1,6 @@
 /**
  * installationRun-first resume: derive target from persisted slices, then apply DOM/step sync.
- * Legacy `sessionStorage.step` is used only when `hasModernResumeSignal(state)` is false — i.e. no
- * meaningful job/devices/install/reporting/paperwork/confirmation signal in installationRun.
+ * Legacy `sessionStorage.step` is used only when `hasModernResumeSignal(state)` is false.
  */
 (function () {
   function hasResumableJob(state) {
@@ -20,8 +19,12 @@
     if ((p.imei && String(p.imei).trim()) || (p.simIccid && String(p.simIccid).trim())) return true;
     if (p.verified.imei || p.verified.sim) return true;
     if (d.secondary.enabled) {
-      if ((d.secondary.imei && String(d.secondary.imei).trim()) || (d.secondary.simIccid && String(d.secondary.simIccid).trim()))
+      if (
+        (d.secondary.imei && String(d.secondary.imei).trim()) ||
+        (d.secondary.simIccid && String(d.secondary.simIccid).trim())
+      ) {
         return true;
+      }
       if (d.secondary.verified.sim) return true;
     }
     if (d.boundSelectedInstallationId || d.boundSelectedVin) return true;
@@ -30,15 +33,21 @@
 
   function hasInstallSucceeded(state) {
     if (!state || !state.install) return false;
-    var ins = normalizeInstallSlice(state.install);
-    return ins.phase === "succeeded";
+    return normalizeInstallSlice(state.install).phase === "succeeded";
+  }
+
+  function hasInstallFailed(state) {
+    if (!state || !state.install) return false;
+    return normalizeInstallSlice(state.install).phase === "failed";
   }
 
   function hasReportingProgress(state) {
     if (!state || !state.reporting) return false;
     var r = normalizeReportingSlice(state.reporting);
     if (r.phase !== "idle") return true;
-    if (r.polling && typeof r.polling.attemptCount === "number" && r.polling.attemptCount > 0) return true;
+    if (r.polling && typeof r.polling.attemptCount === "number" && r.polling.attemptCount > 0) {
+      return true;
+    }
     if (r.bypass && r.bypass.chosen) return true;
     return false;
   }
@@ -51,8 +60,7 @@
 
   function hasConfirmationProgress(state) {
     if (!state || !state.confirmation) return false;
-    var c = normalizeConfirmationSlice(state.confirmation);
-    return c.phase !== "not_started";
+    return normalizeConfirmationSlice(state.confirmation).phase !== "not_started";
   }
 
   function hasModernResumeSignal(state) {
@@ -60,6 +68,7 @@
       hasResumableJob(state) ||
       hasResumableDevices(state) ||
       hasInstallSucceeded(state) ||
+      hasInstallFailed(state) ||
       hasReportingProgress(state) ||
       hasPaperworkProgress(state) ||
       hasConfirmationProgress(state)
@@ -71,9 +80,6 @@
     return !!(j.selectedInstallationId && j.selectedVin);
   }
 
-  /**
-   * @returns {{ source: "modern", resumeKind: string, legacyStepToken?: string } | { source: "legacy_fallback", legacyStep: string }}
-   */
   function deriveResumeTargetFromInstallationRun(state) {
     if (!state || typeof state !== "object") {
       return { source: "legacy_fallback", legacyStep: sessionStorage.getItem("step") || "1" };
@@ -82,42 +88,22 @@
       return { source: "legacy_fallback", legacyStep: sessionStorage.getItem("step") || "1" };
     }
 
-    var conf = normalizeConfirmationSlice(state.confirmation);
-    var pap = normalizePaperworkSlice(state.paperwork);
-    var rep = normalizeReportingSlice(state.reporting);
     var inst = normalizeInstallSlice(state.install);
 
-    if (conf.phase === "succeeded") {
-      return { source: "modern", resumeKind: "completed", legacyStepToken: "done" };
-    }
-    if (conf.phase === "submitting" || conf.phase === "failed") {
-      return { source: "modern", resumeKind: "confirmation_active", legacyStepToken: "confirmation" };
-    }
-    if (pap.operatorAcknowledgedAt && conf.phase === "not_started") {
-      return { source: "modern", resumeKind: "confirmation_ready", legacyStepToken: "confirmation" };
-    }
-    if (pap.formOpenedAt && !pap.operatorAcknowledgedAt) {
-      return { source: "modern", resumeKind: "paperwork_pending", legacyStepToken: "waitingForDevice" };
+    if (inst.phase === "failed") {
+      return {
+        source: "modern",
+        resumeKind: "provision_failed",
+        legacyStepToken: "provisionFailed",
+      };
     }
 
-    if (
-      rep.phase === "polling" ||
-      rep.phase === "proximity" ||
-      rep.phase === "bypassed" ||
-      (rep.bypass && rep.bypass.chosen)
-    ) {
-      return { source: "modern", resumeKind: "waiting_reporting", legacyStepToken: "waitingForDevice" };
-    }
-
-    var postInstall =
-      inst.phase === "succeeded" && conf.phase === "not_started" && !pap.operatorAcknowledgedAt;
-    if (postInstall) {
-      if (rep.phase === "polling" || rep.phase === "proximity" || rep.phase === "bypassed") {
-        return { source: "modern", resumeKind: "waiting_reporting", legacyStepToken: "waitingForDevice" };
-      }
-      if (rep.phase === "idle" && !pap.formOpenedAt) {
-        return { source: "modern", resumeKind: "waiting_reporting", legacyStepToken: "waitingForDevice" };
-      }
+    if (inst.phase === "succeeded") {
+      return {
+        source: "modern",
+        resumeKind: "provision_complete",
+        legacyStepToken: "provisionComplete",
+      };
     }
 
     if (hasResumableDevices(state) && jobHasSelectedInstallation(state)) {
@@ -199,68 +185,62 @@
         (job.searchQuery || "") +
         '"',
     });
-    updateStepStatus(1, "completed");
-    unlockNextStep(1);
     navigateToStep(2);
   }
 
-  /**
-   * Apply resume navigation + legacy step sync for modern-derived targets.
-   */
   function applyInstallationRunResumeTarget(target) {
     if (!target || target.source !== "modern") return;
 
     switch (target.resumeKind) {
-      case "completed":
-        successMsg.style.display = "block";
-        updateStepStatus(1, "completed");
-        updateStepStatus(2, "completed");
-        updateStepStatus(3, "completed");
-        updateStepStatus(4, "completed");
-        updateStepStatus(5, "completed");
-        updateStepStatus(6, "completed");
-        if (target.legacyStepToken) sessionStorage.setItem("step", target.legacyStepToken);
-        break;
-
-      case "confirmation_active":
-      case "confirmation_ready":
-        updateStepStatus(5, "completed");
-        unlockNextStep(5);
-        navigateToStep(6);
-        if (target.legacyStepToken) sessionStorage.setItem("step", target.legacyStepToken);
-        break;
-
-      case "paperwork_pending":
-        updateStepStatus(1, "completed");
-        updateStepStatus(2, "completed");
-        updateStepStatus(3, "completed");
-        updateStepStatus(4, "completed");
-        unlockNextStep(1);
-        unlockNextStep(2);
-        unlockNextStep(3);
-        unlockNextStep(4);
-        navigateToStep(5);
-        if (target.legacyStepToken) sessionStorage.setItem("step", target.legacyStepToken);
-        break;
-
-      case "waiting_reporting":
+      case "provision_complete":
         restoreJobAndVinForDeviceStep();
-        updateStepStatus(1, "completed");
-        unlockNextStep(1);
-        updateStepStatus(2, "completed");
-        unlockNextStep(2);
-        updateStepStatus(3, "completed");
-        unlockNextStep(3);
         navigateToStep(3);
+        if (typeof showProvisioningSuccessAfterInstall === "function") {
+          var instSliceOk = normalizeInstallSlice(getInstallationRunState().install);
+          var summaryOk = instSliceOk.lastResponseSummary || {};
+          var resumePayloadOk =
+            typeof buildReceiptPayloadFromCurrentForm === "function"
+              ? buildReceiptPayloadFromCurrentForm()
+              : {};
+          showProvisioningSuccessAfterInstall(
+            {
+              status: "success",
+              message: summaryOk.message,
+              details: summaryOk.details || {},
+            },
+            resumePayloadOk,
+            { status: summaryOk.httpStatus }
+          );
+        }
+        if (target.legacyStepToken) sessionStorage.setItem("step", target.legacyStepToken);
+        break;
+
+      case "provision_failed":
+        restoreJobAndVinForDeviceStep();
+        navigateToStep(3);
+        if (typeof showProvisioningFailureAfterInstall === "function") {
+          var instSliceFail = normalizeInstallSlice(getInstallationRunState().install);
+          var summaryFail = instSliceFail.lastResponseSummary || {};
+          var resumePayloadFail =
+            typeof buildReceiptPayloadFromCurrentForm === "function"
+              ? buildReceiptPayloadFromCurrentForm()
+              : {};
+          showProvisioningFailureAfterInstall(
+            { message: summaryFail.message || "Provisioning failed" },
+            { status: summaryFail.httpStatus },
+            {
+              message: summaryFail.message,
+              code: summaryFail.code,
+              duplicateCheck: summaryFail.duplicateCheck,
+            },
+            resumePayloadFail
+          );
+        }
         if (target.legacyStepToken) sessionStorage.setItem("step", target.legacyStepToken);
         break;
 
       case "device":
         restoreJobAndVinForDeviceStep();
-        updateStepStatus(1, "completed");
-        unlockNextStep(1);
-        updateStepStatus(2, "completed");
-        unlockNextStep(2);
         navigateToStep(3);
         if (target.legacyStepToken) sessionStorage.setItem("step", target.legacyStepToken);
         break;

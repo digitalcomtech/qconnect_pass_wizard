@@ -9,8 +9,6 @@ let selectedInstallationId = "";
 let imeiVerified          = false;
 let simVerified           = false;
 let secondarySimVerified  = false;
-let formAlreadyOpened     = false; // Prevent form from opening multiple times
-
 function clearLegacyWizardSessionKeys() {
   var keys = [
     "step",
@@ -33,13 +31,11 @@ function resetWizardGlobalsForNewRun() {
   imeiVerified = false;
   simVerified = false;
   secondarySimVerified = false;
-  formAlreadyOpened = false;
 }
 
 function resetWizardUiToColdStart() {
-  // Sections + sidebar
   if (typeof updateStepStatus === "function") {
-    for (var step = 1; step <= 6; step++) {
+    for (var step = 1; step <= provisioningMaxStep(); step++) {
       updateStepStatus(step, "pending");
       if (step >= 2) updateStepStatus(step, "locked");
     }
@@ -48,9 +44,14 @@ function resetWizardUiToColdStart() {
     navigateToStep(1);
   }
 
-  // Visible success/completion area
-  if (typeof successMsg !== "undefined" && successMsg) {
-    successMsg.style.display = "none";
+  var receiptPanel = document.getElementById("provisioningReceiptPanel");
+  if (receiptPanel) {
+    receiptPanel.classList.add("hidden");
+    receiptPanel.innerHTML = "";
+  }
+  var previewPanel = document.getElementById("provisioningPreviewPanel");
+  if (previewPanel) {
+    previewPanel.classList.remove("provisioning-preview-done");
   }
 
   // Clear obvious wizard inputs/status text (safe even if elements are missing)
@@ -64,6 +65,8 @@ function resetWizardUiToColdStart() {
     if (typeof vinStatus !== "undefined" && vinStatus) vinStatus.textContent = "";
     if (typeof imeiVerificationStatus !== "undefined" && imeiVerificationStatus) imeiVerificationStatus.innerHTML = "";
     if (typeof simVerificationStatus !== "undefined" && simVerificationStatus) simVerificationStatus.innerHTML = "";
+    var secondaryImeiStatus = document.getElementById("secondaryImeiVerificationStatus");
+    if (secondaryImeiStatus) secondaryImeiStatus.innerHTML = "";
     var secondaryStatus = document.getElementById("secondarySimVerificationStatus");
     if (secondaryStatus) secondaryStatus.innerHTML = "";
     if (typeof startInstallBtn !== "undefined" && startInstallBtn) startInstallBtn.disabled = true;
@@ -78,6 +81,7 @@ function startNewWizardRunFromUserAction() {
   }
   clearLegacyWizardSessionKeys();
   resetWizardGlobalsForNewRun();
+  if (typeof resetLookupPreviewState === "function") resetLookupPreviewState();
   resetWizardUiToColdStart();
 }
 

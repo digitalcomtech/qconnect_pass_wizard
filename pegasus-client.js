@@ -7,6 +7,7 @@
  */
 
 const fetch = require('node-fetch');
+const { resolveApiAuthenticateToken } = require('./services/pegasus/auth-token');
 
 function stripUrlForLog(urlStr) {
   try {
@@ -71,6 +72,7 @@ async function retryApiCall(apiCall, { maxRetries = 3, delay = 1000, backoff = 2
 function createPegasusClient({ currentConfig, apiBaseUrl, defaultTimeoutMs = 30000 }) {
   const apiBase = (apiBaseUrl || 'https://api.pegasusgateway.com').replace(/\/$/, '');
   const qBase = String(currentConfig.pegasusBaseUrl || '').replace(/\/$/, '');
+  const defaultApiToken = () => resolveApiAuthenticateToken(currentConfig);
 
   function buildInit(method, { bearer, authenticate, bodyObj, extraHeaders = {} }, timeoutMs) {
     const headers = { ...extraHeaders };
@@ -188,7 +190,7 @@ function createPegasusClient({ currentConfig, apiBaseUrl, defaultTimeoutMs = 300
 
     async apiGet(context, pathWithQuery, authenticateToken, timeoutMs) {
       const url = `${apiBase}${pathWithQuery.startsWith('/') ? pathWithQuery : `/${pathWithQuery}`}`;
-      const token = authenticateToken != null ? authenticateToken : currentConfig.pegasusToken;
+      const token = authenticateToken != null ? authenticateToken : defaultApiToken();
       const { response, authMode, authConfigured, upstream } = await exec(
         context,
         url,
@@ -204,7 +206,7 @@ function createPegasusClient({ currentConfig, apiBaseUrl, defaultTimeoutMs = 300
 
     async apiPost(context, pathWithQuery, body, authenticateToken, timeoutMs) {
       const url = `${apiBase}${pathWithQuery.startsWith('/') ? pathWithQuery : `/${pathWithQuery}`}`;
-      const token = authenticateToken != null ? authenticateToken : currentConfig.pegasusToken;
+      const token = authenticateToken != null ? authenticateToken : defaultApiToken();
       const { response, authMode, authConfigured, upstream } = await exec(
         context,
         url,
@@ -219,7 +221,7 @@ function createPegasusClient({ currentConfig, apiBaseUrl, defaultTimeoutMs = 300
     },
 
     async apiGetFullUrl(context, fullUrl, authenticateToken, timeoutMs) {
-      const token = authenticateToken != null ? authenticateToken : currentConfig.pegasusToken;
+      const token = authenticateToken != null ? authenticateToken : defaultApiToken();
       const { response, authMode, authConfigured, upstream } = await exec(
         context,
         fullUrl,
@@ -234,7 +236,7 @@ function createPegasusClient({ currentConfig, apiBaseUrl, defaultTimeoutMs = 300
     },
 
     async apiPostFullUrl(context, fullUrl, body, authenticateToken, timeoutMs) {
-      const token = authenticateToken != null ? authenticateToken : currentConfig.pegasusToken;
+      const token = authenticateToken != null ? authenticateToken : defaultApiToken();
       const { response, authMode, authConfigured, upstream } = await exec(
         context,
         fullUrl,
@@ -250,7 +252,7 @@ function createPegasusClient({ currentConfig, apiBaseUrl, defaultTimeoutMs = 300
 
     async apiPostWithRetry(context, path, body, authenticateToken, retryCount = 3) {
       const url = `${apiBase}${path.startsWith('/') ? path : `/${path}`}`;
-      const token = authenticateToken != null ? authenticateToken : currentConfig.pegasusToken;
+      const token = authenticateToken != null ? authenticateToken : defaultApiToken();
       return retryApiCall(
         async () => {
           const { response, authMode, authConfigured, upstream } = await exec(

@@ -24,12 +24,31 @@ const BASE = (
 const USER = process.env.WIZARD_SMOKE_USER || "installer";
 const PASS = process.env.WIZARD_SMOKE_PASSWORD || "installer123";
 
+const UPSTREAM_SKIP_STATUSES = new Set([401, 403, 502, 503]);
+
 async function req(name, url, options = {}) {
   const res = await fetch(url, options);
   const text = await res.text();
   if (!res.ok) {
     throw new Error(`${name} → HTTP ${res.status} ${text.slice(0, 280)}`);
   }
+  return parseBody(res, text);
+}
+
+async function reqOrSkipUpstream(name, url, options = {}) {
+  const res = await fetch(url, options);
+  const text = await res.text();
+  if (!res.ok && UPSTREAM_SKIP_STATUSES.has(res.status)) {
+    console.warn(`SKIP ${name}: HTTP ${res.status} (Pegasus credentials or upstream unavailable)`);
+    return null;
+  }
+  if (!res.ok) {
+    throw new Error(`${name} → HTTP ${res.status} ${text.slice(0, 280)}`);
+  }
+  return parseBody(res, text);
+}
+
+function parseBody(res, text) {
   const ct = res.headers.get("content-type") || "";
   if (ct.includes("application/json")) {
     try {
@@ -42,12 +61,18 @@ async function req(name, url, options = {}) {
 }
 
 async function main() {
+  require("./scripts/test-install-response-normalize").runInstallResponseNormalizeTests();
+
   console.log("--- smoke (authenticated) ---");
   console.log("BASE:", BASE);
   console.log("User:", USER);
   console.log("");
 
-  await req("GET /healthz", `${BASE}/healthz`);
+  const healthz = await req("GET /healthz", `${BASE}/healthz`);
+  if (!healthz || !healthz.environment) {
+    throw new Error("GET /healthz missing environment field");
+  }
+  console.log("healthz environment:", healthz.environment);
 
   const loginJson = await req(
     "POST /api/auth/login",
@@ -79,25 +104,59 @@ async function main() {
     headers: auth,
   });
   console.log("config:", cfg && cfg.environment, "testMode=", cfg && cfg.testMode);
+  if (!cfg || !cfg.credentials) {
+    throw new Error("GET /api/config missing credentials block");
+  }
+  const c = cfg.credentials;
+  console.log(
+    "config.credentials:",
+    "p1=",
+    c.pegasus1TokenConfigured,
+    "p256=",
+    c.pegasus256TokenConfigured,
+    "qservices=",
+    c.qservicesTokenConfigured,
+    "imei=",
+    c.deviceLookupAvailable,
+    "sim=",
+    c.simLookupAvailable,
+    "search=",
+    c.installationSearchAvailable
+  );
 
-  const pegHealth = await req(
+  const credHealth = await req("GET /api/health/credentials", `${BASE}/api/health/credentials`, {
+    headers: auth,
+  });
+  if (
+    credHealth.pegasus1TokenConfigured !== c.pegasus1TokenConfigured ||
+    credHealth.installationSearchAvailable !== c.installationSearchAvailable
+  ) {
+    throw new Error("/api/health/credentials disagrees with /api/config");
+  }
+  console.log("health/credentials: ok");
+
+  const pegHealth = await reqOrSkipUpstream(
     "GET /api/health/pegasus",
     `${BASE}/api/health/pegasus`,
     { headers: auth }
   );
-  console.log("pegasus health:", pegHealth && pegHealth.status, pegHealth && pegHealth.responseTime);
+  if (pegHealth) {
+    console.log("pegasus health:", pegHealth.status, pegHealth.responseTime);
+  }
 
-  const search = await req(
+  const search = await reqOrSkipUpstream(
     "GET /api/search-installations",
     `${BASE}/api/search-installations?query=${encodeURIComponent("__SMOKE__")}`,
     { headers: auth }
   );
-  console.log(
-    "search-installations:",
-    search && search.success,
-    "count=",
-    search && search.installations && search.installations.length
-  );
+  if (search) {
+    console.log(
+      "search-installations:",
+      search.success,
+      "count=",
+      search.installations && search.installations.length
+    );
+  }
 
   await req(
     "GET /api/activity/summary",
@@ -117,9 +176,63 @@ async function main() {
     statusRes.status,
     statusText.slice(0, 120)
   );
-  if (statusRes.status === 401 || statusRes.status === 403) {
-    throw new Error("installation-status returned auth error — token issue");
+  if (statusRes.status === 403) {
+    throw new Error("installation-status returned 403 — app JWT issue");
   }
+  if (statusRes.status === 401) {
+    console.warn("SKIP installation-status: Pegasus upstream 401");
+  }
+
+  const verifyImeiRes = await fetch(`${BASE}/api/verify-imei`, {
+    method: "POST",
+    headers: auth,
+    body: JSON.stringify({ imei: "000000000000000" }),
+  });
+  const verifyImeiJson = await verifyImeiRes.json();
+  const verifyImeiOk = new Set([200, 400, 404, 401]);
+  if (!verifyImeiOk.has(verifyImeiRes.status)) {
+    throw new Error(
+      `verify-imei smoke expected 200/400/404/401, got ${verifyImeiRes.status}: ${JSON.stringify(verifyImeiJson).slice(0, 120)}`
+    );
+  }
+  if (verifyImeiRes.status === 500) {
+    throw new Error("verify-imei returned 500");
+  }
+  console.log("verify-imei (fake IMEI):", verifyImeiRes.status, verifyImeiJson.message || "");
+
+  const badSimRes = await fetch(`${BASE}/api/verify-sim`, {
+    method: "POST",
+    headers: auth,
+    body: JSON.stringify({ iccid: "1234567890" }),
+  });
+  const badSimJson = await badSimRes.json();
+  if (badSimRes.status !== 400) {
+    throw new Error(`verify-sim invalid prefix expected 400, got ${badSimRes.status}`);
+  }
+  console.log("verify-sim (bad prefix):", badSimRes.status, badSimJson.message || "");
+
+  const fakeSimRes = await fetch(`${BASE}/api/verify-sim`, {
+    method: "POST",
+    headers: auth,
+    body: JSON.stringify({ iccid: "8988000000000000000" }),
+  });
+  const fakeSimJson = await fakeSimRes.json();
+  const fakeSimOk = new Set([200, 404, 401]);
+  if (!fakeSimOk.has(fakeSimRes.status)) {
+    throw new Error(
+      `verify-sim fake ICCID expected 200/404/401, got ${fakeSimRes.status}: ${JSON.stringify(fakeSimJson).slice(0, 120)}`
+    );
+  }
+  if (fakeSimRes.status === 500) {
+    throw new Error("verify-sim returned 500");
+  }
+  console.log(
+    "verify-sim (fake SuperSIM):",
+    fakeSimRes.status,
+    fakeSimJson.simData && fakeSimJson.simData.foundIn
+      ? `foundIn=${fakeSimJson.simData.foundIn}`
+      : fakeSimJson.message || ""
+  );
 
   console.log("");
   console.log("OK — smoke finished (read-only). No /api/install or confirm calls.");

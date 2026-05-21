@@ -1,6 +1,6 @@
 # Authentication System
 
-This document explains the new authentication system implemented to protect sensitive API tokens and secure the QConnect PASS Wizard.
+This document explains the authentication system that protects API routes and Pegasus credentials for the PASS Provisioning Console.
 
 ## 🔐 Overview
 
@@ -88,10 +88,10 @@ The authentication system provides:
 ## 📱 User Interface
 
 ### Login Page (`/login.html`)
-- Clean, modern design matching app theme
-- Username/password fields
-- Error handling and success messages
-- Demo credentials display
+- Minimal internal access card (no marketing copy)
+- Username/password → `POST /api/auth/login` → JWT in `localStorage`
+- Environment badge from public `GET /healthz` (label only, no secrets)
+- Dev credentials: see **Default Users** above and `docs/TOOLING.md` (`WIZARD_SMOKE_*`); not shown on the login UI
 
 ### Main App
 - User info displayed in sidebar
@@ -140,7 +140,7 @@ The authentication system provides:
 - Test mode doesn't bypass authentication
 
 ### Development
-- Use demo credentials for testing
+- Use documented smoke/dev credentials only in non-production environments (see `docs/TOOLING.md`)
 - Check browser console for authentication errors
 - Verify token inclusion in network requests
 

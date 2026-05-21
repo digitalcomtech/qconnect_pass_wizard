@@ -2,7 +2,10 @@
  * HOS segment check + setup (primary/secondary device install steps).
  */
 
+const { resolveApiAuthenticateToken } = require('../pegasus/auth-token');
+
 function createHosHelpers({ pegasus, currentConfig }) {
+  const apiToken = () => resolveApiAuthenticateToken(currentConfig);
   // Check if device has HOS segment configuration
   async function checkHosSegmentConfiguration(imei) {
     try {
@@ -11,7 +14,7 @@ function createHosHelpers({ pegasus, currentConfig }) {
       const response = await pegasus.apiGet(
         "hos-segment-check",
         `/devices?imeis=${encodeURIComponent(imei)}&select=segments`,
-        currentConfig.pegasusToken,
+        apiToken(),
         30000
       );
 
@@ -71,7 +74,7 @@ function createHosHelpers({ pegasus, currentConfig }) {
         "hos-segment-setup",
         `/devices/${encodeURIComponent(imei)}/remote/segment_setup`,
         hosPayload,
-        currentConfig.pegasusToken,
+        apiToken(),
         30000
       );
 

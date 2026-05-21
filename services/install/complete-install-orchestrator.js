@@ -37,6 +37,8 @@ function createCompleteInstallOrchestrator({
         status: 400,
         json: {
           success: false,
+          status: "failed",
+          code: "VALIDATION_ERROR",
           message: "Missing one of client_name, imei, vin, installationId",
         },
       };
@@ -47,6 +49,7 @@ function createCompleteInstallOrchestrator({
       return {
         status: 200,
         json: {
+          success: true,
           status: "success",
           message: "Test mode: Complete workflow simulated successfully",
           workflow: "Complete installation workflow would have been executed",
@@ -63,6 +66,8 @@ function createCompleteInstallOrchestrator({
         status: 400,
         json: {
           success: false,
+          status: "failed",
+          code: "DUPLICATE_INSTALLATION",
           message: "Installation ID already exists in system - duplicate detected",
         },
       };
@@ -73,6 +78,7 @@ function createCompleteInstallOrchestrator({
         status: 503,
         json: {
           success: false,
+          status: "failed",
           code: "DUPLICATE_CHECK_UNAVAILABLE",
           message:
             "Could not verify installation state with Pegasus. Install was stopped to avoid duplicate or conflicting work.",
@@ -160,6 +166,7 @@ function createCompleteInstallOrchestrator({
     console.log("🎉 COMPLETE INSTALLATION WORKFLOW FINISHED SUCCESSFULLY");
 
     const json = {
+      success: true,
       status: "success",
       message: "Complete installation workflow executed successfully",
       details: {
@@ -171,6 +178,31 @@ function createCompleteInstallOrchestrator({
         hosConfiguration: {
           primary: primaryHosResult,
           secondary: secondaryHosResult,
+        },
+        steps: {
+          qservicesDuplicateCheck: { ok: true, outcome: dupResult.outcome },
+          repeatsRecord: { ok: true },
+          group: { ok: true, groupId, created: !!groupResult.created },
+          vehicle: { ok: true, vehicleId },
+          primaryDeviceLink: { ok: true, imei },
+          primarySim: sim_number
+            ? { ok: true, action: "processed" }
+            : { ok: true, action: "skipped", reason: "No primary SIM in request" },
+          secondary: secondary_imei
+            ? {
+                ok: true,
+                imei: secondary_imei,
+                sim: secondary_sim_number
+                  ? { ok: true, action: "processed" }
+                  : { ok: true, action: "skipped", reason: "No secondary SIM in request" },
+                hos: secondaryHosResult,
+              }
+            : { ok: true, action: "skipped", reason: "No secondary device in request" },
+          qservicesConfirmation: {
+            ok: true,
+            action: "not_applicable",
+            reason: "Office provision path; confirm-installation not invoked",
+          },
         },
         timestamp: new Date().toISOString(),
       },
