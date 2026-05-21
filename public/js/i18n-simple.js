@@ -9,7 +9,7 @@ const translations = {
     "installation.title": "Office provisioning for Pegasus",
     "installation.clientSelection": "Installation search",
     "installation.enterClientName": "Client name, VIN, or installation ID",
-    "installation.vinSelection": "Selected installation / VIN",
+    "installation.vinSelection": "Selected installation / vehicle",
     "installation.chooseVin": "Choose target VIN",
     "installation.deviceSetup": "Devices & SIM",
     "installation.enterImeiSim": "Devices, SIM & provision",

@@ -77,6 +77,11 @@ function startNewWizardRunFromUserAction() {
   resetWizardGlobalsForNewRun();
   if (typeof resetLookupPreviewState === "function") resetLookupPreviewState();
   resetWizardUiToColdStart();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  var main = document.querySelector(".console-main");
+  if (main && typeof main.focus === "function") {
+    main.focus({ preventScroll: true });
+  }
 }
 
 window.clearLegacyWizardSessionKeys = clearLegacyWizardSessionKeys;

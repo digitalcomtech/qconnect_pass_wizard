@@ -1,7 +1,7 @@
 // Single-page console: all sections stay visible (no step wizard navigation).
 
 function navigateToStep(stepNumber) {
-  document.querySelectorAll(".section").forEach(function (section) {
+  document.querySelectorAll(".section, .console-card").forEach(function (section) {
     section.classList.remove("hidden");
   });
   if (stepNumber != null) {

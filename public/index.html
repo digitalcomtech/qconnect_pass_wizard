@@ -116,87 +116,194 @@
     .console-main {
       flex: 1;
       overflow-y: auto;
-      padding: 20px;
+      padding: 16px 20px 24px;
     }
 
     .console-main-inner {
-      max-width: 920px;
+      max-width: 1280px;
       margin: 0 auto;
     }
 
-    .console-lede {
-      margin: 0 0 20px 0;
-      font-size: 0.9rem;
-      color: #64748b;
+    .console-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .console-col {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-width: 0;
     }
 
     .section,
-    .console-section {
-      margin-bottom: 20px;
-      padding: 16px 18px;
+    .console-card {
+      padding: 14px 16px;
       border: 1px solid #cbd5e1;
-      border-radius: 6px;
+      border-radius: 4px;
       background: #fff;
-      width: 100%;
       box-sizing: border-box;
     }
 
-    .console-section h2 {
-      margin: 0 0 14px 0;
-      font-size: 0.95rem;
+    .console-card h2 {
+      margin: 0 0 12px 0;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #e2e8f0;
+      font-size: 0.8rem;
       font-weight: 600;
       color: #334155;
-      text-align: left;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
     }
 
-    .console-section h2::after {
-      display: none;
+    .device-panel {
+      margin-top: 4px;
     }
 
-    .console-subsection {
-      margin-top: 16px;
-      padding-top: 16px;
+    .device-panel + .device-panel {
+      margin-top: 12px;
+      padding-top: 12px;
       border-top: 1px solid #e2e8f0;
     }
 
-    .console-subsection h3 {
-      margin: 0 0 12px 0;
-      font-size: 0.88rem;
+    .device-panel-secondary {
+      padding: 10px 12px;
+      border: 1px dashed #cbd5e1;
+      border-radius: 4px;
+      background: #f8fafc;
+    }
+
+    .device-panel-title {
+      margin: 0 0 10px 0;
+      font-size: 0.75rem;
       font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .device-panel-secondary .device-panel-title {
+      color: #94a3b8;
+    }
+
+    .field-group {
+      margin-bottom: 10px;
+    }
+
+    .field-group label {
+      margin-bottom: 4px;
+    }
+
+    .lookup-status {
+      margin: 4px 0 0 0;
+      min-height: 1.1rem;
+      font-size: 0.8rem;
+      line-height: 1.35;
+    }
+
+    .lookup-status:empty {
+      display: none;
+    }
+
+    .search-form-row {
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .search-form-row .field-group {
+      flex: 1;
+      min-width: 200px;
+      margin-bottom: 0;
+    }
+
+    .search-form-row button {
+      margin: 0 0 4px 0;
+      flex-shrink: 0;
+    }
+
+    .selected-person {
+      margin: 0 0 10px 0;
+      font-size: 0.85rem;
+      font-weight: 500;
       color: #475569;
     }
+
+    .selected-person:empty {
+      display: none;
+    }
+
+    .console-card-actions {
+      position: sticky;
+      top: 12px;
+    }
+
+    .console-card-receipt:not(:has(.provisioning-receipt:not(.hidden))) h2 {
+      color: #94a3b8;
+    }
+
+    .provision-actions {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #e2e8f0;
+    }
+
+    .provision-actions button {
+      width: 100%;
+      margin: 0;
+      padding: 10px 16px;
+    }
+
     label {
       display: block;
-      margin-bottom: 8px;
-      font-weight: 600;
-      color: #1e293b;
-      font-size: 0.95rem;
+      margin-bottom: 4px;
+      font-weight: 500;
+      color: #475569;
+      font-size: 0.8rem;
     }
+
+    .field-inline label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .field-inline input[type="checkbox"] {
+      width: auto;
+      margin: 0;
+    }
+
     input[type="text"],
     input[type="date"],
     input[type="number"],
     select,
     textarea {
       width: 100%;
-      padding: 12px 16px;
-      margin-bottom: 16px;
+      padding: 7px 10px;
+      margin-bottom: 0;
       box-sizing: border-box;
-      font-size: 1rem;
-      border: 2px solid #e2e8f0;
-      border-radius: 8px;
+      font-size: 0.875rem;
+      border: 1px solid #cbd5e1;
+      border-radius: 3px;
       background: #fff;
-      transition: all 0.2s ease;
       font-family: inherit;
     }
+
     input[type="text"]:focus,
     input[type="date"]:focus,
     input[type="number"]:focus,
     select:focus,
     textarea:focus {
-      border-color: #862BAB;
+      border-color: #64748b;
       outline: none;
-      box-shadow: 0 0 0 3px rgba(134, 43, 171, 0.1);
-      transform: translateY(-1px);
+      box-shadow: 0 0 0 2px rgba(100, 116, 139, 0.15);
     }
     button {
       padding: 8px 16px;
@@ -220,58 +327,60 @@
     .hidden {
       display: none;
     }
-    #clientStatus,
-    #vinStatus,
-    #installStatus {
-      margin-top: 12px;
-      font-weight: 600;
-      color: #dc2626;
-      text-align: center;
-      padding: 0;
-      border-radius: 8px;
-      min-height: 0;
-      transition: all 0.3s ease;
-    }
-    
-    #clientStatus:not(:empty),
-    #vinStatus:not(:empty),
-    #installStatus:not(:empty) {
-      padding: 12px;
-      min-height: 20px;
-      background: rgba(220, 38, 38, 0.1);
-    }
-    #imeiVerificationStatus {
-      padding: 0;
-      border-radius: 8px;
-      font-size: 0.9rem;
+    .status-line {
+      margin: 8px 0 0 0;
+      font-size: 0.8rem;
       font-weight: 500;
+      color: #b91c1c;
+      padding: 0;
       min-height: 0;
-      border: none;
-      transition: all 0.3s ease;
     }
-    
-    #imeiVerificationStatus:not(:empty) {
-      padding: 12px 16px;
-      min-height: 24px;
+
+    .status-line:empty {
+      display: none;
+    }
+
+    .status-line:not(:empty) {
+      padding: 8px 10px;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 3px;
+    }
+
+    #imeiVerificationStatus:not(:empty),
+    #simVerificationStatus:not(:empty),
+    #secondaryImeiVerificationStatus:not(:empty),
+    #secondarySimVerificationStatus:not(:empty) {
+      padding: 6px 8px;
+      background: #f8fafc;
       border: 1px solid #e2e8f0;
+      border-radius: 3px;
     }
+
     #imeiVerificationStatus span {
       display: block;
     }
-    
+
     .provisioning-preview {
-      margin: 20px 0 12px 0;
-      padding: 16px 18px;
-      border: 2px solid #cbd5e1;
-      border-radius: 10px;
+      margin: 0;
+      padding: 10px 12px;
+      border: 1px solid #e2e8f0;
+      border-radius: 3px;
       background: #f8fafc;
-      font-size: 0.92rem;
+      font-size: 0.82rem;
       color: #334155;
+      line-height: 1.45;
+    }
+
+    .provisioning-preview:empty::before {
+      content: "Select installation, VIN, and devices to see preview.";
+      color: #94a3b8;
+      font-style: italic;
     }
 
     .provisioning-preview-title {
-      margin: 0 0 8px 0;
-      font-size: 1.05rem;
+      margin: 0 0 6px 0;
+      font-size: 0.88rem;
       color: #1e293b;
     }
 
@@ -462,25 +571,28 @@
       margin-top: 16px;
     }
 
-    .receipt-copy-btn {
-      background: linear-gradient(135deg, #475569 0%, #334155 100%);
-      box-shadow: 0 4px 12px rgba(51, 65, 85, 0.25);
-    }
-
+    .receipt-copy-btn,
     .receipt-start-over-btn {
-      background: linear-gradient(135deg, #862BAB 0%, #6B21A8 100%);
+      background: #475569;
     }
 
-    .provisioning-action-row {
-      display: flex;
-      flex-direction: column;
-      align-items: stretch;
-      gap: 0;
-      margin-top: 8px;
+    .receipt-copy-btn:hover,
+    .receipt-start-over-btn:hover {
+      background: #334155;
     }
 
-    #startInstallBtn {
-      align-self: flex-start;
+    .provisioning-receipt-inner {
+      border-width: 1px;
+      border-radius: 4px;
+    }
+
+    @media (max-width: 960px) {
+      .console-grid {
+        grid-template-columns: 1fr;
+      }
+      .console-card-actions {
+        position: static;
+      }
     }
 
     @media (max-width: 600px) {
@@ -489,6 +601,14 @@
       }
       .console-main {
         padding: 12px;
+      }
+      .search-form-row {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .search-form-row button {
+        width: 100%;
+        margin-bottom: 0;
       }
     }
   </style>
@@ -511,123 +631,103 @@
       </div>
     </header>
 
-    <main class="console-main">
+    <main class="console-main" tabindex="-1">
       <div class="console-main-inner">
-        <p class="console-lede">Search an installation, confirm VIN and devices, then provision in Pegasus.</p>
+        <div class="console-grid">
+          <div class="console-col console-col-left">
+            <section id="clientSection" class="section console-card">
+              <h2 data-i18n="installation.clientSelection">Installation search</h2>
+              <form id="clientForm" class="search-form-row">
+                <div class="field-group">
+                  <label for="clientNameInput" data-i18n="installation.clientName">Client name or VIN prefix</label>
+                  <input type="text" id="clientNameInput" placeholder="" autocomplete="off" />
+                </div>
+                <button type="submit">Search</button>
+              </form>
+              <p id="clientStatus" class="status-line"></p>
+            </section>
 
-    <section id="clientSection" class="section console-section">
-      <h2 data-i18n="installation.clientSelection">Installation search</h2>
-      <form id="clientForm">
-        <label for="clientNameInput" data-i18n="installation.clientName">Client name or VIN prefix</label>
-        <input
-          type="text"
-          id="clientNameInput"
-          placeholder=""
-          autocomplete="off"
-        />
-        <button type="submit">Search installations</button>
-      </form>
-      <p id="clientStatus"></p>
-    </section>
+            <section id="vinSection" class="section console-card">
+              <h2 data-i18n="installation.vinSelection">Selected installation / vehicle</h2>
+              <div id="selectedPersonName" class="selected-person"></div>
+              <div class="field-group">
+                <label for="vinSelect">VIN</label>
+                <select id="vinSelect">
+                  <option value="">— Select VIN —</option>
+                </select>
+              </div>
+              <p id="vinStatus" class="status-line"></p>
+            </section>
 
-    <section id="vinSection" class="section console-section">
-      <h2 data-i18n="installation.vinSelection">Selected installation / VIN</h2>
-      <div id="selectedPersonName" style="margin-bottom:10px; font-weight:600; color:#334155;"></div>
-      <label for="vinSelect">VIN</label>
-      <select id="vinSelect">
-        <option value="">— Select VIN —</option>
-      </select>
-      <p id="vinStatus"></p>
-    </section>
+            <section id="deviceSection" class="section console-card">
+              <h2>Device inventory</h2>
 
-    <section id="deviceSection" class="section console-section">
-      <h2 data-i18n="installation.enterImeiSim">Devices &amp; provision</h2>
+              <div class="device-panel device-panel-primary">
+                <p class="device-panel-title">Primary device</p>
+                <div class="field-group">
+                  <label for="imeiInput" data-i18n="installation.imei">IMEI</label>
+                  <input type="text" id="imeiInput" placeholder="IMEI — live lookup" autocomplete="off" />
+                  <div id="imeiVerificationStatus" class="lookup-status" aria-live="polite"></div>
+                </div>
+                <div class="field-group">
+                  <label for="imeiConfirmInput">Confirm IMEI</label>
+                  <input type="text" id="imeiConfirmInput" placeholder="Retype IMEI" />
+                </div>
+                <div class="field-group">
+                  <label for="simInput">SIM ICCID (optional)</label>
+                  <input type="text" id="simInput" placeholder="8988 / 8901 prefix" autocomplete="off" />
+                  <div id="simVerificationStatus" class="lookup-status" aria-live="polite"></div>
+                </div>
+                <div class="field-group">
+                  <label for="simConfirmInput">Confirm SIM</label>
+                  <input type="text" id="simConfirmInput" placeholder="Retype ICCID (optional)" />
+                </div>
+              </div>
 
-      <div class="console-subsection">
-        <h3>Primary IMEI &amp; SIM</h3>
-      <label for="imeiInput" data-i18n="installation.imei">IMEI (primary device)</label>
-      <input
-        type="text"
-        id="imeiInput"
-        placeholder="Enter IMEI — searches Pegasus as you type"
-        autocomplete="off"
-      />
-      <div id="imeiVerificationStatus" style="margin-bottom:14px; min-height:1.25rem;" aria-live="polite"></div>
-      
-      <label for="imeiConfirmInput">Retype IMEI</label>
-      <input
-        type="text"
-        id="imeiConfirmInput"
-        placeholder="Retype IMEI"
-      />
+              <div class="device-panel device-panel-secondary">
+                <p class="device-panel-title">Secondary device (optional)</p>
+                <div class="field-inline">
+                  <label>
+                    <input type="checkbox" id="addSecondaryUnit" />
+                    Enable secondary unit
+                  </label>
+                </div>
+                <div id="secondaryUnitFields" class="hidden">
+                  <div class="field-group">
+                    <label for="secondaryImeiInput">Secondary IMEI</label>
+                    <input type="text" id="secondaryImeiInput" placeholder="IMEI — live lookup" autocomplete="off" />
+                    <div id="secondaryImeiVerificationStatus" class="lookup-status" aria-live="polite"></div>
+                  </div>
+                  <div class="field-group">
+                    <label for="secondarySimInput">Secondary SIM (optional)</label>
+                    <input type="text" id="secondarySimInput" placeholder="ICCID" autocomplete="off" />
+                    <div id="secondarySimVerificationStatus" class="lookup-status" aria-live="polite"></div>
+                  </div>
+                  <div class="field-group">
+                    <label for="secondarySimConfirmInput">Confirm secondary SIM</label>
+                    <input type="text" id="secondarySimConfirmInput" placeholder="Retype ICCID (optional)" />
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
 
-      <label for="simInput">SIM Card # (Optional)</label>
-      <input
-        type="text"
-        id="simInput"
-        placeholder="ICCID (8988 SuperSIM / 8901 Wireless) — optional, live lookup"
-        autocomplete="off"
-      />
-      <div id="simVerificationStatus" style="margin-bottom:14px; min-height:1.25rem;" aria-live="polite"></div>
-      
-      <label for="simConfirmInput">Retype SIM Card # (Optional)</label>
-      <input
-        type="text"
-        id="simConfirmInput"
-        placeholder="Retype SIM Card # (optional)"
-      />
+          <div class="console-col console-col-right">
+            <section class="section console-card console-card-actions">
+              <h2>Provisioning preview</h2>
+              <div id="provisioningPreviewPanel" class="provisioning-preview" aria-live="polite"></div>
+              <div class="provision-actions">
+                <button id="startInstallBtn" type="button" disabled data-i18n="buttons.startInstallation">Provision in Pegasus</button>
+              </div>
+              <p id="installStatus" class="status-line"></p>
+            </section>
 
-      </div>
-
-      <div class="console-subsection">
-        <h3>Secondary IMEI &amp; SIM (optional)</h3>
-      <label style="display:flex;align-items:center;margin-bottom:8px;">
-        <input type="checkbox" id="addSecondaryUnit" style="margin-right:8px;" />
-        Add secondary unit
-      </label>
-      <div id="secondaryUnitFields" class="hidden" style="width:100%;">
-        <label for="secondaryImeiInput">Secondary IMEI</label>
-        <input
-          type="text"
-          id="secondaryImeiInput"
-          placeholder="Secondary IMEI — searches Pegasus as you type"
-          autocomplete="off"
-        />
-        <div id="secondaryImeiVerificationStatus" style="margin-bottom:14px; min-height:1.25rem;" aria-live="polite"></div>
-        
-        <label for="secondarySimInput">Secondary SIM Card # (Optional)</label>
-        <input
-          type="text"
-          id="secondarySimInput"
-          placeholder="Secondary ICCID — optional, live lookup"
-          autocomplete="off"
-        />
-        <div id="secondarySimVerificationStatus" style="margin-bottom:14px; min-height:1.25rem;" aria-live="polite"></div>
-        
-        <label for="secondarySimConfirmInput">Retype Secondary SIM Card # (Optional)</label>
-        <input
-          type="text"
-          id="secondarySimConfirmInput"
-          placeholder="Retype Secondary SIM Card # (optional)"
-        />
-      </div>
-      </div>
-
-      <div class="console-subsection">
-        <h3>Provisioning preview</h3>
-      <div class="provisioning-action-row">
-        <div id="provisioningPreviewPanel" class="provisioning-preview" aria-live="polite"></div>
-        <button id="startInstallBtn" type="button" disabled data-i18n="buttons.startInstallation">Provision in Pegasus</button>
-      </div>
-      </div>
-
-      <p id="installStatus"></p>
-
-      <div class="console-subsection">
-        <h3>Provisioning result</h3>
-      <div id="provisioningReceiptPanel" class="provisioning-receipt hidden" aria-live="polite"></div>
-      </div>
-    </section>
+            <section class="section console-card console-card-receipt">
+              <h2>Provisioning result</h2>
+              <div id="provisioningReceiptPanel" class="provisioning-receipt hidden" aria-live="polite"></div>
+            </section>
+          </div>
+        </div>
       </div>
     </main>
   </div>
