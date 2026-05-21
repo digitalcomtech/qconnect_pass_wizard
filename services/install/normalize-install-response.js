@@ -54,12 +54,15 @@ function environmentLabel(environment) {
   return String(environment).toUpperCase();
 }
 
-function buildInstallContext(body, environment) {
+function buildInstallContext(body, environment, sourceDetails) {
   if (!body || typeof body !== "object") {
-    return { environment: environmentLabel(environment) };
+    const ctx = { environment: environmentLabel(environment) };
+    if (sourceDetails && sourceDetails.dryRun) ctx.dryRun = true;
+    return ctx;
   }
   return {
     environment: environmentLabel(environment),
+    ...(sourceDetails && sourceDetails.dryRun ? { dryRun: true } : {}),
     clientName: body.client_name != null ? String(body.client_name) : undefined,
     vin: body.vin != null ? String(body.vin) : undefined,
     installationId:
@@ -296,7 +299,7 @@ function normalizeInstallResponse({ httpStatus, json, body, environment, request
   const timestamp =
     source.details?.timestamp || source.timestamp || new Date().toISOString();
   const { success, status } = resolveOutcome(httpStatus, source);
-  const context = buildInstallContext(body, environment);
+  const context = buildInstallContext(body, environment, source.details);
 
   const stepsByKey =
     source.details?.stepsByKey ||
@@ -330,6 +333,8 @@ function normalizeInstallResponse({ httpStatus, json, body, environment, request
 
   const sanitizedHos = sanitizeStepData(source.details?.hosConfiguration, 0);
   const details = {
+    ...(source.details?.dryRun ? { dryRun: true } : {}),
+    ...(source.details?.testMode ? { testMode: true } : {}),
     ...(source.details?.groupId != null ? { groupId: source.details.groupId } : {}),
     ...(source.details?.vehicleId != null ? { vehicleId: source.details.vehicleId } : {}),
     ...(source.details?.simProcessed != null
@@ -357,7 +362,9 @@ function normalizeInstallResponse({ httpStatus, json, body, environment, request
       source.message != null
         ? String(source.message)
         : success
-          ? "Complete installation workflow executed successfully"
+          ? source.details?.dryRun
+            ? "Server dry-run complete — no Pegasus mutations performed"
+            : "Complete installation workflow executed successfully"
           : "Request failed",
     ...(source.code != null ? { code: String(source.code) } : {}),
     ...(requestId ? { requestId: String(requestId) } : {}),

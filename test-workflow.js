@@ -234,6 +234,42 @@ async function main() {
       : fakeSimJson.message || ""
   );
 
+  const dryRunBadRes = await fetch(`${BASE}/api/install/dry-run`, {
+    method: "POST",
+    headers: auth,
+    body: JSON.stringify({}),
+  });
+  const dryRunBadJson = await dryRunBadRes.json();
+  if (dryRunBadRes.status !== 400) {
+    throw new Error(
+      `install/dry-run empty body expected 400, got ${dryRunBadRes.status}: ${JSON.stringify(dryRunBadJson).slice(0, 160)}`
+    );
+  }
+  const dryRunFlag =
+    (dryRunBadJson.details && dryRunBadJson.details.dryRun) ||
+    (dryRunBadJson.context && dryRunBadJson.context.dryRun);
+  if (!dryRunFlag) {
+    throw new Error("install/dry-run validation response missing dryRun flag");
+  }
+  console.log("install/dry-run (validation):", dryRunBadRes.status, dryRunBadJson.code || "");
+
+  const dryRunNoAuthRes = await fetch(`${BASE}/api/install/dry-run`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      client_name: "smoke",
+      imei: "000000000000000",
+      vin: "SMOKEVIN",
+      installationId: "smoke-id",
+    }),
+  });
+  if (dryRunNoAuthRes.status !== 401 && dryRunNoAuthRes.status !== 403) {
+    throw new Error(
+      `install/dry-run without auth expected 401/403, got ${dryRunNoAuthRes.status}`
+    );
+  }
+  console.log("install/dry-run (no auth):", dryRunNoAuthRes.status);
+
   console.log("");
   console.log("OK — smoke finished (read-only). No /api/install or confirm calls.");
 }

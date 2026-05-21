@@ -127,7 +127,7 @@ function createHosHelpers({ pegasus, currentConfig }) {
     }
   }
 
-  return { processHosSegmentConfiguration };
+  return { processHosSegmentConfiguration, checkHosSegmentConfiguration };
 }
 
 module.exports = { createHosHelpers };

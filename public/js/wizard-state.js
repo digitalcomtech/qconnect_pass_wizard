@@ -47,6 +47,11 @@ function resetWizardUiToColdStart() {
   if (previewPanel) {
     previewPanel.classList.remove("provisioning-preview-done");
   }
+  if (typeof renderServerDryRunResult === "function") {
+    renderServerDryRunResult(null);
+  }
+  var dryStatus = document.getElementById("serverDryRunStatus");
+  if (dryStatus) dryStatus.textContent = "";
 
   // Clear obvious wizard inputs/status text (safe even if elements are missing)
   try {

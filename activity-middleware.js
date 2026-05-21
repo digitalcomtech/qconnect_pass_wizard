@@ -10,12 +10,18 @@ const {
 // Store active sessions in memory (in production, use Redis or database)
 const activeSessions = new Map();
 
+function isTrackedInstallMutationPath(path) {
+  if (!path) return false;
+  if (path.includes('/dry-run')) return false;
+  return path.includes('/api/install') || path.includes('/api/secondary-install');
+}
+
 /**
  * Middleware to start tracking installation sessions
  */
 function trackInstallationStart(req, res, next) {
   // Only track installation-related endpoints
-  if (!req.path.includes('/api/install') && !req.path.includes('/api/secondary-install')) {
+  if (!isTrackedInstallMutationPath(req.path)) {
     return next();
   }
 
@@ -71,7 +77,7 @@ function trackInstallationStart(req, res, next) {
  */
 function trackInstallationComplete(req, res, next) {
   // Only for installation endpoints
-  if (!req.path.includes('/api/install') && !req.path.includes('/api/secondary-install')) {
+  if (!isTrackedInstallMutationPath(req.path)) {
     return next();
   }
 

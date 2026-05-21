@@ -86,6 +86,7 @@ const { createSecondaryDeviceProcessor } = require("./services/install/secondary
 const { createSimHelpers } = require("./services/install/sim");
 const { createHosHelpers } = require("./services/install/hos");
 const { createCompleteInstallOrchestrator } = require("./services/install/complete-install-orchestrator");
+const { createDryRunOrchestrator } = require("./services/install/dry-run-orchestrator");
 const { normalizeInstallResponse } = require("./services/install/normalize-install-response");
 const { createSecondaryInstallOrchestrator } = require("./services/install/secondary-install-orchestrator");
 const { createConfirmInstallationOrchestrator } = require("./services/install/confirm-installation-orchestrator");
@@ -114,7 +115,10 @@ const processSecondaryDevice = createSecondaryDeviceProcessor({
   createSecondaryVehicle,
 });
 const { processSimCard } = createSimHelpers({ pegasus, currentConfig });
-const { processHosSegmentConfiguration } = createHosHelpers({ pegasus, currentConfig });
+const { processHosSegmentConfiguration, checkHosSegmentConfiguration } = createHosHelpers({
+  pegasus,
+  currentConfig,
+});
 
 const { runCompleteInstallOrchestration } = createCompleteInstallOrchestrator({
   TEST_MODE,
@@ -126,6 +130,15 @@ const { runCompleteInstallOrchestration } = createCompleteInstallOrchestrator({
   processHosSegmentConfiguration,
   processSimCard,
   processSecondaryDevice,
+});
+
+const { runInstallDryRun } = createDryRunOrchestrator({
+  ENVIRONMENT,
+  TEST_MODE,
+  currentConfig,
+  pegasus,
+  checkDuplicateInstallation,
+  checkHosSegmentConfiguration,
 });
 
 const { runSecondaryInstallOrchestration } = createSecondaryInstallOrchestrator({
@@ -228,6 +241,26 @@ function sendInstallApiResponse(req, res, result) {
   if (result.beforeSend) result.beforeSend();
   return res.status(result.status).json(payload);
 }
+
+app.post("/api/install/dry-run", authenticateToken, async (req, res) => {
+  try {
+    const result = await runInstallDryRun({ body: req.body });
+    return sendInstallApiResponse(req, res, result);
+  } catch (err) {
+    console.error("❌ Error in install dry-run:", err);
+    return sendInstallApiResponse(req, res, {
+      status: 500,
+      json: {
+        success: false,
+        status: "failed",
+        code: "DRY_RUN_ERROR",
+        message: "Internal server error during install dry-run",
+        error: err.message,
+        details: { dryRun: true, steps: [], warnings: [], errors: [] },
+      },
+    });
+  }
+});
 
 app.post("/api/install", authenticateToken, trackInstallationStart, async (req, res) => {
   try {

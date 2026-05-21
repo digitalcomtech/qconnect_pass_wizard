@@ -9,6 +9,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   clientForm.addEventListener("submit", onNextClient);
   vinSelect.addEventListener("change", applyVinSelection);
   startInstallBtn.addEventListener("click", onStartInstallation);
+  var serverDryRunBtn = document.getElementById("serverDryRunBtn");
+  if (serverDryRunBtn && typeof onServerDryRun === "function") {
+    serverDryRunBtn.addEventListener("click", onServerDryRun);
+  }
   initDeviceLookupListeners();
 
   document.getElementById("imeiConfirmInput").addEventListener("input", () => {

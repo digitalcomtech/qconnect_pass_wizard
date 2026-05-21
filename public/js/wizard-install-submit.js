@@ -83,39 +83,13 @@ async function onStartInstallation() {
   let data = null;
   let installPayload = null;
   try {
-    let clientName = sessionStorage.getItem("selectedClientFullName") || selectedClientName;
-    clientName = clientName.replace(/\s+NA\s*\/?\s*$/i, "").trim();
-
-    const payload = {
-      client_name: clientName,
-      imei,
-      vin: selectedVIN,
-      installationId: selectedInstallationId,
-    };
-    const selectedInstallationRaw = sessionStorage.getItem("selectedInstallation");
-    if (selectedInstallationRaw) {
-      try {
-        const selectedInstallation = JSON.parse(selectedInstallationRaw);
-        const licensePlate = selectedInstallation?.vehiculo?.placas;
-        if (licensePlate) {
-          payload.license_plate = licensePlate;
-        }
-        const vehiculoSubmarca = selectedInstallation?.vehiculo?.submarca;
-        if (vehiculoSubmarca) {
-          payload.vehiculo_submarca = vehiculoSubmarca;
-        }
-      } catch (parseError) {
-        console.warn("Failed to parse selected installation for license plate:", parseError);
-      }
-    }
-    if (sim) {
-      payload.sim_number = sim;
-    }
-    if (addSecondary && secondaryImei) {
-      payload.secondary_imei = secondaryImei;
-    }
-    if (addSecondary && secondarySim) {
-      payload.secondary_sim_number = secondarySim;
+    const payload =
+      typeof buildInstallRequestPayload === "function"
+        ? buildInstallRequestPayload()
+        : null;
+    if (!payload) {
+      installStatus.innerText = "🚨 Could not build install payload.";
+      return;
     }
 
     installPayload = payload;

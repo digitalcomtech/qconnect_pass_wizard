@@ -94,7 +94,27 @@ Use **QA test devices** your team has approved for lookup (not production IMEI/I
 | 21 | **Planned Pegasus actions** | Group, vehicle, device link, SIM processing, qservices duplicate check. |
 | 22 | **Provision button** | Enabled only when all blockers are resolved. |
 
-**Stop before step 23** if you are not authorized to mutate QA Pegasus for this run.
+### A6. Server dry-run (recommended before Phase B)
+
+Uses `POST /api/install/dry-run` with the same body as `POST /api/install`. **No Pegasus mutations**, repeats, or confirmations.
+
+| # | Step | Expected |
+|---|------|----------|
+| 23 | Click **Validate plan (server dry-run)** after search, VIN, and primary IMEI are set. | Status line updates; result panel appears below preview. |
+| 24 | Result label | Shows **Server dry-run · no mutation**. |
+| 25 | **`details.steps`** | Planned duplicate check, group, vehicle, device/SIM steps; each marked dry-run in data or message. |
+| 26 | **Credential warnings** | qservices / Pegasus token gaps surfaced when applicable. |
+| 27 | **Provision in Pegasus** | Still separate — dry-run does not replace the final mutation button. |
+
+**CLI probe (auth required):**
+
+```bash
+curl -s -X POST -H "Authorization: Bearer TOKEN" -H "Content-Type: application/json" \
+  -d '{"client_name":"QA Client","imei":"…","vin":"…","installationId":"…"}' \
+  http://localhost:8080/api/install/dry-run | jq '{success, code, message, details: {dryRun, steps: (.details.steps|length)}}'
+```
+
+**Stop before Phase B step 28** if you are not authorized to mutate QA Pegasus for this run.
 
 ---
 
@@ -104,14 +124,14 @@ Use **QA test devices** your team has approved for lookup (not production IMEI/I
 
 | # | Step | Expected |
 |---|------|----------|
-| 23 | Re-read preview; confirm **QA** and planned actions. | No surprises. |
-| 24 | Click **Provision in Pegasus**. | Request completes; receipt panel appears. |
-| 25 | Receipt **status badge** | Success, partial, or failed — matches outcome. |
-| 26 | Receipt **`details.steps`** (or legacy step summary) | Lists qservices duplicate check, group, vehicle, device, SIM, confirmation as applicable. |
-| 27 | Step outcomes | Group/vehicle/device/SIM steps show ok/fail with readable messages. |
-| 28 | **Secrets** | Receipt and UI show **no** tokens, passwords, or raw `auth` values. |
-| 29 | **Copy receipt summary** | Paste into a ticket; confirm VIN, installation ID, IMEI, SIM, and step list are useful for support. |
-| 30 | **Start over** | Page resets; receipt hidden; search fields cleared. |
+| 28 | Re-read preview and server dry-run; confirm **QA** and planned actions. | No surprises. |
+| 29 | Click **Provision in Pegasus**. | Request completes; receipt panel appears. |
+| 30 | Receipt **status badge** | Success, partial, or failed — matches outcome. |
+| 31 | Receipt **`details.steps`** (or legacy step summary) | Lists qservices duplicate check, group, vehicle, device, SIM, confirmation as applicable. |
+| 32 | Step outcomes | Group/vehicle/device/SIM steps show ok/fail with readable messages. |
+| 33 | **Secrets** | Receipt and UI show **no** tokens, passwords, or raw `auth` values. |
+| 34 | **Copy receipt summary** | Paste into a ticket; confirm VIN, installation ID, IMEI, SIM, and step list are useful for support. |
+| 35 | **Start over** | Page resets; receipt hidden; search fields cleared. |
 
 If `TEST_MODE=true` in server env, Pegasus mutation may be skipped — note that in your run log.
 
@@ -149,6 +169,7 @@ credentials: p1= Y/N  p256= Y/N  qservices= Y/N  search= Y/N
 search + VIN: Y/N
 primary IMEI/SIM lookup: Y/N
 preview complete (stopped before provision): Y/N
+server dry-run (POST /api/install/dry-run): Y/N
 Notes:
 ```
 

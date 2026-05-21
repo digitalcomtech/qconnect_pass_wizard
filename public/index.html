@@ -246,15 +246,30 @@
     }
 
     .provision-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
       margin-top: 10px;
       padding-top: 10px;
       border-top: 1px solid #e2e8f0;
     }
 
     .provision-actions button {
-      width: 100%;
+      flex: 1 1 auto;
+      min-width: 140px;
       margin: 0;
       padding: 10px 16px;
+    }
+
+    .provision-actions button.secondary-action {
+      background: #f1f5f9;
+      color: #0f172a;
+      border: 1px solid #cbd5e1;
+    }
+
+    .provision-actions button.secondary-action:hover:not(:disabled) {
+      background: #e2e8f0;
     }
 
     label {
@@ -447,6 +462,62 @@
 
     .provisioning-preview-done {
       opacity: 0.85;
+    }
+
+    .server-dry-run-panel {
+      margin-top: 14px;
+      padding: 12px 14px;
+      border: 1px dashed #94a3b8;
+      border-radius: 8px;
+      background: #f8fafc;
+      font-size: 0.9rem;
+    }
+
+    .server-dry-run-panel.hidden {
+      display: none;
+    }
+
+    .server-dry-run-tag {
+      margin: 0 0 8px 0;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #475569;
+    }
+
+    .server-dry-run-summary {
+      margin: 0 0 10px 0;
+      font-weight: 600;
+    }
+
+    .server-dry-run-summary.server-dry-run-ok {
+      color: #047857;
+    }
+
+    .server-dry-run-summary.server-dry-run-fail {
+      color: #b91c1c;
+    }
+
+    .server-dry-run-steps,
+    .server-dry-run-warn,
+    .server-dry-run-err {
+      margin: 8px 0 0 1.2rem;
+      padding: 0;
+    }
+
+    .server-dry-run-warn {
+      color: #b45309;
+    }
+
+    .server-dry-run-err {
+      color: #b91c1c;
+    }
+
+    #serverDryRunStatus {
+      margin-top: 8px;
+      font-size: 0.85rem;
+      color: #64748b;
     }
 
     .provisioning-receipt {
@@ -717,8 +788,11 @@
               <h2>Provisioning preview</h2>
               <div id="provisioningPreviewPanel" class="provisioning-preview" aria-live="polite"></div>
               <div class="provision-actions">
+                <button id="serverDryRunBtn" type="button" class="secondary-action">Validate plan (server dry-run)</button>
                 <button id="startInstallBtn" type="button" disabled data-i18n="buttons.startInstallation">Provision in Pegasus</button>
               </div>
+              <p id="serverDryRunStatus" class="status-line" aria-live="polite"></p>
+              <div id="serverDryRunPanel" class="server-dry-run-panel hidden" aria-live="polite"></div>
               <p id="installStatus" class="status-line"></p>
             </section>
 
@@ -739,6 +813,8 @@
   <script src="./js/wizard-auth.js"></script>
   <script src="./js/wizard-api.js"></script>
   <script src="./js/wizard-provisioning-preview.js"></script>
+  <script src="./js/wizard-install-payload.js"></script>
+  <script src="./js/wizard-provisioning-dry-run.js"></script>
   <script src="./js/wizard-provisioning-receipt.js"></script>
   <script src="./js/wizard-utils.js"></script>
   <script src="./js/installation-run-store.js"></script>
