@@ -10,6 +10,21 @@ Small scripts for config checks, smoke tests, and drift audits. Run from the **r
 
 ---
 
+## `npm run qa:preflight` — QA dry-run preflight (`scripts/qa-dry-run-preflight.js`)
+
+Read-only checks before a manual QA dry-run. Verifies `healthz` is **qa**, JWT login works, and `/api/health/credentials` has Pegasus1, Pegasus256, qservices, and search enabled. **Does not** call `/api/install`.
+
+Exits non-zero if environment is not `qa` (unless `QA_DRY_RUN_ALLOW_PROD=true`).
+
+```bash
+npm start   # ENVIRONMENT=qa, .env.local loaded
+npm run qa:preflight
+```
+
+Full supervisor checklist: **`docs/QA_DRY_RUN_CHECKLIST.md`**.
+
+---
+
 ## `npm run smoke` — authenticated smoke (`test-workflow.js`)
 
 Hits a **running** server with a real login + JWT. **Read-only** (no install / confirm / SIM writes).

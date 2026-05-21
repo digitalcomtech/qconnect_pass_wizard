@@ -8,6 +8,7 @@
     "open:chrome": "wait-on http://localhost:8080 && open -a \"Google Chrome\" http://localhost:8080",
     "dev": "concurrently \"npm run serve\" \"npm run open:chrome\"",
     "smoke": "node test-workflow.js",
+    "qa:preflight": "node scripts/qa-dry-run-preflight.js",
     "validate:config": "node scripts/validate-config.js",
     "audit:routes": "node scripts/audit-routes.js",
     "audit:activity": "node scripts/audit-activity-json.js",
