@@ -16,6 +16,8 @@ const BASE = (process.env.WIZARD_BASE_URL || 'http://localhost:8080').replace(/\
 const USER = process.env.WIZARD_SMOKE_USER || 'installer';
 const PASS = process.env.WIZARD_SMOKE_PASSWORD || 'installer123';
 const ALLOW_PROD = process.env.QA_DRY_RUN_ALLOW_PROD === 'true';
+const TOKEN_FIX =
+  'Run npm run pegasus:fetch-tokens and restart the server (or npm run pegasus:refresh-and-start).';
 
 function fail(msg) {
   console.error('FAIL:', msg);
@@ -28,6 +30,21 @@ function pass(msg) {
 
 function warn(msg) {
   console.warn('WARN:', msg);
+}
+
+function printTokenHealth(name, health) {
+  if (!health) {
+    console.log(`  ${name}: (no live probe data — restart server after token refresh)`);
+    return;
+  }
+  console.log(`  ${name}:`);
+  console.log(`    configured: ${health.configured}`);
+  console.log(`    live:       ${health.live}`);
+  console.log(`    status:     ${health.status == null ? '—' : health.status}`);
+  console.log(`    state:      ${health.state}`);
+  if (!health.live && health.likelyFix) {
+    console.log(`    likely fix: ${health.likelyFix}`);
+  }
 }
 
 async function main() {
@@ -76,36 +93,46 @@ async function main() {
   if (!credRes.ok) fail(`/api/health/credentials → HTTP ${credRes.status}`);
   const cred = await credRes.json();
 
-  const flags = {
-    pegasus1TokenConfigured: cred.pegasus1TokenConfigured,
-    pegasus256TokenConfigured: cred.pegasus256TokenConfigured,
-    qservicesTokenConfigured: cred.qservicesTokenConfigured,
-    deviceLookupAvailable: cred.deviceLookupAvailable,
-    simLookupAvailable: cred.simLookupAvailable,
-    installationSearchAvailable: cred.installationSearchAvailable,
-  };
-
   console.log('');
-  console.log('credentials (from /api/health/credentials):');
-  Object.keys(flags).forEach((k) => {
-    console.log(`  ${k}:`, flags[k]);
-  });
-
-  const required = [
-    'pegasus1TokenConfigured',
-    'pegasus256TokenConfigured',
-    'qservicesTokenConfigured',
-    'installationSearchAvailable',
-  ];
-  const missing = required.filter((k) => !flags[k]);
-  if (missing.length) {
-    fail(`missing credentials for full QA dry-run: ${missing.join(', ')}`);
+  console.log('Pegasus tokens (configured vs live):');
+  if (cred.tokens) {
+    printTokenHealth('qservices', cred.tokens.qservices);
+    printTokenHealth('pegasus1', cred.tokens.pegasus1);
+    printTokenHealth('pegasus256', cred.tokens.pegasus256);
+  } else {
+    warn('Server did not return tokens.* — restart server after upgrading credential diagnostics.');
+    console.log('  pegasus1TokenConfigured:', cred.pegasus1TokenConfigured);
+    console.log('  pegasus256TokenConfigured:', cred.pegasus256TokenConfigured);
+    console.log('  qservicesTokenConfigured:', cred.qservicesTokenConfigured);
   }
-  pass('all required credential flags true');
 
-  if (cfg.credentials) {
+  const requiredConfigured = [
+    ['pegasus1TokenConfigured', cred.pegasus1TokenConfigured],
+    ['pegasus256TokenConfigured', cred.pegasus256TokenConfigured],
+    ['qservicesTokenConfigured', cred.qservicesTokenConfigured],
+  ];
+  const missingConfigured = requiredConfigured.filter(([, v]) => !v).map(([k]) => k);
+  if (missingConfigured.length) {
+    fail(`token env vars missing on server: ${missingConfigured.join(', ')}. ${TOKEN_FIX}`);
+  }
+  pass('all required tokens configured on server');
+
+  if (cred.tokens) {
+    const notLive = Object.entries(cred.tokens).filter(([, h]) => !h.live);
+    if (notLive.length) {
+      fail(
+        `tokens not live on running server: ${notLive.map(([k]) => k).join(', ')}. ${TOKEN_FIX}`
+      );
+    }
+    pass('all tokens live on running server (upstream auth OK)');
+  }
+
+  if (cfg.credentials && cred.tokens) {
     if (cfg.credentials.pegasus1TokenConfigured !== cred.pegasus1TokenConfigured) {
-      warn('/api/config credentials disagree with /api/health/credentials (pegasus1)');
+      warn('/api/config credentials disagree with /api/health/credentials (pegasus1 configured)');
+    }
+    if (cfg.credentials.pegasus1TokenLive !== cred.tokens.pegasus1.live) {
+      warn('/api/config vs /api/health/credentials pegasus1 live mismatch');
     }
   }
 
@@ -122,12 +149,14 @@ async function main() {
     fail(`/api/health/pegasus → HTTP ${pegRes.status}`);
   }
 
-  if (peg.success) {
-    pass(`qservices live probe HTTP ${peg.status || 'ok'}`);
+  if (peg.success && (peg.status === 200 || peg.status === undefined)) {
+    pass(`qservices live probe HTTP ${peg.status || 200}`);
     if (peg.upstream) console.log('  upstream:', peg.upstream);
+  } else if (cred.tokens && cred.tokens.qservices.live) {
+    pass('qservices live (from /api/health/credentials tokens.qservices)');
   } else {
-    warn(
-      `qservices live probe not healthy: ${peg.message || peg.code || pegRes.status}`
+    fail(
+      `qservices live probe not healthy: ${peg.message || peg.code || pegRes.status}. ${TOKEN_FIX}`
     );
   }
 

@@ -32,11 +32,14 @@ async function onNextClient(e) {
         headers: getAuthHeaders()
       }
     );
-    if (!resp.ok) throw new Error(`Search failed: ${resp.status}`);
     const data = await resp.json();
-    
-    if (!data.success) {
-      throw new Error(data.message || 'Search failed');
+
+    if (!resp.ok || !data.success) {
+      const msg =
+        typeof formatPegasusApiError === "function"
+          ? formatPegasusApiError(resp, data, "search")
+          : data.message || `Search failed: ${resp.status}`;
+      throw new Error(msg);
     }
     
     const installationsArray = data.installations;

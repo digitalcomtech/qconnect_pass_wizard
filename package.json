@@ -16,6 +16,9 @@
     "test:credentials": "node scripts/test-credential-diagnostics.js",
     "test:install-response": "node scripts/test-install-response-normalize.js",
     "pegasus:fetch-tokens": "node scripts/fetch-pegasus-tokens.js",
+    "pegasus:refresh-and-start": "node scripts/pegasus-refresh-and-start.js",
+    "pegasus:refresh-and-preflight": "node scripts/pegasus-refresh-and-preflight.js",
+    "pegasus:live-probe": "node scripts/pegasus-live-probe-cli.js",
     "pegasus:probe-qservices": "node scripts/probe-qservices-auth.js",
     "test:qservices-hint": "node scripts/test-qservices-auth-hint.js",
     "test:qservices-response": "node scripts/test-qservices-response.js"

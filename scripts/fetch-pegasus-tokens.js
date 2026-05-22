@@ -102,8 +102,9 @@ async function main() {
   fs.writeFileSync(OUT, lines.join('\n') + '\n', 'utf8');
   console.log('');
   console.log('Wrote', OUT);
-  console.log('Load before starting the server, e.g.:');
-  console.log('  set -a && source .env.local && set +a && npm start');
+  console.log('Restart the server so it loads these tokens, e.g.:');
+  console.log('  npm run pegasus:refresh-and-start');
+  console.log('Or: set -a && source .env.local && set +a && npm start');
 }
 
 if (require.main === module) {

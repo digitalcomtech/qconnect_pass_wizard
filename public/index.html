@@ -52,6 +52,25 @@
       color: #0f172a;
     }
 
+    .header-credential-status {
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 6px;
+      max-width: 420px;
+      line-height: 1.3;
+    }
+
+    .header-credential-ok {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .header-credential-warn {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
     .console-header-right {
       display: flex;
       align-items: center;
@@ -690,6 +709,7 @@
       <div class="console-header-left">
         <h1 data-i18n="app.title">PASS Provisioning Console</h1>
         <span class="env-badge" id="consoleEnvironment">PROD</span>
+        <span id="headerCredentialStatus" class="header-credential-status" hidden></span>
       </div>
       <div class="console-header-right">
         <select id="languageSelector" class="lang-select" aria-label="Language">
@@ -811,6 +831,7 @@
   <script src="./js/activity-tracker.js"></script>
   <script src="./js/wizard-console-mode.js"></script>
   <script src="./js/wizard-auth.js"></script>
+  <script src="./js/wizard-credential-status.js"></script>
   <script src="./js/wizard-api.js"></script>
   <script src="./js/wizard-provisioning-preview.js"></script>
   <script src="./js/wizard-install-payload.js"></script>

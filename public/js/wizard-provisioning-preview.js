@@ -199,16 +199,45 @@ function refreshProvisioningPreview() {
   }
 
   const credWarnings = [];
-  if (creds && !creds.qservicesTokenConfigured) {
-    credWarnings.push(
-      "qservices Bearer token is not configured. Installation search and qservices-side confirmation may return 401. IMEI/SIM provisioning via api.pegasusgateway.com can still proceed."
-    );
-  }
-  if (creds && !creds.deviceLookupAvailable) {
-    credWarnings.push("Pegasus1 token missing — device lookup may fail.");
-  }
-  if (creds && !creds.simLookupAvailable) {
-    credWarnings.push("Pegasus1/256 SIM tokens incomplete — SIM lookup may fail.");
+  if (creds && creds.tokens) {
+    const t = creds.tokens;
+    if (t.qservices && !t.qservices.configured) {
+      credWarnings.push(
+        "qservices token missing — run npm run pegasus:fetch-tokens and restart the server."
+      );
+    } else if (t.qservices && t.qservices.configured && !t.qservices.live) {
+      credWarnings.push(
+        t.qservices.state === "expired"
+          ? "qservices token expired — refresh tokens and restart the server."
+          : "qservices token not live — refresh tokens and restart the server."
+      );
+    }
+    if (t.pegasus1 && t.pegasus1.configured && !t.pegasus1.live) {
+      credWarnings.push(
+        t.pegasus1.state === "expired"
+          ? "Pegasus1 token expired — device lookup will fail until refresh."
+          : "Pegasus1 token not live."
+      );
+    }
+    if (t.pegasus256 && t.pegasus256.configured && !t.pegasus256.live) {
+      credWarnings.push(
+        t.pegasus256.state === "expired"
+          ? "Pegasus256 token expired — some SIM paths may fail until refresh."
+          : "Pegasus256 token not live."
+      );
+    }
+  } else {
+    if (creds && !creds.qservicesTokenConfigured) {
+      credWarnings.push(
+        "qservices Bearer token is not configured. Run npm run pegasus:fetch-tokens and restart the server."
+      );
+    }
+    if (creds && !creds.deviceLookupAvailable) {
+      credWarnings.push("Pegasus1 token missing — device lookup may fail.");
+    }
+    if (creds && !creds.simLookupAvailable) {
+      credWarnings.push("Pegasus1/256 SIM tokens incomplete — SIM lookup may fail.");
+    }
   }
 
   const planned = buildPlannedActions(secondaryEnabled, primarySim, secondarySim);

@@ -32,6 +32,9 @@ async function loadAppConfig() {
     }
 
     if (typeof refreshProvisioningPreview === "function") refreshProvisioningPreview();
+    if (typeof refreshHeaderCredentialStatus === "function") {
+      refreshHeaderCredentialStatus();
+    }
   } catch (err) {
     console.error("Failed to load app config:", err);
     // Fallback to production config

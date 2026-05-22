@@ -6,6 +6,7 @@
 const express = require("express");
 const {
   buildPegasusCredentialDiagnostics,
+  buildPegasusCredentialDiagnosticsWithLive,
 } = require("../services/pegasus/credential-diagnostics");
 const { missingQservicesTokenMessage } = require("../services/pegasus/qservices-auth-hint");
 const { readQservicesJson } = require("../services/pegasus/qservices-response");
@@ -32,30 +33,71 @@ function createApiMetaRouter({
 }) {
   const router = express.Router();
 
-  router.get("/config", authenticateToken, (req, res) => {
-    const credentials = buildPegasusCredentialDiagnostics(currentConfig, ENVIRONMENT);
-    res.json({
-      environment: ENVIRONMENT,
-      testMode: TEST_MODE,
-      pegasusBaseUrl: currentConfig.pegasusBaseUrl,
-      credentials: {
-        pegasus1TokenConfigured: credentials.pegasus1TokenConfigured,
-        pegasus256TokenConfigured: credentials.pegasus256TokenConfigured,
-        qservicesTokenConfigured: credentials.qservicesTokenConfigured,
-        deviceLookupAvailable: credentials.deviceLookupAvailable,
-        simLookupAvailable: credentials.simLookupAvailable,
-        installationSearchAvailable: credentials.installationSearchAvailable,
-      },
-    });
+  function credentialsSummary(credentials) {
+    return {
+      pegasus1TokenConfigured: credentials.pegasus1TokenConfigured,
+      pegasus256TokenConfigured: credentials.pegasus256TokenConfigured,
+      qservicesTokenConfigured: credentials.qservicesTokenConfigured,
+      pegasus1TokenLive: credentials.pegasus1TokenLive,
+      pegasus256TokenLive: credentials.pegasus256TokenLive,
+      qservicesTokenLive: credentials.qservicesTokenLive,
+      deviceLookupAvailable: credentials.deviceLookupAvailable,
+      simLookupAvailable: credentials.simLookupAvailable,
+      installationSearchAvailable: credentials.installationSearchAvailable,
+      tokens: credentials.tokens,
+      tokenRefreshHint: credentials.tokenRefreshHint,
+    };
+  }
+
+  router.get("/config", authenticateToken, async (req, res) => {
+    try {
+      const credentials = await buildPegasusCredentialDiagnosticsWithLive(
+        currentConfig,
+        ENVIRONMENT,
+        pegasus
+      );
+      res.json({
+        environment: ENVIRONMENT,
+        testMode: TEST_MODE,
+        pegasusBaseUrl: currentConfig.pegasusBaseUrl,
+        credentials: credentialsSummary(credentials),
+      });
+    } catch (err) {
+      const credentials = buildPegasusCredentialDiagnostics(currentConfig, ENVIRONMENT);
+      res.json({
+        environment: ENVIRONMENT,
+        testMode: TEST_MODE,
+        pegasusBaseUrl: currentConfig.pegasusBaseUrl,
+        credentials: credentialsSummary(credentials),
+        credentialsProbeError: err.message,
+      });
+    }
   });
 
-  /** Configuration-only diagnostics; no upstream Pegasus calls. */
-  router.get("/health/credentials", authenticateToken, (req, res) => {
+  /** Credential diagnostics with live upstream probes (no secrets). */
+  router.get("/health/credentials", authenticateToken, async (req, res) => {
     res.set("Cache-Control", "no-store");
-    res.json({
-      success: true,
-      ...buildPegasusCredentialDiagnostics(currentConfig, ENVIRONMENT),
-    });
+    try {
+      const credentials = await buildPegasusCredentialDiagnosticsWithLive(
+        currentConfig,
+        ENVIRONMENT,
+        pegasus
+      );
+      const allLive =
+        credentials.tokens.qservices.live &&
+        credentials.tokens.pegasus1.live &&
+        credentials.tokens.pegasus256.live;
+      res.json({
+        success: allLive,
+        ...credentials,
+      });
+    } catch (err) {
+      res.status(503).json({
+        success: false,
+        message: err.message,
+        ...buildPegasusCredentialDiagnostics(currentConfig, ENVIRONMENT),
+      });
+    }
   });
 
   router.get("/health/pegasus", authenticateToken, async (req, res) => {

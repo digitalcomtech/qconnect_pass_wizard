@@ -10,14 +10,29 @@ Small scripts for config checks, smoke tests, and drift audits. Run from the **r
 
 ---
 
+## Pegasus token refresh (local dev)
+
+Tokens in `.env.local` expire; **configured ≠ live**. The running server only picks up new values after restart.
+
+| Command | Purpose |
+|---------|---------|
+| `npm run pegasus:fetch-tokens` | Write fresh `QA_*_TOKEN` vars to `.env.local` (needs `PEGASUS_AUTH_USERNAME` / `PASSWORD`) |
+| `npm run pegasus:live-probe` | Probe tokens from `.env.local` without a server |
+| `npm run pegasus:refresh-and-start` | Fetch tokens → load `.env.local` → `node server.js` |
+| `npm run pegasus:refresh-and-preflight` | Fetch → live probe → `qa:preflight` (server must use same `.env.local`) |
+
+`/api/health/credentials` returns per-token `configured`, `live`, `status`, `state` (`missing` \| `expired` \| `live`), and `likelyFix`.
+
+---
+
 ## `npm run qa:preflight` — QA dry-run preflight (`scripts/qa-dry-run-preflight.js`)
 
-Read-only checks before a manual QA dry-run. Verifies `healthz` is **qa**, JWT login works, and `/api/health/credentials` has Pegasus1, Pegasus256, qservices, and search enabled. **Does not** call `/api/install`.
+Read-only checks before a manual QA dry-run. Verifies `healthz` is **qa**, JWT login works, and **live** Pegasus tokens on the **running** server (not just env vars present). **Does not** call `/api/install`.
 
-Exits non-zero if environment is not `qa` (unless `QA_DRY_RUN_ALLOW_PROD=true`).
+Fails if any token is configured but upstream returns 401. Likely fix printed: `npm run pegasus:fetch-tokens` and restart (or `pegasus:refresh-and-start`).
 
 ```bash
-npm start   # ENVIRONMENT=qa, .env.local loaded
+npm run pegasus:refresh-and-start   # recommended when tokens expired
 npm run qa:preflight
 ```
 

@@ -5,10 +5,11 @@
 const express = require("express");
 const { lookupSimByIccid } = require("../services/pegasus/sim-lookup");
 const { resolveApiAuthenticateToken } = require("../services/pegasus/auth-token");
+const { missingQservicesTokenMessage } = require("../services/pegasus/qservices-auth-hint");
 const {
-  missingQservicesTokenMessage,
-  rejectedQservicesTokenMessage,
-} = require("../services/pegasus/qservices-auth-hint");
+  pegasus1TokenExpiredMessage,
+  qservicesTokenExpiredMessage,
+} = require("../services/pegasus/token-auth-messages");
 const {
   readQservicesJson,
   qservicesErrorToHttpStatus,
@@ -91,10 +92,11 @@ function createPegasusReadRouter({ pegasus, currentConfig, authenticateToken, en
         );
         const message =
           response.status === 401
-            ? rejectedQservicesTokenMessage(environment || "qa")
+            ? qservicesTokenExpiredMessage()
             : `Pegasus API error: HTTP ${response.status}`;
         return res.status(response.status).json({
           success: false,
+          code: response.status === 401 ? "qservices_token_expired" : undefined,
           message,
           upstream,
           details: errBody,
@@ -263,9 +265,14 @@ function createPegasusReadRouter({ pegasus, currentConfig, authenticateToken, en
             message: "Device not found - IMEI does not exist in the system",
           });
         }
+        const imeiMessage =
+          deviceResp.status === 401
+            ? pegasus1TokenExpiredMessage()
+            : `Pegasus API error: ${deviceResp.status}`;
         return res.status(deviceResp.status).json({
           success: false,
-          message: `Pegasus API error: ${deviceResp.status}`,
+          code: deviceResp.status === 401 ? "pegasus1_token_expired" : undefined,
+          message: imeiMessage,
         });
       }
 
@@ -359,6 +366,7 @@ function createPegasusReadRouter({ pegasus, currentConfig, authenticateToken, en
 
       return res.status(result.status).json({
         success: false,
+        code: result.code,
         message: result.message,
         simType: result.simType,
         iccid: result.iccid,

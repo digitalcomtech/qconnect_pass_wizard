@@ -7,9 +7,16 @@
 
 const API_HOST = 'api.pegasusgateway.com';
 const { buildQservicesAuthHint, missingQservicesTokenMessage } = require('./qservices-auth-hint');
+const { runAllCredentialLiveProbes } = require('./credential-live-probes');
+const { TOKEN_REFRESH_FIX } = require('./token-auth-messages');
 
 function tokenConfigured(value) {
   return typeof value === 'string' && value.trim().length > 0;
+}
+
+function availabilityFromToken(tokenHealth) {
+  if (!tokenHealth.configured) return false;
+  return tokenHealth.live === true;
 }
 
 /**
@@ -92,11 +99,62 @@ function buildPegasusCredentialDiagnostics(currentConfig, environment) {
     },
     qservicesAuthHint: qservicesHint,
     notes,
+    tokenRefreshHint: TOKEN_REFRESH_FIX,
     timestamp: new Date().toISOString(),
+  };
+}
+
+/**
+ * Configured flags + live upstream probes (no secrets).
+ * @param {object} pegasus - pegasus client
+ */
+async function buildPegasusCredentialDiagnosticsWithLive(
+  currentConfig,
+  environment,
+  pegasus
+) {
+  const base = buildPegasusCredentialDiagnostics(currentConfig, environment);
+  const live = await runAllCredentialLiveProbes(pegasus, currentConfig);
+
+  const tokens = {
+    pegasus1: live.pegasus1,
+    pegasus256: live.pegasus256,
+    qservices: live.qservices,
+  };
+
+  const deviceLookupAvailable = availabilityFromToken(tokens.pegasus1);
+  const simLookupAvailable =
+    availabilityFromToken(tokens.pegasus256) || availabilityFromToken(tokens.pegasus1);
+  const installationSearchAvailable = availabilityFromToken(tokens.qservices);
+
+  const notes = [...base.notes];
+  for (const [name, health] of Object.entries(tokens)) {
+    if (health.state === 'expired') {
+      notes.push(
+        `${name} token is configured but upstream returned HTTP ${health.status} (likely expired). ${TOKEN_REFRESH_FIX}`
+      );
+    } else if (health.state === 'missing') {
+      notes.push(`${name} token env var is missing. ${TOKEN_REFRESH_FIX}`);
+    }
+  }
+
+  return {
+    ...base,
+    deviceLookupAvailable,
+    simLookupAvailable,
+    installationSearchAvailable,
+    pegasus1TokenLive: tokens.pegasus1.live,
+    pegasus256TokenLive: tokens.pegasus256.live,
+    qservicesTokenLive: tokens.qservices.live,
+    tokens,
+    notes,
+    liveProbedAt: new Date().toISOString(),
   };
 }
 
 module.exports = {
   buildPegasusCredentialDiagnostics,
+  buildPegasusCredentialDiagnosticsWithLive,
   tokenConfigured,
+  availabilityFromToken,
 };

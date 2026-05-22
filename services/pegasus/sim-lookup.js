@@ -102,6 +102,28 @@ async function lookupSimByIccid(pegasus, currentConfig, iccid, { timeoutMs = 100
   });
   checkedInstances.push(pegasus1);
 
+  const auth401 =
+    pegasus256.httpStatus === 401 ||
+    pegasus1.httpStatus === 401 ||
+    pegasus256.httpStatus === 403 ||
+    pegasus1.httpStatus === 403;
+  if (
+    auth401 &&
+    !pegasus256.found &&
+    !pegasus1.found
+  ) {
+    return {
+      success: false,
+      status: 401,
+      code: "pegasus_sim_token_expired",
+      message:
+        "Pegasus1/Pegasus256 token expired. Run npm run pegasus:fetch-tokens and restart the server.",
+      simType,
+      iccid,
+      checkedInstances,
+    };
+  }
+
   if (pegasus1.found) {
     const sim = pegasus1.sim;
     return {

@@ -206,10 +206,11 @@ async function runImeiLookup(isSecondary) {
         vehicleName: data && data.vehicleName,
         vehicleId: data && data.vehicleId,
       });
-      statusEl.innerHTML = lookupStatusHtml(
-        "err",
-        `❌ ${data.message || "IMEI not available for provisioning"}`
-      );
+      const imeiErrMsg =
+        typeof formatPegasusApiError === "function"
+          ? formatPegasusApiError(resp, data, "imei")
+          : data.message || "IMEI not available for provisioning";
+      statusEl.innerHTML = lookupStatusHtml("err", `❌ ${imeiErrMsg}`);
     }
   } catch (err) {
     if (!target.isCurrentSeq(seq)) return;
@@ -341,10 +342,11 @@ async function runSimLookup(isSecondary) {
         data.checkedInstances && data.checkedInstances.length
           ? ` Checked: ${data.checkedInstances.join(", ")}.`
           : "";
-      statusEl.innerHTML = lookupStatusHtml(
-        "err",
-        `❌ ${data.message || "SIM not found"}${checked}`
-      );
+      const simErrMsg =
+        typeof formatPegasusApiError === "function"
+          ? formatPegasusApiError(resp, data, "sim")
+          : data.message || "SIM not found";
+      statusEl.innerHTML = lookupStatusHtml("err", `❌ ${simErrMsg}${checked}`);
     }
   } catch (err) {
     if (!target.isCurrentSeq(seq)) return;
