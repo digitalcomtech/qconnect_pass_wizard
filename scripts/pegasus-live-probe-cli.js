@@ -3,12 +3,14 @@
 
 /**
  * Live Pegasus token probes using .env.local (no running server required).
- *   node scripts/pegasus-live-probe-cli.js
+ *   npm run pegasus:live-probe
  */
 
 const { loadEnvLocal } = require('./load-env-local');
-const config = require('../config');
-const pegasus = require('../pegasus-client');
+const {
+  getRuntimeAppConfig,
+  createRuntimePegasusClient,
+} = require('./runtime-app-config');
 const { buildPegasusCredentialDiagnosticsWithLive } = require('../services/pegasus/credential-diagnostics');
 
 function printTokenRow(label, health) {
@@ -24,16 +26,18 @@ function printTokenRow(label, health) {
 
 async function main() {
   const loaded = loadEnvLocal({ override: true });
+  const runtime = getRuntimeAppConfig({ loadEnvLocal: false });
+  const { environment, currentConfig } = runtime;
+  const pegasus = createRuntimePegasusClient(runtime);
+
   console.log('--- Pegasus live token probes ---');
   console.log('.env.local:', loaded.exists ? loaded.path : 'missing', `(${loaded.loaded} vars)`);
-  console.log('ENVIRONMENT:', process.env.ENVIRONMENT || config.ENVIRONMENT);
+  console.log('ENVIRONMENT:', environment);
   console.log('');
 
-  const env = (process.env.ENVIRONMENT || config.ENVIRONMENT || 'qa').toLowerCase();
-  const currentConfig = config.ENV_CONFIG[env] || config.ENV_CONFIG.qa;
   const cred = await buildPegasusCredentialDiagnosticsWithLive(
     currentConfig,
-    env,
+    environment,
     pegasus
   );
 
