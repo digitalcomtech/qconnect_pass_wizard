@@ -60,13 +60,31 @@ async function fetchPegasusAuthToken({
   };
 }
 
-/** Prefer Pegasus1 Authenticate token for api.pegasusgateway.com when set. */
+/**
+ * Authenticate token for api.pegasusgateway.com (devices, groups, vehicles, HOS).
+ * Prefer Pegasus256 (production/qconnect site); Pegasus1 is fallback only.
+ * Never use qservices Bearer (pegasusToken) on the main API host.
+ */
 function resolveApiAuthenticateToken(config) {
-  return config.pegasus1Token || config.pegasusToken || '';
+  if (!config) return '';
+  if (config.pegasus256Token && String(config.pegasus256Token).trim()) {
+    return config.pegasus256Token;
+  }
+  if (config.pegasus1Token && String(config.pegasus1Token).trim()) {
+    return config.pegasus1Token;
+  }
+  return '';
+}
+
+/** Pegasus1 warehouse token only (SIM activate in Pegasus1). */
+function resolvePegasus1WarehouseToken(config) {
+  if (!config || !config.pegasus1Token) return '';
+  return String(config.pegasus1Token).trim();
 }
 
 module.exports = {
   fetchPegasusAuthToken,
   resolveApiAuthenticateToken,
+  resolvePegasus1WarehouseToken,
   AUTH_URL,
 };

@@ -32,11 +32,13 @@ function credentialWarnings(currentConfig, environment) {
       'qservices Bearer not configured — duplicate check and confirmation may fail on real install.'
     );
   }
-  if (!creds.pegasus1TokenConfigured) {
-    warnings.push('Pegasus1 token missing — group/vehicle/device APIs may fail on real install.');
-  }
   if (!creds.pegasus256TokenConfigured) {
-    warnings.push('Pegasus256 token missing — some SIM paths may fail on real install.');
+    warnings.push(
+      'Pegasus256 token missing — device/group/vehicle APIs and primary SIM lookup may fail on real install.'
+    );
+  }
+  if (!creds.pegasus1TokenConfigured) {
+    warnings.push('Pegasus1 token missing — warehouse SIM activate may fail on real install.');
   }
   return warnings;
 }

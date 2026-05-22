@@ -71,9 +71,14 @@ if (!currentConfig.pegasusToken) {
     `[startup] qservices Bearer token for "${ENVIRONMENT}" is empty (${ENVIRONMENT === "production" ? "PROD_PEGASUS_TOKEN" : "QA_PEGASUS_TOKEN"}). Installation search returns 503 until set; run npm run pegasus:fetch-tokens. See GET /api/health/credentials.`
   );
 }
+if (!currentConfig.pegasus256Token) {
+  console.warn(
+    `[startup] Pegasus256 Authenticate token is empty (${ENVIRONMENT === "production" ? "PROD_PEGASUS256_TOKEN" : "QA_PEGASUS256_TOKEN"}). Device/group/vehicle APIs will fail.`
+  );
+}
 if (!currentConfig.pegasus1Token) {
   console.warn(
-    `[startup] Pegasus1 Authenticate token is empty (${ENVIRONMENT === "production" ? "PROD_PEGASUS1_TOKEN" : "QA_PEGASUS1_TOKEN"}). Device/group/vehicle APIs will fail.`
+    `[startup] Pegasus1 Authenticate token is empty (${ENVIRONMENT === "production" ? "PROD_PEGASUS1_TOKEN" : "QA_PEGASUS1_TOKEN"}). Warehouse SIM activate may fail.`
   );
 }
 

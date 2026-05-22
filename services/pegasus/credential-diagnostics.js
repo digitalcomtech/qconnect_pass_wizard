@@ -28,8 +28,9 @@ function buildPegasusCredentialDiagnostics(currentConfig, environment) {
   const pegasus256TokenConfigured = tokenConfigured(currentConfig.pegasus256Token);
   const qservicesTokenConfigured = tokenConfigured(currentConfig.pegasusToken);
 
-  const deviceLookupAvailable = pegasus1TokenConfigured;
-  const simLookupAvailable = pegasus1TokenConfigured || pegasus256TokenConfigured;
+  const deviceLookupAvailable =
+    pegasus256TokenConfigured || pegasus1TokenConfigured;
+  const simLookupAvailable = pegasus256TokenConfigured || pegasus1TokenConfigured;
   const installationSearchAvailable = qservicesTokenConfigured;
 
   const notes = [];
@@ -38,14 +39,14 @@ function buildPegasusCredentialDiagnostics(currentConfig, environment) {
     notes.push(missingQservicesTokenMessage(environment));
     notes.push(...qservicesHint.notInterchangeable);
   }
-  if (!pegasus1TokenConfigured) {
-    notes.push(
-      'IMEI/device/group/vehicle APIs need QA_PEGASUS1_TOKEN / PROD_PEGASUS1_TOKEN (Authenticate on api.pegasusgateway.com).'
-    );
-  }
   if (!pegasus256TokenConfigured) {
     notes.push(
-      'Pegasus256 SIM path needs QA_PEGASUS256_TOKEN / PROD_PEGASUS256_TOKEN; Pegasus1 alone still allows partial SIM lookup.'
+      'IMEI/device/group/vehicle APIs prefer QA_PEGASUS256_TOKEN / PROD_PEGASUS256_TOKEN (Authenticate on api.pegasusgateway.com, Pegasus256 site).'
+    );
+  }
+  if (!pegasus1TokenConfigured) {
+    notes.push(
+      'Pegasus1 warehouse SIM activate/lookup needs QA_PEGASUS1_TOKEN / PROD_PEGASUS1_TOKEN (SIM lookup also checks Pegasus256 first).'
     );
   }
 
@@ -66,9 +67,7 @@ function buildPegasusCredentialDiagnostics(currentConfig, environment) {
         authStyle: 'Authenticate',
         host: API_HOST,
         usedFor: [
-          'Device lookup (verify-imei)',
-          'Groups and vehicles (provision)',
-          'Pegasus1 / warehouse SIM lookup',
+          'Warehouse SIM activate and Pegasus1 SIM fallback lookup',
         ],
       },
       pegasus256: {
@@ -78,7 +77,11 @@ function buildPegasusCredentialDiagnostics(currentConfig, environment) {
             : ['QA_PEGASUS256_TOKEN'],
         authStyle: 'Authenticate',
         host: API_HOST,
-        usedFor: ['Pegasus256 / migrated SIM lookup'],
+        usedFor: [
+          'Device lookup (verify-imei)',
+          'Groups, vehicles, HOS (provision)',
+          'Migrated SIM lookup (first)',
+        ],
       },
       qservices: {
         envVars:
@@ -122,7 +125,8 @@ async function buildPegasusCredentialDiagnosticsWithLive(
     qservices: live.qservices,
   };
 
-  const deviceLookupAvailable = availabilityFromToken(tokens.pegasus1);
+  const deviceLookupAvailable =
+    availabilityFromToken(tokens.pegasus256) || availabilityFromToken(tokens.pegasus1);
   const simLookupAvailable =
     availabilityFromToken(tokens.pegasus256) || availabilityFromToken(tokens.pegasus1);
   const installationSearchAvailable = availabilityFromToken(tokens.qservices);

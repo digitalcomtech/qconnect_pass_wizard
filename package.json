@@ -14,6 +14,7 @@
     "audit:activity": "node scripts/audit-activity-json.js",
     "test:sim-lookup": "node scripts/test-sim-lookup.js",
     "test:credentials": "node scripts/test-credential-diagnostics.js",
+    "test:auth-token": "node scripts/test-auth-token-resolve.js",
     "test:install-response": "node scripts/test-install-response-normalize.js",
     "pegasus:fetch-tokens": "node scripts/fetch-pegasus-tokens.js",
     "pegasus:refresh-and-start": "node scripts/pegasus-refresh-and-start.js",

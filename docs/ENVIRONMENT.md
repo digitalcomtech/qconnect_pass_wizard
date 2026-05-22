@@ -41,7 +41,7 @@ The deprecated name **`ENABLE_CONFIRMATION_FALLBACK`** does **nothing** (fallbac
 
 Outbound Pegasus calls are centralized in **`pegasus-client.js`** (`createPegasusClient`): qservices routes use **Bearer** + `pegasusBaseUrl`; `api.pegasusgateway.com` routes use the **`Authenticate`** header. Failures are logged as **`[Pegasus]`** JSON lines (upstream URL redacted, no secrets). `server.js` wires a single client instance after config load.
 
-For **`api.pegasusgateway.com`**, the client prefers **`pegasus1Token`** over **`pegasusToken`** when both are set (devices, groups, vehicles, IMEI verify).
+For **`api.pegasusgateway.com`**, the client prefers **`pegasus256Token`** for devices, groups, vehicles, and HOS. **`pegasus1Token`** is used for warehouse SIM activate and as the second SIM lookup pass. **`pegasusToken`** (Bearer) is only for qservices installation search/confirm — never sent to `api.pegasusgateway.com`.
 
 ### Refreshing expired tokens
 

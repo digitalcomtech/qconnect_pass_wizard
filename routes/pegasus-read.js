@@ -7,7 +7,7 @@ const { lookupSimByIccid } = require("../services/pegasus/sim-lookup");
 const { resolveApiAuthenticateToken } = require("../services/pegasus/auth-token");
 const { missingQservicesTokenMessage } = require("../services/pegasus/qservices-auth-hint");
 const {
-  pegasus1TokenExpiredMessage,
+  pegasus256TokenExpiredMessage,
   qservicesTokenExpiredMessage,
 } = require("../services/pegasus/token-auth-messages");
 const {
@@ -269,11 +269,11 @@ function createPegasusReadRouter({ pegasus, currentConfig, authenticateToken, en
         }
         const imeiMessage =
           deviceResp.status === 401
-            ? pegasus1TokenExpiredMessage()
+            ? pegasus256TokenExpiredMessage()
             : `Pegasus API error: ${deviceResp.status}`;
         return res.status(deviceResp.status).json({
           success: false,
-          code: deviceResp.status === 401 ? "pegasus1_token_expired" : undefined,
+          code: deviceResp.status === 401 ? "pegasus256_token_expired" : undefined,
           message: imeiMessage,
         });
       }

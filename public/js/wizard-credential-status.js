@@ -13,8 +13,12 @@ function formatPegasusApiError(resp, data, context) {
       "qservices token not configured. Run npm run pegasus:fetch-tokens and restart the server."
     );
   }
-  if (code === "pegasus1_token_expired" || (context === "imei" && status === 401)) {
-    return "Pegasus1 token expired. Run npm run pegasus:fetch-tokens and restart the server.";
+  if (
+    code === "pegasus256_token_expired" ||
+    code === "pegasus1_token_expired" ||
+    (context === "imei" && status === 401)
+  ) {
+    return "Pegasus256 token expired (device lookup). Run npm run pegasus:fetch-tokens and restart the server.";
   }
   if (
     code === "pegasus_sim_token_expired" ||
