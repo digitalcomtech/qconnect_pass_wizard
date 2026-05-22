@@ -1,8 +1,8 @@
 // Wizard: client search + VIN selection (sessionStorage for installs list)
 async function onNextClient(e) {
   e.preventDefault();
-  clientStatus.innerText = "";
-  
+  setClientSearchStatus("", "");
+
   // Track client selection step
   const clientName = clientNameInput.value.trim();
   if (window.activityTracker && clientName) {
@@ -20,10 +20,15 @@ async function onNextClient(e) {
 
   selectedClientName = clientNameInput.value.trim();
   if (!selectedClientName) {
-    clientStatus.innerText = "🚨 Please enter a client name or VIN start.";
+    setClientSearchStatus("error", "Please enter a client name or VIN prefix.");
+    setVinSectionState("disabled");
     return;
   }
-  clientStatus.innerText = "↻ Fetching all installations…";
+
+  setClientSearchStatus("loading", "Fetching installations…");
+  setVinSectionState("loading");
+  selectedVIN = "";
+  selectedInstallationId = "";
 
   try {
     const resp = await fetch(
@@ -41,15 +46,44 @@ async function onNextClient(e) {
           : data.message || `Search failed: ${resp.status}`;
       throw new Error(msg);
     }
-    
-    const installationsArray = data.installations;
-    const filtered = installationsArray; // Already filtered by backend
+
+    const installationsArray = data.installations || [];
+    const filtered = installationsArray;
+    const totalFetched =
+      data.totalFetched != null
+        ? data.totalFetched
+        : data.totalCount != null
+          ? data.totalCount
+          : null;
+    const matchedCount =
+      data.matchedCount != null
+        ? data.matchedCount
+        : data.totalFound != null
+          ? data.totalFound
+          : filtered.length;
 
     if (filtered.length === 0) {
-      clientStatus.innerText = `❌ No installations found for "${selectedClientName}".`;
-      vinSelect.innerHTML = `<option value="">-- No VINs found --</option>`;
+      setClientSearchStatus(
+        "warn",
+        formatSearchZeroMessage(totalFetched, selectedClientName)
+      );
+      setVinSectionState("empty");
+      applyJobDiscoveryPatch({
+        searchQuery: selectedClientName,
+        searchResults: [],
+        selectedInstallationId: null,
+        selectedVin: null,
+        personDisplayName: "",
+        selectedInstallation: null,
+      });
       return;
     }
+
+    setClientSearchStatus(
+      "success",
+      formatSearchSuccessMessage(totalFetched, matchedCount, selectedClientName)
+    );
+    setVinSectionState("ready");
 
     applyJobDiscoveryPatch({
       searchQuery: selectedClientName,
@@ -64,10 +98,9 @@ async function onNextClient(e) {
     buildVinSelectOptions(vinSelect, jobAfterSearch.searchResults, null);
     syncJobDiscoveryToLegacySession(jobAfterSearch, { step: "2" });
 
-    // Update workflow status
     updateWorkflowStatus({
       currentStep: '2',
-      status: `Found ${filtered.length} installation(s) for "${selectedClientName}"`
+      status: `Found ${matchedCount} installation(s) for "${selectedClientName}"`
     });
 
     navigateToStep(2);
@@ -75,12 +108,12 @@ async function onNextClient(e) {
     debugPrint(filtered, "Filtered Installations");
   } catch (err) {
     console.error(err);
-    clientStatus.innerText = "❌ " + err.message;
+    setClientSearchStatus("error", err.message);
+    setVinSectionState("disabled");
   }
 }
 
 function applyVinSelection() {
-  vinStatus.innerText = "";
   const vin = vinSelect.value;
   if (!vin) {
     selectedVIN = "";
@@ -88,6 +121,9 @@ function applyVinSelection() {
     var personEl = document.getElementById("selectedPersonName");
     if (personEl) personEl.textContent = "";
     if (typeof refreshProvisioningPreview === "function") refreshProvisioningPreview();
+    if (!vinSelect.disabled) {
+      setVinHintStatus("Select a VIN to continue.", "success");
+    }
     return;
   }
   selectedVIN = vin;
@@ -140,6 +176,8 @@ function applyVinSelection() {
     vin: selectedVIN,
     status: "Selected VIN: " + selectedVIN,
   });
+
+  setVinHintStatus("Selected VIN: " + selectedVIN, "success");
 
   navigateToStep(3);
 

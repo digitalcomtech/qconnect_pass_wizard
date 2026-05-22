@@ -126,6 +126,8 @@ function createPegasusReadRouter({ pegasus, currentConfig, authenticateToken, en
       res.json({
         success: true,
         installations: filtered,
+        totalFetched: installationsArray.length,
+        matchedCount: filtered.length,
         totalFound: filtered.length,
         query: query,
       });

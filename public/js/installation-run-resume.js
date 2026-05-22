@@ -131,6 +131,7 @@
       selectedVIN = job.selectedVin;
       selectedInstallationId = job.selectedInstallationId || "";
       syncJobDiscoveryToLegacySession(job, { step: "3" });
+      if (typeof syncSearchUiFromJob === "function") syncSearchUiFromJob(job);
       if (job.selectedVin) {
         updateWorkflowStatus({
           currentStep: "3",
@@ -176,6 +177,7 @@
     selectedClientName = job.searchQuery || "";
     buildVinSelectOptions(vinSelect, job.searchResults || [], job.selectedVin || null);
     syncJobDiscoveryToLegacySession(job, { step: "2" });
+    if (typeof syncSearchUiFromJob === "function") syncSearchUiFromJob(job);
     updateWorkflowStatus({
       currentStep: "2",
       status:

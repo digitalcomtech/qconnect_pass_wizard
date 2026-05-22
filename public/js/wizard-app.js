@@ -59,6 +59,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   navigateToStep(1);
+  if (typeof setVinSectionState === "function") {
+    setVinSectionState("disabled");
+  }
   restoreState();
   if (vinSelect.value && typeof applyVinSelection === "function") {
     applyVinSelection();

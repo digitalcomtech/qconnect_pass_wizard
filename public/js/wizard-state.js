@@ -60,8 +60,10 @@ function resetWizardUiToColdStart() {
     if (typeof imeiInput !== "undefined" && imeiInput) imeiInput.value = "";
     if (typeof simInput !== "undefined" && simInput) simInput.value = "";
     if (typeof installStatus !== "undefined" && installStatus) installStatus.textContent = "";
-    if (typeof clientStatus !== "undefined" && clientStatus) clientStatus.textContent = "";
-    if (typeof vinStatus !== "undefined" && vinStatus) vinStatus.textContent = "";
+    if (typeof setClientSearchStatus === "function") setClientSearchStatus("", "");
+    else if (typeof clientStatus !== "undefined" && clientStatus) clientStatus.textContent = "";
+    if (typeof setVinSectionState === "function") setVinSectionState("disabled");
+    else if (typeof vinStatus !== "undefined" && vinStatus) vinStatus.textContent = "";
     if (typeof imeiVerificationStatus !== "undefined" && imeiVerificationStatus) imeiVerificationStatus.innerHTML = "";
     if (typeof simVerificationStatus !== "undefined" && simVerificationStatus) simVerificationStatus.innerHTML = "";
     var secondaryImeiStatus = document.getElementById("secondaryImeiVerificationStatus");

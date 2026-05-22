@@ -381,6 +381,51 @@
       border-radius: 3px;
     }
 
+    .status-line--loading:not(:empty) {
+      color: #475569;
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+    }
+
+    .status-line--success:not(:empty) {
+      color: #047857;
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+    }
+
+    .status-line--warn:not(:empty) {
+      color: #b45309;
+      background: #fffbeb;
+      border-color: #fde68a;
+    }
+
+    .status-line--error:not(:empty) {
+      color: #b91c1c;
+      background: #fef2f2;
+      border-color: #fecaca;
+    }
+
+    .status-line--hint:not(:empty) {
+      color: #64748b;
+      background: #f8fafc;
+      border-color: #e2e8f0;
+      font-weight: 400;
+    }
+
+    .console-card--disabled {
+      opacity: 0.55;
+    }
+
+    .console-card--disabled select,
+    .console-card--disabled input,
+    .console-card--disabled button {
+      cursor: not-allowed;
+    }
+
+    #vinSection.console-card--disabled {
+      pointer-events: none;
+    }
+
     #imeiVerificationStatus:not(:empty),
     #simVerificationStatus:not(:empty),
     #secondaryImeiVerificationStatus:not(:empty),
@@ -849,6 +894,7 @@
   <script src="./js/installation-run-resume.js"></script>
   <script src="./js/wizard-workflow-status.js"></script>
   <script src="./js/wizard-nav.js"></script>
+  <script src="./js/wizard-search-ui.js"></script>
   <script src="./js/wizard-search.js"></script>
   <script src="./js/wizard-device-verify.js"></script>
   <script src="./js/wizard-install-submit.js"></script>
