@@ -32,7 +32,7 @@ async function initializeUsers() {
   }
   
   // Generate proper hashes for our demo passwords
-  const adminHash = await bcrypt.hash('admin123', 10);
+  const adminHash = await bcrypt.hash('admindct', 10);
   const installerHash = await bcrypt.hash('installer123', 10);
   
   // Update the users with proper hashes
